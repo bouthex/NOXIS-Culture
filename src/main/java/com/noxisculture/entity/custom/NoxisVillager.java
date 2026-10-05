@@ -1,6 +1,12 @@
 package com.noxisculture.entity.custom;
 
+import com.noxisculture.entity.mood.NoxisMood;
+import com.noxisculture.entity.mood.NoxisMoodController;
 import com.noxisculture.entity.trade.NoxisVillagerTrades;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
@@ -23,7 +29,7 @@ import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.TradeWithPlayerGoal;
 import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
 import net.minecraft.world.entity.monster.Monster;
-import net.minecraft.world.entity.npc.AbstractVillager;
+import net.minecraft.world.entity.npc.villager.AbstractVillager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.level.Level;
@@ -41,11 +47,42 @@ public class NoxisVillager extends AbstractVillager {
     /** Reposición de ofertas: dos veces por día de Minecraft. */
     private static final long RESTOCK_INTERVAL_TICKS = 12_000L;
     private static final float VOICE_PITCH_MULTIPLIER = 1.4F; // voz aguda = "cute"
+    /** 1 de cada N ticks larga humito el sombrero (~cada 6 s en promedio). */
+    private static final int HAT_SMOKE_CHANCE = 120;
+    private static final double HAT_TOP_HEIGHT = 1.75D;
 
+    private static final EntityDataAccessor<Byte> MOOD =
+            SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BYTE);
+    private static final int HAPPY_AFTER_TRADE_TICKS = 60;
+    private static final float MOOD_BLEND_SPEED = 0.15F;
+
+    private final NoxisMoodController moodController = new NoxisMoodController();
     private long lastRestockGameTime;
+
+    // Solo cliente: transición suave entre emociones (0 = nada, 1 = completo).
+    private float happyAnim;
+    private float scaredAnim;
 
     public NoxisVillager(EntityType<? extends NoxisVillager> type, Level level) {
         super(type, level);
+    }
+
+    @Override
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(MOOD, NoxisMood.NEUTRAL.id());
+    }
+
+    public NoxisMood getMood() {
+        return NoxisMood.byId(this.entityData.get(MOOD));
+    }
+
+    public float getHappyAnim() {
+        return this.happyAnim;
+    }
+
+    public float getScaredAnim() {
+        return this.scaredAnim;
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -94,6 +131,12 @@ public class NoxisVillager extends AbstractVillager {
     }
 
     @Override
+    public void notifyTrade(MerchantOffer offer) {
+        super.notifyTrade(offer);
+        this.moodController.makeHappy(HAPPY_AFTER_TRADE_TICKS);
+    }
+
+    @Override
     protected void rewardTradeXp(MerchantOffer offer) {
         if (offer.shouldRewardExp()) {
             int xp = 3 + this.random.nextInt(4);
@@ -104,13 +147,58 @@ public class NoxisVillager extends AbstractVillager {
     @Override
     public void tick() {
         super.tick();
-        if (!this.level().isClientSide() && !this.isTrading()) {
+        if (this.level().isClientSide()) {
+            this.clientTick();
+            return;
+        }
+        // Emociones (servidor -> se sincroniza solo al cambiar).
+        NoxisMood mood = this.moodController.tick(this);
+        if (mood != this.getMood()) {
+            this.entityData.set(MOOD, mood.id());
+        }
+        // Reposición de ofertas.
+        if (!this.isTrading()) {
             long now = this.level().getGameTime();
             if (now - this.lastRestockGameTime >= RESTOCK_INTERVAL_TICKS) {
                 this.getOffers().forEach(MerchantOffer::resetUses);
                 this.lastRestockGameTime = now;
             }
         }
+    }
+
+    private void clientTick() {
+        NoxisMood mood = this.getMood();
+        this.happyAnim = approach(this.happyAnim, mood == NoxisMood.HAPPY ? 1.0F : 0.0F);
+        this.scaredAnim = approach(this.scaredAnim, mood == NoxisMood.SCARED ? 1.0F : 0.0F);
+
+        double headY = this.getY() + 1.0D;
+        switch (mood) {
+            case HAPPY -> {
+                if (this.random.nextInt(12) == 0) {
+                    this.level().addParticle(ParticleTypes.HAPPY_VILLAGER,
+                            this.getRandomX(0.6D), headY + 0.3D, this.getRandomZ(0.6D), 0.0D, 0.0D, 0.0D);
+                }
+            }
+            case SCARED -> {
+                // Gotitas de sudor nervioso.
+                if (this.random.nextInt(8) == 0) {
+                    this.level().addParticle(ParticleTypes.SPLASH,
+                            this.getRandomX(0.5D), headY, this.getRandomZ(0.5D), 0.0D, 0.0D, 0.0D);
+                }
+            }
+            default -> {
+                // Bocanada de humito desde la copa del sombrero.
+                if (this.random.nextInt(HAT_SMOKE_CHANCE) == 0) {
+                    this.level().addParticle(ParticleTypes.SMOKE,
+                            this.getX(), this.getY() + HAT_TOP_HEIGHT, this.getZ(), 0.0D, 0.03D, 0.0D);
+                }
+            }
+        }
+    }
+
+    private static float approach(float current, float target) {
+        if (current < target) return Math.min(target, current + MOOD_BLEND_SPEED);
+        return Math.max(target, current - MOOD_BLEND_SPEED);
     }
 
     // ---------------- Persistencia ----------------

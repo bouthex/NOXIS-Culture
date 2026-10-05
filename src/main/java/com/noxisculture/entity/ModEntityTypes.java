@@ -13,14 +13,14 @@ public final class ModEntityTypes {
     private ModEntityTypes() {}
 
     /**
-     * Hitbox: 0.6 de ancho x 1.45 de alto (incluye el sombrero de copa).
+     * Hitbox: 0.7 de ancho x 1.7 de alto (incluye el sombrero de copa alto).
      * Un aldeano vanilla mide 0.6 x 1.95, así que el Noxis es claramente "petiso".
      */
     public static final EntityType<NoxisVillager> NOXIS_VILLAGER = register(
             ModEntityTypeIds.NOXIS_VILLAGER,
             EntityType.Builder.<NoxisVillager>of(NoxisVillager::new, MobCategory.CREATURE)
-                    .sized(0.6F, 1.45F)
-                    .eyeHeight(0.8F)
+                    .sized(0.7F, 1.7F)
+                    .eyeHeight(0.72F)
                     .clientTrackingRange(10)
     );
 

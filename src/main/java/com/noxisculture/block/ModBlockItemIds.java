@@ -2,7 +2,7 @@ package com.noxisculture.block;
 
 import com.noxisculture.NoxisCulture;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.level.block.BlockItemId;
+import net.minecraft.references.BlockItemId;
 
 /**
  * IDs de bloques que tienen ítem. Desde 26.2 Mojang separa los IDs de las
