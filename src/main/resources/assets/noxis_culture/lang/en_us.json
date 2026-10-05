@@ -1,0 +1,7 @@
+{
+  "block.noxis_culture.noxite_bricks": "Noxite Bricks",
+  "item.noxis_culture.cosmos_pickaxe": "Cosmos Pickaxe",
+  "item.noxis_culture.cosmos_pickaxe.lore": "Right-click: Stellar Pulse",
+  "item.noxis_culture.cosmos_pickaxe.pulse": "✦ Stellar Pulse: %s ore veins nearby",
+  "entity.noxis_culture.noxis_villager": "Noxis Villager"
+}

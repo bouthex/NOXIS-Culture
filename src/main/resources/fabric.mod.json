@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "noxis_culture",
+  "version": "${version}",
+  "name": "Noxis Culture",
+  "description": "Una pequeña raza alienígena de sombrero de copa: los Noxis.",
+  "authors": ["TuNombre"],
+  "license": "All-Rights-Reserved",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["com.noxisculture.NoxisCulture"],
+    "client": ["com.noxisculture.client.NoxisCultureClient"]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.3",
+    "minecraft": "~26.2",
+    "java": ">=25",
+    "fabric-api": "*"
+  }
+}

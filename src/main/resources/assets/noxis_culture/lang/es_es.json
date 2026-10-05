@@ -1,0 +1,7 @@
+{
+  "block.noxis_culture.noxite_bricks": "Ladrillos de Noxita",
+  "item.noxis_culture.cosmos_pickaxe": "Pico del Cosmos",
+  "item.noxis_culture.cosmos_pickaxe.lore": "Clic derecho: Pulso Estelar",
+  "item.noxis_culture.cosmos_pickaxe.pulse": "✦ Pulso Estelar: %s vetas cerca",
+  "entity.noxis_culture.noxis_villager": "Aldeano Noxis"
+}
