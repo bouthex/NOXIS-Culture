@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "noxis_culture:noxus_block"
+  ],
+  "result": {
+    "count": 9,
+    "id": "noxis_culture:noxus_ingot"
+  }
+}

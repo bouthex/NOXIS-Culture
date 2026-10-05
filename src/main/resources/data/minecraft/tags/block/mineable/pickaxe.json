@@ -1,1 +1,11 @@
-{"replace":false,"values":["noxis_culture:noxite_bricks"]}
+{
+  "replace": false,
+  "values": [
+    "noxis_culture:noxite_bricks",
+    "noxis_culture:glowing_noxite_bricks",
+    "noxis_culture:noxus_ore",
+    "noxis_culture:deepslate_noxus_ore",
+    "noxis_culture:noxus_block",
+    "noxis_culture:noyux_cauldron"
+  ]
+}

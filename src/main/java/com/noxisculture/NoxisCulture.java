@@ -1,9 +1,12 @@
 package com.noxisculture;
 
 import com.noxisculture.block.ModBlocks;
+import com.noxisculture.fluid.ModFluids;
+import com.noxisculture.block.entity.ModBlockEntities;
 import com.noxisculture.entity.ModEntityTypes;
 import com.noxisculture.item.ModCreativeTabs;
 import com.noxisculture.item.ModItems;
+import com.noxisculture.worldgen.ModWorldgen;
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.resources.Identifier;
 import org.slf4j.Logger;
@@ -21,10 +24,13 @@ public final class NoxisCulture implements ModInitializer {
     @Override
     public void onInitialize() {
         // El orden importa: los bloques registran sus BlockItems antes que el resto de ítems.
+        ModFluids.initialize();
         ModBlocks.initialize();
         ModItems.initialize();
+        ModBlockEntities.initialize();
         ModEntityTypes.initialize();
         ModCreativeTabs.initialize();
+        ModWorldgen.initialize();
         LOGGER.info("Noxis Culture: los Noxis llegaron al mundo.");
     }
 

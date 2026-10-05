@@ -6,7 +6,7 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "noxis_culture:noxite_bricks"
+          "name": "noxis_culture:noxus_block"
         }
       ],
       "conditions": [

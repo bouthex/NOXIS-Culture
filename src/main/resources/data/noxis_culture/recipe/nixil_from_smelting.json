@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:smelting",
+  "category": "misc",
+  "cookingtime": 200,
+  "experience": 0.7,
+  "ingredient": "noxis_culture:glowing_noxite_bricks",
+  "result": {
+    "id": "noxis_culture:nixil"
+  }
+}

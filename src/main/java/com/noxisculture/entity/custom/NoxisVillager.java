@@ -59,6 +59,11 @@ public class NoxisVillager extends AbstractVillager {
     private final NoxisMoodController moodController = new NoxisMoodController();
     private long lastRestockGameTime;
 
+    // Progresión de comercio (como el aldeano vanilla).
+    private int merchantLevel = 1;
+    private int merchantXp;
+    private boolean pendingLevelUp;
+
     // Solo cliente: transición suave entre emociones (0 = nada, 1 = completo).
     private float happyAnim;
     private float scaredAnim;
@@ -117,7 +122,7 @@ public class NoxisVillager extends AbstractVillager {
                     return InteractionResult.CONSUME;
                 }
                 this.setTradingPlayer(player);
-                this.openTradingScreen(player, this.getDisplayName(), 1);
+                this.openTradingScreen(player, this.getDisplayName(), this.merchantLevel);
             }
             return InteractionResult.SUCCESS;
         }
@@ -127,7 +132,41 @@ public class NoxisVillager extends AbstractVillager {
     @Override
     protected void updateTrades(ServerLevel level) {
         // Toda la tabla de tradeos vive en su propia clase: fácil de balancear y portar.
-        NoxisVillagerTrades.fill(this.getOffers(), level, this.random);
+        // Al crearse: ofertas de todos los niveles ya alcanzados.
+        for (int lvl = 1; lvl <= this.merchantLevel; lvl++) {
+            NoxisVillagerTrades.addLevelOffers(lvl, this.getOffers(), level, this.random);
+        }
+    }
+
+    /**
+     * Al cerrar el menú: sube de nivel si corresponde y renueva las ofertas agotadas.
+     * (Arregla que el menú siguiera mostrando tradeos ya usados.)
+     */
+    @Override
+    protected void stopTrading() {
+        super.stopTrading();
+        if (!(this.level() instanceof ServerLevel serverLevel)) {
+            return;
+        }
+        if (this.pendingLevelUp) {
+            this.pendingLevelUp = false;
+            this.merchantLevel++;
+            NoxisVillagerTrades.addLevelOffers(this.merchantLevel, this.getOffers(), serverLevel, this.random);
+            serverLevel.sendParticles(ParticleTypes.HAPPY_VILLAGER,
+                    this.getX(), this.getY() + 1.2D, this.getZ(), 12, 0.4D, 0.4D, 0.4D, 0.0D);
+            this.moodController.makeHappy(HAPPY_AFTER_TRADE_TICKS * 2);
+        }
+        NoxisVillagerTrades.replaceExhausted(this.getOffers(), serverLevel, this.random);
+    }
+
+    @Override
+    public int getVillagerXp() {
+        return this.merchantXp;
+    }
+
+    @Override
+    public boolean showProgressBar() {
+        return true;
     }
 
     @Override
@@ -138,6 +177,11 @@ public class NoxisVillager extends AbstractVillager {
 
     @Override
     protected void rewardTradeXp(MerchantOffer offer) {
+        this.merchantXp += offer.getXp();
+        if (this.merchantLevel < NoxisVillagerTrades.MAX_LEVEL
+                && this.merchantXp >= NoxisVillagerTrades.xpToLevelUp(this.merchantLevel)) {
+            this.pendingLevelUp = true;
+        }
         if (offer.shouldRewardExp()) {
             int xp = 3 + this.random.nextInt(4);
             this.level().addFreshEntity(new ExperienceOrb(this.level(), this.getX(), this.getY() + 0.5D, this.getZ(), xp));
@@ -207,12 +251,16 @@ public class NoxisVillager extends AbstractVillager {
     protected void addAdditionalSaveData(ValueOutput output) {
         super.addAdditionalSaveData(output); // AbstractVillager ya guarda las ofertas
         output.putLong("last_restock", this.lastRestockGameTime);
+        output.putInt("merchant_level", this.merchantLevel);
+        output.putInt("merchant_xp", this.merchantXp);
     }
 
     @Override
     protected void readAdditionalSaveData(ValueInput input) {
         super.readAdditionalSaveData(input);
         this.lastRestockGameTime = input.getLong("last_restock").orElse(0L);
+        this.merchantLevel = Math.max(1, input.getInt("merchant_level").orElse(1));
+        this.merchantXp = input.getInt("merchant_xp").orElse(0);
     }
 
     /** Viven en aldeas: no deben desaparecer al alejarse el jugador. */

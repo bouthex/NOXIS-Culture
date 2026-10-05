@@ -39,6 +39,7 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
     private static final float EAR_BASE_ANGLE = 0.22F;
 
     private final ModelPart head;
+    private final ModelPart body;
     private final ModelPart hat;
     private final ModelPart rightEar;
     private final ModelPart leftEar;
@@ -51,6 +52,7 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
     public NoxisVillagerModel(ModelPart root) {
         super(root);
         this.head = root.getChild(PartNames.HEAD);
+        this.body = root.getChild(PartNames.BODY);
         this.hat = this.head.getChild(HAT);
         this.rightEar = this.head.getChild(PartNames.RIGHT_EAR);
         this.leftEar = this.head.getChild(PartNames.LEFT_EAR);
@@ -138,26 +140,42 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         float happy = state.happyAnim;
         float scared = state.scaredAnim;
 
-        // Cabeza: mira al jugador, rebota al caminar, se encoge y tiembla con miedo.
+        // Bamboleo cartoon: todo el cuerpo se inclina y rebota; las patitas quedan en el piso.
+        float[] waddle = NoxisMoodAnimator.waddle(pos, amount, happy);
+        float roll = waddle[0];
+        float bounce = waddle[1];
+        float hop = Math.abs(Mth.sin(age * 0.3F)) * 0.6F * happy * (1.0F - amount); // saltitos de alegría quieto
+
+        this.body.zRot = roll;
+        this.body.y = HEAD_Y - bounce - hop;
+
+        // Cabeza: mira al jugador + vida propia (asiente, se mece) + miedo (se encoge y tiembla).
+        float[] life = NoxisMoodAnimator.headLife(age, pos, amount, happy);
         this.head.yRot = state.yRot * Mth.DEG_TO_RAD;
-        this.head.xRot = state.xRot * Mth.DEG_TO_RAD + 0.25F * scared;
-        this.head.zRot = NoxisMoodAnimator.headTremble(age, scared);
-        this.head.y = HEAD_Y - Math.abs(Mth.cos(pos * 1.2F)) * 0.8F * amount + 0.8F * scared;
+        this.head.xRot = state.xRot * Mth.DEG_TO_RAD + life[0] + 0.25F * scared;
+        this.head.zRot = roll * 1.4F + life[1] + NoxisMoodAnimator.headTremble(age, scared);
+        this.head.x = -roll * 3.0F;
+        this.head.y = HEAD_Y - bounce - hop + 0.8F * scared;
 
         // Piezas compartidas por todas las especies Noxis.
         NoxisMoodAnimator.animateEars(this.rightEar, this.leftEar, age, happy, scared, EAR_BASE_ANGLE);
         NoxisMoodAnimator.animateHat(this.hat, HAT_Y, HAT_BASE_TILT, age, pos, amount, happy, scared);
         NoxisMoodAnimator.animateTail(this.tail, TAIL_BASE_ANGLE, age, happy, scared);
 
-        // Pasitos cortitos y rápidos.
+        // Pasitos cortitos.
         this.rightLeg.xRot = Mth.cos(pos * 1.2F) * 1.1F * amount;
         this.leftLeg.xRot = Mth.cos(pos * 1.2F + Mth.PI) * 1.1F * amount;
 
-        // Brazos: balanceo al caminar; feliz = saluda; miedo = se tapa la carita.
+        // Brazos: acompañan el bamboleo; feliz = saluda; miedo = se tapa la carita.
+        float armY = 17.5F - bounce - hop;
+        this.rightArm.y = armY;
+        this.leftArm.y = armY;
+        this.rightArm.x = -4.0F - roll * 2.5F;
+        this.leftArm.x = 4.0F - roll * 2.5F;
         float wave = Mth.sin(age * 0.5F) * 0.3F * happy;
         this.rightArm.xRot = Mth.cos(pos * 1.2F + Mth.PI) * 0.9F * amount - 1.3F * scared;
         this.leftArm.xRot = Mth.cos(pos * 1.2F) * 0.9F * amount - 1.3F * scared;
-        this.rightArm.zRot = 0.15F + (0.9F + wave) * happy - 0.5F * scared;
-        this.leftArm.zRot = -0.15F - (0.9F - wave) * happy + 0.5F * scared;
+        this.rightArm.zRot = 0.15F + roll + (0.9F + wave) * happy - 0.5F * scared;
+        this.leftArm.zRot = -0.15F + roll - (0.9F - wave) * happy + 0.5F * scared;
     }
 }

@@ -6,7 +6,7 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "noxis_culture:noxite_bricks"
+          "name": "minecraft:cauldron"
         }
       ],
       "conditions": [

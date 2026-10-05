@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "values": [
+    "noxis_culture:noxus_ore",
+    "noxis_culture:deepslate_noxus_ore",
+    "noxis_culture:noxus_block"
+  ]
+}

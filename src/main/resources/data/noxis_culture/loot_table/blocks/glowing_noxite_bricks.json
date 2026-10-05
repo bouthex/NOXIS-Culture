@@ -6,7 +6,7 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "noxis_culture:noxite_bricks"
+          "name": "noxis_culture:glowing_noxite_bricks"
         }
       ],
       "conditions": [

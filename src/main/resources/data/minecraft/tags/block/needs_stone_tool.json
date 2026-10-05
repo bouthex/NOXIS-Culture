@@ -1,1 +1,7 @@
-{"replace":false,"values":["noxis_culture:noxite_bricks"]}
+{
+  "replace": false,
+  "values": [
+    "noxis_culture:noxite_bricks",
+    "noxis_culture:glowing_noxite_bricks"
+  ]
+}
