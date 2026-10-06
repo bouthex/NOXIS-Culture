@@ -32,8 +32,8 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
     private static final String HAT_SPRIG = "hat_sprig";
     private static final String PONCHO = "poncho";
     private static final String TORCH = "torch";
-    private static final String RIGHT_LID = "right_lid";
-    private static final String LEFT_LID = "left_lid";
+    private static final String EYES_TIRED = "eyes_tired";
+    private static final String EYES_CLOSED = "eyes_closed";
     private static final float HAT_Y = -8.0F;
     private static final float TAIL_BASE_ANGLE = 0.9F;
 
@@ -49,8 +49,8 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
     private final ModelPart tail;
     private final ModelPart rightArm;
     private final ModelPart torch;
-    private final ModelPart rightLid;
-    private final ModelPart leftLid;
+    private final ModelPart eyesTired;
+    private final ModelPart eyesClosed;
     private boolean restRising;
     private final ModelPart leftArm;
     private final ModelPart rightLeg;
@@ -63,8 +63,8 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         this.hat = this.head.getChild(HAT);
         this.rightEar = this.head.getChild(PartNames.RIGHT_EAR);
         this.leftEar = this.head.getChild(PartNames.LEFT_EAR);
-        this.rightLid = this.head.getChild(RIGHT_LID);
-        this.leftLid = this.head.getChild(LEFT_LID);
+        this.eyesTired = this.head.getChild(EYES_TIRED);
+        this.eyesClosed = this.head.getChild(EYES_CLOSED);
         this.tail = root.getChild(PartNames.BODY).getChild(TAIL);
         this.rightArm = root.getChild(PartNames.RIGHT_ARM);
         this.torch = root.getChild(TORCH);
@@ -86,13 +86,14 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         head.addOrReplaceChild(PartNames.RIGHT_EAR,
                 CubeListBuilder.create().texOffs(0, 28).addBox(-1.5F, -3.0F, -0.5F, 3.0F, 3.0F, 1.0F),
                 PartPose.offsetAndRotation(-4.5F, -9.0F, 0.0F, 0.0F, 0.0F, -EAR_BASE_ANGLE));
-        // Párpados 3D: bajan sobre los ojos para entrecerrarlos (esfuerzo) o casi cerrarlos (sueño).
-        head.addOrReplaceChild(RIGHT_LID,
-                CubeListBuilder.create().texOffs(0, 40).addBox(0.0F, 0.0F, -0.5F, 3.0F, 1.0F, 1.0F),
-                PartPose.offset(-4.0F, -6.0F, -4.0F));
-        head.addOrReplaceChild(LEFT_LID,
-                CubeListBuilder.create().texOffs(0, 40).addBox(-3.0F, 0.0F, -0.5F, 3.0F, 1.0F, 1.0F),
-                PartPose.offset(4.0F, -6.0F, -4.0F));
+        // Expresiones: capas finitas pegadas a la cara (filas 1-4), dibujadas píxel por píxel.
+        // Se muestran/ocultan según el estado. Tapan también el brillo de los ojos de abajo.
+        head.addOrReplaceChild(EYES_TIRED,
+                CubeListBuilder.create().texOffs(0, 59).addBox(-5.0F, -7.0F, -4.05F, 10.0F, 4.0F, 0.0F),
+                PartPose.ZERO);
+        head.addOrReplaceChild(EYES_CLOSED,
+                CubeListBuilder.create().texOffs(20, 59).addBox(-5.0F, -7.0F, -4.05F, 10.0F, 4.0F, 0.0F),
+                PartPose.ZERO);
         head.addOrReplaceChild(PartNames.LEFT_EAR,
                 CubeListBuilder.create().texOffs(0, 28).mirror().addBox(-1.5F, -3.0F, -0.5F, 3.0F, 3.0F, 1.0F),
                 PartPose.offsetAndRotation(4.5F, -9.0F, 0.0F, 0.0F, 0.0F, EAR_BASE_ANGLE));
@@ -218,18 +219,20 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
 
         // ---- Párpados (expresión) ----
         // esfuerzo por ver con la antorcha: entrecierra; cansado: casi cierra y parpadea lento.
-        // Con la antorcha: el párpado tapa solo 1 fila y se inclina hacia adentro (ceño de esfuerzo),
-        // así quedan 2 píxeles de ojo bizco visibles a cada lado.
-        // Cansado: casi cerrados y rectos, con parpadeo lento.
-        boolean blink = (t % 70) < 4 || dozing;
-        float lids = Math.max(1.3F * torchAnim, rest * (blink ? 3.0F : 2.0F));
-        float frown = 0.32F * torchAnim * (1.0F - rest);
-        this.rightLid.visible = lids > 0.05F;
-        this.leftLid.visible = lids > 0.05F;
-        this.rightLid.yScale = lids;
-        this.leftLid.yScale = lids;
-        this.rightLid.zRot = frown;
-        this.leftLid.zRot = -frown;
+        // ---- Expresión de los ojos ----
+        //  · Antorcha de noche: ojitos cansados pero vigilando (2 px amarillos + pupila bizca).
+        //  · Sentado: los mismos ojitos de sueño, que se cierran al cabecear.
+        //  · Siempre: parpadeo normal cada tanto; cansado, parpadeo LENTO con cabeceo.
+        boolean sleepy = torchAnim > 0.5F || rest > 0.5F;
+        boolean slowBlink = sleepy && (t % 110) < 8;
+        boolean normalBlink = (t % 83) < 3;
+        boolean closed = slowBlink || (rest > 0.5F && dozing) || (!sleepy && normalBlink);
+        this.eyesClosed.visible = closed;
+        this.eyesTired.visible = sleepy && !closed;
+        // Con el parpadeo lento, la cabecita se le cae un poquito (cabeceo de sueño).
+        if (slowBlink) {
+            this.head.xRot += 0.12F * torchAnim;
+        }
 
         // ---- Patitas: pasitos, o estiradas hacia adelante al sentarse ----
         // Sentado: patitas hacia adelante, un poquito para arriba y abiertas en V, asomando
