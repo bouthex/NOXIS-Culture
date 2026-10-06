@@ -47,7 +47,9 @@ public final class NoxisMoodAnimator {
     }
 
     public static void animateTail(ModelPart tail, float baseAngle, float age, float happy, float scared) {
-        tail.xRot = Mth.lerp(scared, baseAngle + 0.3F * happy, -0.25F);
+        // Feliz: rebota DENTRO de su rango normal (nunca sube más), así no llega a la nuca.
+        float happyBounce = (-0.08F + 0.08F * Math.abs(Mth.sin(age * 0.6F))) * happy;
+        tail.xRot = Mth.lerp(scared, baseAngle + happyBounce, -0.25F);
         tail.yRot = Mth.sin(age * (0.15F + 0.35F * happy)) * 0.45F * (1.0F - scared);
     }
 

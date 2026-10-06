@@ -36,6 +36,18 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
     private static final String EYES_CLOSED = "eyes_closed";
     private static final String EYES_OPEN = "eyes_open";
     private static final String UMBRELLA = "umbrella";
+    private static final String PONCHO_V = "poncho_v";
+    private static final String PONCHO_SKIRT = "poncho_skirt";
+    private static final String PONCHO_LOW_R = "poncho_low_r";
+    private static final String PONCHO_LOW_L = "poncho_low_l";
+    private static final String P_ARM_R = "poncho_arm_r";
+    private static final String P_ARM_L = "poncho_arm_l";
+    private static final String P_TORCH = "poncho_torch";
+    private static final String P_UMBRELLA = "poncho_umbrella";
+    private static final String P_CANOPY = "poncho_canopy";
+    /** Con poncho, el brazo sale por su agujero un poquito más abajo (lo justo para quedar bajo el borde). */
+    private static final float PONCHO_ARM_DROP_R = 1.60F;
+    private static final float PONCHO_ARM_DROP_L = 1.05F;
     private static final String UMBRELLA_CANOPY = "umbrella_canopy";
     private static final float HAT_Y = -8.0F;
     private static final float TAIL_BASE_ANGLE = 0.9F;
@@ -56,6 +68,16 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
     private final ModelPart eyesClosed;
     private final ModelPart eyesOpen;
     private final ModelPart umbrella;
+    private final ModelPart poncho;
+    private final ModelPart ponchoV;
+    private final ModelPart ponchoSkirt;
+    private final ModelPart ponchoLowR;
+    private final ModelPart ponchoLowL;
+    private final ModelPart pArmR;
+    private final ModelPart pArmL;
+    private final ModelPart pTorch;
+    private final ModelPart pUmbrella;
+    private final ModelPart pCanopy;
     private final ModelPart umbrellaCanopy;
     private boolean restRising;
     private final ModelPart leftArm;
@@ -73,6 +95,16 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         this.eyesClosed = this.head.getChild(EYES_CLOSED);
         this.eyesOpen = this.head.getChild(EYES_OPEN);
         this.umbrella = root.getChild(UMBRELLA);
+        this.poncho = this.body.getChild(PONCHO);
+        this.ponchoV = this.body.getChild(PONCHO_V);
+        this.ponchoSkirt = this.ponchoV.getChild(PONCHO_SKIRT);
+        this.ponchoLowR = this.ponchoV.getChild(PONCHO_LOW_R);
+        this.ponchoLowL = this.ponchoV.getChild(PONCHO_LOW_L);
+        this.pArmR = this.body.getChild(P_ARM_R);
+        this.pArmL = this.body.getChild(P_ARM_L);
+        this.pTorch = this.body.getChild(P_TORCH);
+        this.pUmbrella = this.body.getChild(P_UMBRELLA);
+        this.pCanopy = this.pUmbrella.getChild(P_CANOPY);
         this.umbrellaCanopy = this.umbrella.getChild(UMBRELLA_CANOPY);
         this.tail = root.getChild(PartNames.BODY).getChild(TAIL);
         this.rightArm = root.getChild(PartNames.RIGHT_ARM);
@@ -139,6 +171,71 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         body.addOrReplaceChild(PONCHO,
                 CubeListBuilder.create().texOffs(20, 30).addBox(-3.5F, -0.2F, -3.0F, 7.0F, 3.0F, 6.0F),
                 PartPose.ZERO);
+        // ===== Poncho (variante) =====
+        // Una sola prenda de tela: dos grandes paneles que caen desde debajo de la cabeza en tres
+        // escalones, abertura triangular al frente, agujero real para la cola y DOS agujeros
+        // pequeños para los brazos, cerrados por la propia tela. Sin capucha.
+        PartDefinition ponchoTela = body.addOrReplaceChild(PONCHO_V,
+                CubeListBuilder.create()
+                        .texOffs(64, 0).addBox(-0.50F, 0.20F, -4.15F, 1.00F, 1.00F, 0.55F)
+                        .texOffs(69, 0).addBox(-5.00F, -0.20F, 2.90F, 10.00F, 1.30F, 0.50F)
+                        .texOffs(91, 0).addBox(-5.60F, 1.10F, 3.20F, 3.85F, 3.40F, 0.50F)
+                        .texOffs(101, 0).addBox(1.75F, 1.10F, 3.20F, 3.85F, 3.40F, 0.50F)
+                        .texOffs(111, 0).addBox(-5.60F, 0.05F, -3.60F, 0.50F, 1.95F, 0.70F)
+                        .texOffs(115, 0).addBox(-5.60F, 0.05F, 0.72F, 0.50F, 1.95F, 2.48F)
+                        .texOffs(64, 6).addBox(-5.60F, 0.05F, -2.90F, 0.50F, 0.30F, 3.62F)
+                        .texOffs(74, 6).addBox(-5.60F, 0.05F, -4.10F, 5.60F, 1.95F, 0.50F)
+                        .texOffs(88, 6).addBox(-6.10F, 2.00F, -4.10F, 0.50F, 2.20F, 1.20F)
+                        .texOffs(93, 6).addBox(-6.10F, 2.00F, 0.72F, 0.50F, 2.20F, 2.88F)
+                        .texOffs(101, 6).addBox(-6.10F, 2.76F, -2.90F, 0.50F, 1.44F, 3.62F)
+                        .texOffs(111, 6).addBox(-6.10F, 2.00F, -4.60F, 5.10F, 2.20F, 0.50F)
+                        .texOffs(64, 13).addBox(5.10F, 0.05F, -3.60F, 0.50F, 1.95F, 1.78F)
+                        .texOffs(70, 13).addBox(5.10F, 0.05F, 0.86F, 0.50F, 1.95F, 2.34F)
+                        .texOffs(77, 13).addBox(5.10F, 0.05F, -1.82F, 0.50F, 0.27F, 2.68F)
+                        .texOffs(85, 13).addBox(0.00F, 0.05F, -4.10F, 5.60F, 1.95F, 0.50F)
+                        .texOffs(99, 13).addBox(5.60F, 2.00F, -4.10F, 0.50F, 2.20F, 2.28F)
+                        .texOffs(106, 13).addBox(5.60F, 2.00F, 0.86F, 0.50F, 2.20F, 2.74F)
+                        .texOffs(114, 13).addBox(5.60F, 2.62F, -1.82F, 0.50F, 1.58F, 2.68F)
+                        .texOffs(64, 19).addBox(1.00F, 2.00F, -4.60F, 5.10F, 2.20F, 0.50F),
+                PartPose.ZERO);
+        ponchoTela.addOrReplaceChild(PONCHO_SKIRT,
+                CubeListBuilder.create()
+                        .texOffs(77, 19).addBox(-6.20F, 0.00F, -0.25F, 12.40F, 1.80F, 0.50F),
+                PartPose.offsetAndRotation(0.0F, 4.5F, 3.85F, 0.12F, 0.0F, 0.0F));
+        ponchoTela.addOrReplaceChild(PONCHO_LOW_R,
+                CubeListBuilder.create()
+                        .texOffs(64, 30).addBox(-6.70F, 0.00F, -4.60F, 0.50F, 2.10F, 8.60F)
+                        .texOffs(84, 30).addBox(-6.70F, 0.00F, -5.10F, 4.80F, 2.10F, 0.50F),
+                PartPose.offset(0.0F, 4.2F, 0.0F));
+        ponchoTela.addOrReplaceChild(PONCHO_LOW_L,
+                CubeListBuilder.create()
+                        .texOffs(96, 30).addBox(6.20F, 0.00F, -4.60F, 0.50F, 2.10F, 8.60F)
+                        .texOffs(116, 30).addBox(1.90F, 0.00F, -5.10F, 4.80F, 2.10F, 0.50F),
+                PartPose.offset(0.0F, 4.2F, 0.0F));
+        // Brazos y objetos del poncho: siguen al cuerpo, así salen limpios por su agujero.
+        body.addOrReplaceChild(P_ARM_R,
+                CubeListBuilder.create().texOffs(22, 16).addBox(-1.0F, 0.0F, -1.0F, 2.0F, 3.0F, 2.0F),
+                PartPose.offset(-4.0F, 0.5F + PONCHO_ARM_DROP_R, 0.0F));
+        body.addOrReplaceChild(P_ARM_L,
+                CubeListBuilder.create().texOffs(22, 16).mirror().addBox(-1.0F, 0.0F, -1.0F, 2.0F, 3.0F, 2.0F),
+                PartPose.offset(4.0F, 0.5F + PONCHO_ARM_DROP_L, 0.0F));
+        body.addOrReplaceChild(P_TORCH,
+                CubeListBuilder.create()
+                        .texOffs(56, 30).addBox(-0.5F, -6.0F, -0.5F, 1.0F, 6.0F, 1.0F)
+                        .texOffs(56, 38).addBox(-1.0F, -8.0F, -1.0F, 2.0F, 2.0F, 2.0F),
+                PartPose.ZERO);
+        PartDefinition pUmb = body.addOrReplaceChild(P_UMBRELLA, CubeListBuilder.create()
+                        .texOffs(110, 64).addBox(-0.5F, -25.0F, -0.5F, 1.0F, 26.0F, 1.0F)
+                        .texOffs(116, 64).addBox(-0.5F, 1.0F, -0.5F, 1.0F, 2.0F, 1.0F)
+                        .texOffs(116, 70).addBox(-0.5F, 2.0F, 0.5F, 1.0F, 1.0F, 2.0F),
+                PartPose.ZERO);
+        pUmb.addOrReplaceChild(P_CANOPY, CubeListBuilder.create()
+                        .texOffs(0, 64).addBox(-10.0F, -25.0F, -10.0F, 20.0F, 1.0F, 20.0F)
+                        .texOffs(0, 86).addBox(-7.5F, -27.0F, -7.5F, 15.0F, 2.0F, 15.0F)
+                        .texOffs(64, 86).addBox(-4.5F, -29.0F, -4.5F, 9.0F, 2.0F, 9.0F)
+                        .texOffs(82, 64).addBox(-2.0F, -30.0F, -2.0F, 4.0F, 1.0F, 4.0F)
+                        .texOffs(100, 64).addBox(-1.0F, -32.0F, -1.0F, 2.0F, 2.0F, 2.0F),
+                PartPose.ZERO);
         PartDefinition tail = body.addOrReplaceChild(TAIL,
                 CubeListBuilder.create().texOffs(0, 34).addBox(-0.5F, -0.5F, 0.0F, 1.0F, 1.0F, 4.0F),
                 PartPose.offsetAndRotation(0.0F, 3.5F, 2.5F, TAIL_BASE_ANGLE, 0.0F, 0.0F));
@@ -184,6 +281,11 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
                 PartPose.ZERO);
 
         return LayerDefinition.create(mesh, 128, 128);
+    }
+
+    /** Curva suave (acelera y frena) para gestos como abrir la capa. */
+    private static float smooth(float x) {
+        return x * x * (3.0F - 2.0F * x);
     }
 
     /** Curva con pequeño sobrepaso: hace que el "plop" al sentarse rebote un poquito. */
@@ -309,7 +411,7 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         float umb = state.umbrellaAnim;
         float umbSway = Mth.sin(age * 0.1F) * 0.04F + Mth.cos(pos * 1.2F) * 0.06F * amount;
         leftX = Mth.lerp(umb, leftX, -0.3F + umbSway);
-        leftZ = Mth.lerp(umb, leftZ, -1.5F + roll);
+        leftZ = Mth.lerp(umb, leftZ, -1.62F + roll);   // brazo apenas más abierto y un pelín más alto
         this.rightArm.xRot = rightX;
         this.rightArm.zRot = rightZ;
         this.leftArm.xRot = leftX;
@@ -320,11 +422,14 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         if (this.umbrella.visible) {
             float yy = 3.0F * Mth.cos(leftX);
             float zz = 3.0F * Mth.sin(leftX);
-            this.umbrella.x = this.leftArm.x - yy * Mth.sin(leftZ);
+            // La manito agarra la varilla por su lado de afuera; con la antorcha (cabeza hacia
+            // adelante y ladeada hacia este lado) se separa un poco más para no rozar la cabeza.
+            float apart = (0.6F + 0.8F * torchAnim) * umb;
+            this.umbrella.x = this.leftArm.x - yy * Mth.sin(leftZ) + apart;
             this.umbrella.y = this.leftArm.y + yy * Mth.cos(leftZ);
             this.umbrella.z = this.leftArm.z + zz;
             // Apenas inclinado hacia la cabeza para cubrirla, sin tocar el ala del sombrero.
-            this.umbrella.zRot = -0.08F + roll * 0.4F;
+            this.umbrella.zRot = -0.08F + 0.07F * torchAnim + roll * 0.4F; // más derecho si la cabeza se inclina
             this.umbrella.xRot = -0.05F + umbSway;
             // La cúpula gira despacito sobre la varilla (detalle tierno).
             this.umbrellaCanopy.yRot = Mth.sin(age * 0.04F) * 0.35F;
@@ -355,6 +460,68 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
             this.torch.xScale = scale;
             this.torch.yScale = scale;
             this.torch.zScale = scale;
+        }
+
+        // ---- Variante de ropa: poncho de hojas (0) o poncho de tela (1) ----
+        boolean hasPoncho = state.variant == 1;
+        this.poncho.visible = !hasPoncho;
+        this.ponchoV.visible = hasPoncho;
+        float rT = smooth(torchAnim);
+        float rU = smooth(umb);
+        if (hasPoncho) {
+            // La tela de abajo acompaña el bamboleo con un pequeño retraso.
+            float step = pos * 0.6F;
+            float lagRoll = (-Mth.sin(step - 0.6F) * 0.14F * amount + roll) * 0.8F;
+            this.ponchoLowR.zRot = lagRoll;
+            this.ponchoLowL.zRot = lagRoll;
+            this.ponchoLowR.xRot = 0.04F * amount * Mth.sin(step - 0.6F);
+            this.ponchoLowL.xRot = this.ponchoLowR.xRot;
+            this.ponchoSkirt.xRot = 0.12F + 0.25F * amount;
+            this.ponchoSkirt.zRot = lagRoll;
+            // Con poncho los brazos viven ADENTRO: solo aparecen saliendo por su agujero al usar algo.
+            this.rightArm.visible = false;
+            this.leftArm.visible = false;
+            this.torch.visible = false;
+            this.umbrella.visible = false;
+            float sw = Mth.sin(age * 0.12F) * 0.05F + Mth.cos(pos * 1.2F) * 0.08F * amount;
+            // Brazo derecho + antorcha
+            this.pArmR.visible = rT > 0.02F;
+            this.pArmR.xRot = -0.6F + sw;
+            this.pArmR.zRot = 1.9F;
+            this.pArmR.yScale = Math.max(0.001F, rT);
+            float tS = Mth.clamp((rT - 0.85F) / 0.15F, 0.0F, 1.0F);   // aparece con la mano ya afuera
+            this.pTorch.visible = tS > 0.01F;
+            float ry = 3.0F * rT * Mth.cos(this.pArmR.xRot);
+            this.pTorch.x = this.pArmR.x - ry * Mth.sin(1.9F);
+            this.pTorch.y = this.pArmR.y + ry * Mth.cos(1.9F);
+            this.pTorch.z = 3.0F * rT * Mth.sin(this.pArmR.xRot);
+            this.pTorch.xRot = -0.27F + sw;
+            this.pTorch.zRot = -0.2F - roll * 0.5F;
+            this.pTorch.xScale = this.pTorch.yScale = this.pTorch.zScale = Math.max(0.001F, tS);
+            // Brazo izquierdo + paraguas
+            this.pArmL.visible = rU > 0.02F;
+            this.pArmL.xRot = -0.3F;
+            this.pArmL.zRot = -1.62F;
+            this.pArmL.yScale = Math.max(0.001F, rU);
+            float uS = Mth.clamp((rU - 0.85F) / 0.15F, 0.0F, 1.0F);
+            this.pUmbrella.visible = uS > 0.01F;
+            float ly = 3.0F * rU * Mth.cos(-0.3F);
+            this.pUmbrella.x = this.pArmL.x - ly * Mth.sin(-1.62F) + (0.6F + 0.8F * torchAnim) * uS;
+            this.pUmbrella.y = this.pArmL.y + ly * Mth.cos(-1.62F);
+            this.pUmbrella.z = 3.0F * rU * Mth.sin(-0.3F);
+            this.pUmbrella.xRot = -0.05F - 0.12F * torchAnim;
+            this.pUmbrella.zRot = -0.08F + 0.07F * torchAnim - roll;
+            this.pCanopy.yRot = Mth.sin(age * 0.04F) * 0.35F;
+            this.pUmbrella.xScale = this.pUmbrella.yScale = this.pUmbrella.zScale = Math.max(0.001F, uS);
+            // Sentado con poncho: la colita sale derecha por su agujero (no hacia el costado).
+            this.tail.yRot = Mth.lerp(rest, this.tail.yRot, 0.0F);
+        } else {
+            this.rightArm.visible = true;
+            this.leftArm.visible = true;
+            this.pArmR.visible = false;
+            this.pArmL.visible = false;
+            this.pTorch.visible = false;
+            this.pUmbrella.visible = false;
         }
     }
 }

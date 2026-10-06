@@ -70,6 +70,12 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
             SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> UMBRELLA =
             SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BOOLEAN);
+    /** Variante de ropa: 0 = poncho de hojas, 1 = poncho de tela (con agujeros para brazos y cola). */
+    private static final EntityDataAccessor<Byte> VARIANT =
+            SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BYTE);
+    public static final byte VARIANT_PONCHO = 0;
+    public static final byte VARIANT_CAPE = 1;
+    private static final float CAPE_CHANCE = 0.4F;
     private static final EntityDataAccessor<Boolean> RESTING =
             SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BOOLEAN);
     private static final int HAPPY_AFTER_TRADE_TICKS = 60;
@@ -101,6 +107,7 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
     private float torchAnim;
     private float restAnim;
     private float umbrellaAnim;
+    private boolean variantChosen;
     /** El primer descanso llega pronto (1-5 min) para poder verlo; después, ~1 por día. */
     private int restCooldown = 1_200 + (int) (Math.random() * 4_800);
 
@@ -115,6 +122,7 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
         builder.define(TORCH, false);
         builder.define(RESTING, false);
         builder.define(UMBRELLA, false);
+        builder.define(VARIANT, VARIANT_PONCHO);
     }
 
     public NoxisMood getMood() {
@@ -135,6 +143,15 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
 
     public boolean isHoldingTorch() {
         return this.entityData.get(TORCH);
+    }
+
+    public byte getVariant() {
+        return this.entityData.get(VARIANT);
+    }
+
+    /** Manos ocupadas (antorcha o paraguas): no puede acomodarse la capa. */
+    public boolean hasHandsBusy() {
+        return this.isHoldingTorch() || this.isHoldingUmbrella();
     }
 
     public float getUmbrellaAnim() {
@@ -316,6 +333,11 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
         if (this.restCooldown > 0) {
             this.restCooldown--;
         }
+        // Variante de ropa: se elige una sola vez, al aparecer.
+        if (!this.variantChosen) {
+            this.variantChosen = true;
+            this.entityData.set(VARIANT, this.random.nextFloat() < CAPE_CHANCE ? VARIANT_CAPE : VARIANT_PONCHO);
+        }
         NoxisMood mood = this.moodController.tick(this);
         if (mood != this.getMood()) {
             this.entityData.set(MOOD, mood.id());
@@ -405,6 +427,9 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
         output.putInt("merchant_level", this.merchantLevel);
         output.putInt("merchant_xp", this.merchantXp);
         output.putBoolean("pending_level_up", this.pendingLevelUp);
+        output.putBoolean("variant_chosen", this.variantChosen);
+        output.putInt("variant", this.getVariant());
+
         output.putInt("rest_cooldown", this.restCooldown);
     }
 
@@ -415,6 +440,9 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
         this.merchantLevel = Math.max(1, input.getInt("merchant_level").orElse(1));
         this.merchantXp = input.getInt("merchant_xp").orElse(0);
         this.pendingLevelUp = input.getBooleanOr("pending_level_up", false);
+        this.variantChosen = input.getBooleanOr("variant_chosen", false);
+        this.entityData.set(VARIANT, (byte) input.getInt("variant").orElse(0).intValue());
+
         this.restCooldown = input.getInt("rest_cooldown").orElse(this.restCooldown);
     }
 
