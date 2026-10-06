@@ -12,6 +12,8 @@ public class NoxisVillagerRenderState extends LivingEntityRenderState {
     public float torchAnim;
     /** 0..1: cuánto está sentado descansando. */
     public float restAnim;
+    /** 0..1: cuánto sacó el paraguas (lluvia). */
+    public float umbrellaAnim;
     /** true mientras se está levantando (para no repetir el rebote del "plop" al revés). */
     public boolean restRising;
 }

@@ -2,6 +2,9 @@ package com.noxisculture.entity.custom;
 
 import com.noxisculture.entity.ai.NoxisRestGoal;
 import com.noxisculture.entity.ai.NoxisRestful;
+import com.noxisculture.entity.ai.NoxisWorkAtTableGoal;
+import com.noxisculture.entity.ai.NoxisWorker;
+import net.minecraft.core.BlockPos;
 import com.noxisculture.entity.light.NoxisLightController;
 import com.noxisculture.sound.ModSounds;
 import com.noxisculture.entity.light.NoxisLightSource;
@@ -17,6 +20,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.stats.Stats;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
@@ -51,9 +55,11 @@ import org.jspecify.annotations.Nullable;
  * nos da gratis el menú de comercio vanilla, el guardado de ofertas y la
  * integración con TradeWithPlayerGoal, sin el sistema de profesiones/cerebro.
  */
-public class NoxisVillager extends AbstractVillager implements NoxisLightSource, NoxisRestful {
-    /** Reposición de ofertas: dos veces por día de Minecraft. */
+public class NoxisVillager extends AbstractVillager implements NoxisLightSource, NoxisRestful, NoxisWorker {
+    /** Puede reponer en su mesa como mucho cada medio día (~2 veces por día, como vanilla). */
     private static final long RESTOCK_INTERVAL_TICKS = 12_000L;
+    /** Espera tras cerrar el menú antes de subir de nivel (vanilla: 40 ticks = 2 s). */
+    private static final int LEVEL_UP_DELAY_TICKS = 40;
     /** 1 de cada N ticks larga humito el sombrero (~cada 6 s en promedio). */
     private static final int HAT_SMOKE_CHANCE = 120;
     private static final double HAT_TOP_HEIGHT = 1.75D;
@@ -61,6 +67,8 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
     private static final EntityDataAccessor<Byte> MOOD =
             SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BYTE);
     private static final EntityDataAccessor<Boolean> TORCH =
+            SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> UMBRELLA =
             SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> RESTING =
             SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BOOLEAN);
@@ -85,12 +93,14 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
     private int merchantLevel = 1;
     private int merchantXp;
     private boolean pendingLevelUp;
+    private int levelUpTimer;
 
     // Solo cliente: transición suave entre emociones (0 = nada, 1 = completo).
     private float happyAnim;
     private float scaredAnim;
     private float torchAnim;
     private float restAnim;
+    private float umbrellaAnim;
     /** El primer descanso llega pronto (1-5 min) para poder verlo; después, ~1 por día. */
     private int restCooldown = 1_200 + (int) (Math.random() * 4_800);
 
@@ -104,6 +114,7 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
         builder.define(MOOD, NoxisMood.NEUTRAL.id());
         builder.define(TORCH, false);
         builder.define(RESTING, false);
+        builder.define(UMBRELLA, false);
     }
 
     public NoxisMood getMood() {
@@ -126,6 +137,14 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
         return this.entityData.get(TORCH);
     }
 
+    public float getUmbrellaAnim() {
+        return this.umbrellaAnim;
+    }
+
+    public boolean isHoldingUmbrella() {
+        return this.entityData.get(UMBRELLA);
+    }
+
     public float getRestAnim() {
         return this.restAnim;
     }
@@ -143,7 +162,8 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
 
     @Override
     public boolean isSafeToRest() {
-        return this.getMood() == NoxisMood.NEUTRAL && !this.isTrading() && !this.isHoldingTorch();
+        return this.getMood() == NoxisMood.NEUTRAL && !this.isTrading() && !this.isHoldingTorch()
+                && !this.isHoldingUmbrella();
     }
 
     @Override
@@ -171,6 +191,7 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
         this.goalSelector.addGoal(1, new PanicGoal(this, 0.6D));
         this.goalSelector.addGoal(2, new LookAtTradingPlayerGoal(this));
         this.goalSelector.addGoal(3, new NoxisRestGoal<>(this));
+        this.goalSelector.addGoal(4, new NoxisWorkAtTableGoal<>(this, 0.45D));
         this.goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 0.35D));
         this.goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 6.0F));
         this.goalSelector.addGoal(9, new RandomLookAroundGoal(this));
@@ -206,16 +227,11 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
     }
 
     /**
-     * Al cerrar el menú (como vanilla): si juntó la experiencia necesaria, sube de nivel
-     * (puede subir más de uno si comerciaste mucho), desbloquea 2 tradeos nuevos por nivel
-     * y lo festeja con partículas y su sonido de alegría.
+     * Sube de nivel (como vanilla): se llama desde tick() cuando ya NO está comerciando,
+     * 2 segundos después de cerrar el menú. Puede subir más de un nivel si comerciaste mucho.
+     * Desbloquea 2 tradeos nuevos por nivel y lo festeja.
      */
-    @Override
-    protected void stopTrading() {
-        super.stopTrading();
-        if (!(this.level() instanceof ServerLevel serverLevel) || !this.pendingLevelUp) {
-            return;
-        }
+    private void levelUp(ServerLevel serverLevel) {
         this.pendingLevelUp = false;
         while (this.merchantLevel < NoxisVillagerTrades.MAX_LEVEL
                 && this.merchantXp >= NoxisVillagerTrades.xpToLevelUp(this.merchantLevel)) {
@@ -226,6 +242,37 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
                 this.getX(), this.getY() + 1.2D, this.getZ(), 16, 0.4D, 0.4D, 0.4D, 0.0D);
         this.playSound(ModSounds.NOXIS_CELEBRATE, 1.2F, 1.1F);
         this.moodController.makeHappy(HAPPY_AFTER_TRADE_TICKS * 2);
+    }
+
+    // ---------------- Trabajo en la mesa (NoxisWorker) ----------------
+
+    @Override
+    public boolean needsToWork() {
+        if (this.isTrading() || this.isHoldingTorch() || this.isResting()) {
+            return false;
+        }
+        if (this.level().getGameTime() - this.lastRestockGameTime < RESTOCK_INTERVAL_TICKS) {
+            return false;
+        }
+        for (MerchantOffer offer : this.getOffers()) {
+            if (offer.getUses() > 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public void workAt(BlockPos table) {
+        if (!(this.level() instanceof ServerLevel serverLevel)) {
+            return;
+        }
+        this.getOffers().forEach(MerchantOffer::resetUses);
+        this.lastRestockGameTime = serverLevel.getGameTime();
+        serverLevel.playSound(null, table, SoundEvents.SMITHING_TABLE_USE, SoundSource.NEUTRAL, 0.8F, 1.2F);
+        serverLevel.sendParticles(ParticleTypes.HAPPY_VILLAGER,
+                table.getX() + 0.5D, table.getY() + 1.1D, table.getZ() + 0.5D, 6, 0.3D, 0.2D, 0.3D, 0.0D);
+        this.moodController.makeHappy(HAPPY_AFTER_TRADE_TICKS);
     }
 
     @Override
@@ -250,6 +297,7 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
         if (this.merchantLevel < NoxisVillagerTrades.MAX_LEVEL
                 && this.merchantXp >= NoxisVillagerTrades.xpToLevelUp(this.merchantLevel)) {
             this.pendingLevelUp = true;
+            this.levelUpTimer = LEVEL_UP_DELAY_TICKS;
         }
         if (offer.shouldRewardExp()) {
             int xp = 3 + this.random.nextInt(4);
@@ -279,19 +327,22 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
             if (dark != this.isHoldingTorch()) {
                 this.entityData.set(TORCH, dark);
             }
+            // Si llueve (o nieva) y tiene el cielo encima, saca el paraguas con la otra mano.
+            boolean wet = this.level().isRaining() && this.level().canSeeSky(this.blockPosition().above());
+            if (wet != this.isHoldingUmbrella()) {
+                this.entityData.set(UMBRELLA, wet);
+            }
         }
         // Luz dinámica (cada 2 ticks alcanza: solo escribe en el mundo si algo cambió).
         if (this.tickCount % 2 == 0) {
             int light = this.isHoldingTorch() ? LIGHT_TORCH : mood == NoxisMood.HAPPY ? LIGHT_HAPPY : LIGHT_BASE;
             this.lightController.update(this, light);
         }
-        // Reposición de ofertas.
-        if (!this.isTrading()) {
-            long now = this.level().getGameTime();
-            if (now - this.lastRestockGameTime >= RESTOCK_INTERVAL_TICKS) {
-                this.getOffers().forEach(MerchantOffer::resetUses);
-                this.lastRestockGameTime = now;
-            }
+        // Subida de nivel: cuando ya cerraste el menú (no depende de stopTrading,
+        // que Minecraft no llama al cerrar el menú: ese era el error).
+        if (this.pendingLevelUp && !this.isTrading() && --this.levelUpTimer <= 0
+                && this.level() instanceof ServerLevel serverLevel) {
+            this.levelUp(serverLevel);
         }
     }
 
@@ -300,6 +351,7 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
         this.happyAnim = approach(this.happyAnim, mood == NoxisMood.HAPPY ? 1.0F : 0.0F);
         this.scaredAnim = approach(this.scaredAnim, mood == NoxisMood.SCARED ? 1.0F : 0.0F);
         this.torchAnim = approach(this.torchAnim, this.isHoldingTorch() ? 1.0F : 0.0F);
+        this.umbrellaAnim = approach(this.umbrellaAnim, this.isHoldingUmbrella() ? 1.0F : 0.0F);
         // Sentarse es más lento y pesado que el resto de las transiciones.
         float restTarget = this.isResting() ? 1.0F : 0.0F;
         this.restAnim += Mth.clamp(restTarget - this.restAnim, -0.06F, 0.06F);
@@ -352,6 +404,7 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
         output.putLong("last_restock", this.lastRestockGameTime);
         output.putInt("merchant_level", this.merchantLevel);
         output.putInt("merchant_xp", this.merchantXp);
+        output.putBoolean("pending_level_up", this.pendingLevelUp);
         output.putInt("rest_cooldown", this.restCooldown);
     }
 
@@ -361,6 +414,7 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
         this.lastRestockGameTime = input.getLong("last_restock").orElse(0L);
         this.merchantLevel = Math.max(1, input.getInt("merchant_level").orElse(1));
         this.merchantXp = input.getInt("merchant_xp").orElse(0);
+        this.pendingLevelUp = input.getBooleanOr("pending_level_up", false);
         this.restCooldown = input.getInt("rest_cooldown").orElse(this.restCooldown);
     }
 

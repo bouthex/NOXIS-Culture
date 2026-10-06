@@ -34,6 +34,9 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
     private static final String TORCH = "torch";
     private static final String EYES_TIRED = "eyes_tired";
     private static final String EYES_CLOSED = "eyes_closed";
+    private static final String EYES_OPEN = "eyes_open";
+    private static final String UMBRELLA = "umbrella";
+    private static final String UMBRELLA_CANOPY = "umbrella_canopy";
     private static final float HAT_Y = -8.0F;
     private static final float TAIL_BASE_ANGLE = 0.9F;
 
@@ -51,6 +54,9 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
     private final ModelPart torch;
     private final ModelPart eyesTired;
     private final ModelPart eyesClosed;
+    private final ModelPart eyesOpen;
+    private final ModelPart umbrella;
+    private final ModelPart umbrellaCanopy;
     private boolean restRising;
     private final ModelPart leftArm;
     private final ModelPart rightLeg;
@@ -65,6 +71,9 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         this.leftEar = this.head.getChild(PartNames.LEFT_EAR);
         this.eyesTired = this.head.getChild(EYES_TIRED);
         this.eyesClosed = this.head.getChild(EYES_CLOSED);
+        this.eyesOpen = this.head.getChild(EYES_OPEN);
+        this.umbrella = root.getChild(UMBRELLA);
+        this.umbrellaCanopy = this.umbrella.getChild(UMBRELLA_CANOPY);
         this.tail = root.getChild(PartNames.BODY).getChild(TAIL);
         this.rightArm = root.getChild(PartNames.RIGHT_ARM);
         this.torch = root.getChild(TORCH);
@@ -90,6 +99,11 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         // Se muestran/ocultan según el estado. Tapan también el brillo de los ojos de abajo.
         head.addOrReplaceChild(EYES_TIRED,
                 CubeListBuilder.create().texOffs(0, 59).addBox(-5.0F, -7.0F, -4.05F, 10.0F, 4.0F, 0.0F),
+                PartPose.ZERO);
+        // Ojos normales: también en capa propia, a la MISMA profundidad que las otras
+        // expresiones. Debajo la cara es solo piel, así de costado nunca se asoma el amarillo.
+        head.addOrReplaceChild(EYES_OPEN,
+                CubeListBuilder.create().texOffs(40, 59).addBox(-5.0F, -7.0F, -4.05F, 10.0F, 4.0F, 0.0F),
                 PartPose.ZERO);
         head.addOrReplaceChild(EYES_CLOSED,
                 CubeListBuilder.create().texOffs(20, 59).addBox(-5.0F, -7.0F, -4.05F, 10.0F, 4.0F, 0.0F),
@@ -153,7 +167,23 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
                 CubeListBuilder.create().texOffs(22, 22).mirror().addBox(-1.0F, 0.0F, -1.0F, 2.0F, 2.0F, 2.0F),
                 PartPose.offset(1.5F, 22.0F, 0.0F));
 
-        return LayerDefinition.create(mesh, 64, 64);
+        // ---- Paraguas (pieza propia: se ubica en la mano izquierda en cada cuadro) ----
+        // Mango con ganchito, varilla larga y una cúpula escalonada de 20 px: bien por encima
+        // del sombrero de copa para que nunca choquen. Gema en la punta (brilla).
+        PartDefinition umbrella = root.addOrReplaceChild(UMBRELLA, CubeListBuilder.create()
+                        .texOffs(110, 64).addBox(-0.5F, -25.0F, -0.5F, 1.0F, 26.0F, 1.0F)     // varilla
+                        .texOffs(116, 64).addBox(-0.5F, 1.0F, -0.5F, 1.0F, 2.0F, 1.0F)        // mango
+                        .texOffs(116, 70).addBox(-0.5F, 2.0F, 0.5F, 1.0F, 1.0F, 2.0F),        // ganchito
+                PartPose.offset(7.0F, 17.5F, -1.0F));
+        umbrella.addOrReplaceChild(UMBRELLA_CANOPY, CubeListBuilder.create()
+                        .texOffs(0, 64).addBox(-10.0F, -25.0F, -10.0F, 20.0F, 1.0F, 20.0F)    // borde
+                        .texOffs(0, 86).addBox(-7.5F, -27.0F, -7.5F, 15.0F, 2.0F, 15.0F)      // cúpula media
+                        .texOffs(64, 86).addBox(-4.5F, -29.0F, -4.5F, 9.0F, 2.0F, 9.0F)       // cúpula alta
+                        .texOffs(82, 64).addBox(-2.0F, -30.0F, -2.0F, 4.0F, 1.0F, 4.0F)       // tapa
+                        .texOffs(100, 64).addBox(-1.0F, -32.0F, -1.0F, 2.0F, 2.0F, 2.0F),     // gema
+                PartPose.ZERO);
+
+        return LayerDefinition.create(mesh, 128, 128);
     }
 
     /** Curva con pequeño sobrepaso: hace que el "plop" al sentarse rebote un poquito. */
@@ -229,6 +259,7 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         boolean closed = slowBlink || (rest > 0.5F && dozing) || (!sleepy && normalBlink);
         this.eyesClosed.visible = closed;
         this.eyesTired.visible = sleepy && !closed;
+        this.eyesOpen.visible = !closed && !sleepy;
         // Con el parpadeo lento, la cabecita se le cae un poquito (cabeceo de sueño).
         if (slowBlink) {
             this.head.xRot += 0.12F * torchAnim;
@@ -274,10 +305,37 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         rightZ = Mth.lerp(torchAnim, rightZ, 1.9F + roll);
         leftX = Mth.lerp(torchAnim, leftX, -0.5F + Mth.cos(pos * 1.2F) * 0.3F * amount);
         leftZ = Mth.lerp(torchAnim, leftZ, -0.25F);
+        // Paraguas: brazo izquierdo estirado al costado (apenas adelante), sosteniéndolo firme.
+        float umb = state.umbrellaAnim;
+        float umbSway = Mth.sin(age * 0.1F) * 0.04F + Mth.cos(pos * 1.2F) * 0.06F * amount;
+        leftX = Mth.lerp(umb, leftX, -0.3F + umbSway);
+        leftZ = Mth.lerp(umb, leftZ, -1.5F + roll);
         this.rightArm.xRot = rightX;
         this.rightArm.zRot = rightZ;
         this.leftArm.xRot = leftX;
         this.leftArm.zRot = leftZ;
+
+        // ---- Paraguas en la mano izquierda ----
+        this.umbrella.visible = umb > 0.02F;
+        if (this.umbrella.visible) {
+            float yy = 3.0F * Mth.cos(leftX);
+            float zz = 3.0F * Mth.sin(leftX);
+            this.umbrella.x = this.leftArm.x - yy * Mth.sin(leftZ);
+            this.umbrella.y = this.leftArm.y + yy * Mth.cos(leftZ);
+            this.umbrella.z = this.leftArm.z + zz;
+            // Apenas inclinado hacia la cabeza para cubrirla, sin tocar el ala del sombrero.
+            this.umbrella.zRot = -0.08F + roll * 0.4F;
+            this.umbrella.xRot = -0.05F + umbSway;
+            // La cúpula gira despacito sobre la varilla (detalle tierno).
+            this.umbrellaCanopy.yRot = Mth.sin(age * 0.04F) * 0.35F;
+            float scale = Mth.clamp(umb * 1.15F, 0.0F, 1.0F);
+            this.umbrella.xScale = scale;
+            this.umbrella.yScale = scale;
+            this.umbrella.zScale = scale;
+        }
+        // Con lluvia, las orejitas van hacia atrás (a los gatos no les gusta mojarse).
+        this.rightEar.xRot += 0.5F * umb;
+        this.leftEar.xRot += 0.5F * umb;
 
         // ---- Antorcha en la mano ----
         this.torch.visible = torchAnim > 0.02F;

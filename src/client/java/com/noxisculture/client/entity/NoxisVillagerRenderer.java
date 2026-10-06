@@ -26,6 +26,7 @@ public class NoxisVillagerRenderer extends MobRenderer<NoxisVillager, NoxisVilla
         state.scaredAnim = entity.getScaredAnim();
         state.torchAnim = entity.getTorchAnim();
         state.restAnim = entity.getRestAnim();
+        state.umbrellaAnim = entity.getUmbrellaAnim();
         state.restRising = !entity.isResting();
     }
 
