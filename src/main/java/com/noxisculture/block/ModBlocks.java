@@ -1,5 +1,6 @@
 package com.noxisculture.block;
 
+import com.noxisculture.block.custom.NoxisLightBlock;
 import com.noxisculture.block.custom.NoyuxCauldronBlock;
 import com.noxisculture.fluid.ModFluids;
 import java.util.function.Function;
@@ -18,6 +19,7 @@ import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.properties.NoteBlockInstrument;
 import net.minecraft.world.level.material.MapColor;
+import net.minecraft.world.level.material.PushReaction;
 
 public final class ModBlocks {
     private ModBlocks() {}
@@ -85,6 +87,16 @@ public final class ModBlocks {
             ModBlockIds.NOYUX,
             props -> new LiquidBlock(ModFluids.NOYUX, props),
             BlockBehaviour.Properties.ofFullCopy(Blocks.WATER).lightLevel(state -> 6));
+
+    /** Luz invisible que acompaña a los Noxis (luz dinámica sin shaders). */
+    public static final Block NOXIS_LIGHT = register(
+            ModBlockIds.NOXIS_LIGHT, NoxisLightBlock::new,
+            BlockBehaviour.Properties.of()
+                    .replaceable()
+                    .noOcclusion()
+                    .noLootTable()
+                    .pushReaction(PushReaction.DESTROY)
+                    .lightLevel(state -> state.getValue(NoxisLightBlock.LEVEL)));
 
     private static BlockBehaviour.Properties noxiteBrickProperties() {
         return BlockBehaviour.Properties.of()

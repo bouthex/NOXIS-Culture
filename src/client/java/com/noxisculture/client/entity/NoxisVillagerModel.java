@@ -31,6 +31,7 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
     private static final String TAIL_TIP = "tail_tip";
     private static final String HAT_SPRIG = "hat_sprig";
     private static final String PONCHO = "poncho";
+    private static final String TORCH = "torch";
     private static final float HAT_Y = -8.0F;
     private static final float TAIL_BASE_ANGLE = 0.9F;
 
@@ -45,6 +46,7 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
     private final ModelPart leftEar;
     private final ModelPart tail;
     private final ModelPart rightArm;
+    private final ModelPart torch;
     private final ModelPart leftArm;
     private final ModelPart rightLeg;
     private final ModelPart leftLeg;
@@ -58,6 +60,7 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         this.leftEar = this.head.getChild(PartNames.LEFT_EAR);
         this.tail = root.getChild(PartNames.BODY).getChild(TAIL);
         this.rightArm = root.getChild(PartNames.RIGHT_ARM);
+        this.torch = this.rightArm.getChild(TORCH);
         this.leftArm = root.getChild(PartNames.LEFT_ARM);
         this.rightLeg = root.getChild(PartNames.RIGHT_LEG);
         this.leftLeg = root.getChild(PartNames.LEFT_LEG);
@@ -115,9 +118,15 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
                 PartPose.offsetAndRotation(0.0F, 0.0F, 4.0F, 0.9F, 0.0F, 0.0F));
 
         // ---- Bracitos y patitas ----
-        root.addOrReplaceChild(PartNames.RIGHT_ARM,
+        PartDefinition rightArm = root.addOrReplaceChild(PartNames.RIGHT_ARM,
                 CubeListBuilder.create().texOffs(22, 16).addBox(-1.0F, 0.0F, -1.0F, 2.0F, 3.0F, 2.0F),
                 PartPose.offset(-4.0F, 17.5F, 0.0F));
+        // Antorcha en la manito: palito + llama (la llama brilla gracias a la capa emisiva).
+        rightArm.addOrReplaceChild(TORCH,
+                CubeListBuilder.create()
+                        .texOffs(56, 30).addBox(-0.5F, 1.5F, -0.5F, 1.0F, 6.0F, 1.0F)
+                        .texOffs(56, 38).addBox(-1.0F, 7.5F, -1.0F, 2.0F, 2.0F, 2.0F),
+                PartPose.ZERO);
         root.addOrReplaceChild(PartNames.LEFT_ARM,
                 CubeListBuilder.create().texOffs(22, 16).mirror().addBox(-1.0F, 0.0F, -1.0F, 2.0F, 3.0F, 2.0F),
                 PartPose.offset(4.0F, 17.5F, 0.0F));
@@ -176,6 +185,20 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         this.rightArm.xRot = Mth.cos(pos * 1.2F + Mth.PI) * 0.9F * amount - 1.3F * scared;
         this.leftArm.xRot = Mth.cos(pos * 1.2F) * 0.9F * amount - 1.3F * scared;
         this.rightArm.zRot = 0.15F + roll + (0.9F + wave) * happy - 0.5F * scared;
+
+        // Antorcha: el brazo sube hasta apuntar arriba (algo adelante para iluminar el camino),
+        // con un leve vaivén al caminar; la antorcha "aparece" creciendo desde la mano.
+        float torchAnim = state.torchAnim;
+        if (torchAnim > 0.0F) {
+            float raised = -2.75F + Mth.sin(age * 0.12F) * 0.06F + Mth.cos(pos * 1.2F) * 0.1F * amount;
+            this.rightArm.xRot = Mth.lerp(torchAnim, this.rightArm.xRot, raised);
+            this.rightArm.zRot = Mth.lerp(torchAnim, this.rightArm.zRot, 0.25F + roll);
+        }
+        this.torch.visible = torchAnim > 0.02F;
+        float scale = Mth.clamp(torchAnim * 1.15F, 0.0F, 1.0F);
+        this.torch.xScale = scale;
+        this.torch.yScale = scale;
+        this.torch.zScale = scale;
         this.leftArm.zRot = -0.15F + roll - (0.9F - wave) * happy + 0.5F * scared;
     }
 }

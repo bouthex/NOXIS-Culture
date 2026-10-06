@@ -1,5 +1,7 @@
 package com.noxisculture.entity.custom;
 
+import com.noxisculture.entity.light.NoxisLightController;
+import com.noxisculture.entity.light.NoxisLightSource;
 import com.noxisculture.entity.mood.NoxisMood;
 import com.noxisculture.entity.mood.NoxisMoodController;
 import com.noxisculture.entity.trade.NoxisVillagerTrades;
@@ -8,9 +10,12 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.LightLayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.stats.Stats;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
@@ -43,7 +48,7 @@ import org.jspecify.annotations.Nullable;
  * nos da gratis el menú de comercio vanilla, el guardado de ofertas y la
  * integración con TradeWithPlayerGoal, sin el sistema de profesiones/cerebro.
  */
-public class NoxisVillager extends AbstractVillager {
+public class NoxisVillager extends AbstractVillager implements NoxisLightSource {
     /** Reposición de ofertas: dos veces por día de Minecraft. */
     private static final long RESTOCK_INTERVAL_TICKS = 12_000L;
     private static final float VOICE_PITCH_MULTIPLIER = 1.4F; // voz aguda = "cute"
@@ -53,10 +58,20 @@ public class NoxisVillager extends AbstractVillager {
 
     private static final EntityDataAccessor<Byte> MOOD =
             SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BYTE);
+    private static final EntityDataAccessor<Boolean> TORCH =
+            SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BOOLEAN);
     private static final int HAPPY_AFTER_TRADE_TICKS = 60;
+
+    // Luz dinámica: gemas y ojos (siempre), más fuerte al estar feliz, máxima con la antorcha.
+    private static final int LIGHT_BASE = 6;
+    private static final int LIGHT_HAPPY = 9;
+    private static final int LIGHT_TORCH = 13;
+    /** Por debajo de esta luz del cielo (cuevas) también sacan la antorcha. */
+    private static final int CAVE_SKY_LIGHT = 4;
     private static final float MOOD_BLEND_SPEED = 0.15F;
 
     private final NoxisMoodController moodController = new NoxisMoodController();
+    private final NoxisLightController lightController = new NoxisLightController();
     private long lastRestockGameTime;
 
     // Progresión de comercio (como el aldeano vanilla).
@@ -67,6 +82,7 @@ public class NoxisVillager extends AbstractVillager {
     // Solo cliente: transición suave entre emociones (0 = nada, 1 = completo).
     private float happyAnim;
     private float scaredAnim;
+    private float torchAnim;
 
     public NoxisVillager(EntityType<? extends NoxisVillager> type, Level level) {
         super(type, level);
@@ -76,6 +92,7 @@ public class NoxisVillager extends AbstractVillager {
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
         builder.define(MOOD, NoxisMood.NEUTRAL.id());
+        builder.define(TORCH, false);
     }
 
     public NoxisMood getMood() {
@@ -88,6 +105,14 @@ public class NoxisVillager extends AbstractVillager {
 
     public float getScaredAnim() {
         return this.scaredAnim;
+    }
+
+    public float getTorchAnim() {
+        return this.torchAnim;
+    }
+
+    public boolean isHoldingTorch() {
+        return this.entityData.get(TORCH);
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -200,6 +225,19 @@ public class NoxisVillager extends AbstractVillager {
         if (mood != this.getMood()) {
             this.entityData.set(MOOD, mood.id());
         }
+        // De noche (o en cuevas oscuras) sacan la antorcha. Se revisa cada segundo.
+        if (this.tickCount % 20 == 0) {
+            boolean dark = this.level().isDarkOutside()
+                    || this.level().getBrightness(LightLayer.SKY, this.blockPosition()) < CAVE_SKY_LIGHT;
+            if (dark != this.isHoldingTorch()) {
+                this.entityData.set(TORCH, dark);
+            }
+        }
+        // Luz dinámica (cada 2 ticks alcanza: solo escribe en el mundo si algo cambió).
+        if (this.tickCount % 2 == 0) {
+            int light = this.isHoldingTorch() ? LIGHT_TORCH : mood == NoxisMood.HAPPY ? LIGHT_HAPPY : LIGHT_BASE;
+            this.lightController.update(this, light);
+        }
         // Reposición de ofertas.
         if (!this.isTrading()) {
             long now = this.level().getGameTime();
@@ -214,6 +252,17 @@ public class NoxisVillager extends AbstractVillager {
         NoxisMood mood = this.getMood();
         this.happyAnim = approach(this.happyAnim, mood == NoxisMood.HAPPY ? 1.0F : 0.0F);
         this.scaredAnim = approach(this.scaredAnim, mood == NoxisMood.SCARED ? 1.0F : 0.0F);
+        this.torchAnim = approach(this.torchAnim, this.isHoldingTorch() ? 1.0F : 0.0F);
+
+        // Llamita en la punta de la antorcha.
+        if (this.torchAnim > 0.9F && this.random.nextInt(5) == 0) {
+            float yaw = this.yBodyRot * Mth.DEG_TO_RAD;
+            double fx = -Mth.sin(yaw), fz = Mth.cos(yaw);      // adelante
+            double rx = -Mth.cos(yaw), rz = -Mth.sin(yaw);     // derecha
+            this.level().addParticle(ParticleTypes.SMALL_FLAME,
+                    this.getX() + rx * 0.27D + fx * 0.12D, this.getY() + 1.12D,
+                    this.getZ() + rz * 0.27D + fz * 0.12D, 0.0D, 0.01D, 0.0D);
+        }
 
         double headY = this.getY() + 1.0D;
         switch (mood) {
@@ -261,6 +310,13 @@ public class NoxisVillager extends AbstractVillager {
         this.lastRestockGameTime = input.getLong("last_restock").orElse(0L);
         this.merchantLevel = Math.max(1, input.getInt("merchant_level").orElse(1));
         this.merchantXp = input.getInt("merchant_xp").orElse(0);
+    }
+
+    /** Al desaparecer (muerte, descarga del chunk...), se lleva su luz. */
+    @Override
+    public void remove(Entity.RemovalReason reason) {
+        this.lightController.clear(this.level());
+        super.remove(reason);
     }
 
     /** Viven en aldeas: no deben desaparecer al alejarse el jugador. */
