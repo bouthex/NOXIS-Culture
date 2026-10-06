@@ -15,5 +15,7 @@
   "block.noxis_culture.noyux_cauldron": "Noyux Cauldron",
   "item.noxis_culture.noyux_bucket": "Noyux Bucket",
   "item.noxis_culture.noyux_bucket.lore": "Corrosive! Dissolves stone",
-  "block.noxis_culture.noyux": "Noyux"
+  "block.noxis_culture.noyux": "Noyux",
+  "block.noxis_culture.noxis_light": "Noxis Light",
+  "itemGroup.noxis_culture": "Noxis Culture"
 }

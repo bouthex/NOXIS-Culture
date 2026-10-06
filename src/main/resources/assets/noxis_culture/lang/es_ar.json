@@ -15,5 +15,7 @@
   "block.noxis_culture.noyux_cauldron": "Caldero de Noyux",
   "item.noxis_culture.noyux_bucket": "Cubo de Noyux",
   "item.noxis_culture.noyux_bucket.lore": "¡Corrosivo! Disuelve la piedra",
-  "block.noxis_culture.noyux": "Noyux"
+  "block.noxis_culture.noyux": "Noyux",
+  "block.noxis_culture.noxis_light": "Luz Noxis",
+  "itemGroup.noxis_culture": "Noxis Culture"
 }

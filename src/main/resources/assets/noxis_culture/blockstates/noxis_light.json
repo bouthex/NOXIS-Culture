@@ -1,0 +1,49 @@
+{
+  "variants": {
+    "level=1": {
+      "model": "noxis_culture:block/noxis_light"
+    },
+    "level=2": {
+      "model": "noxis_culture:block/noxis_light"
+    },
+    "level=3": {
+      "model": "noxis_culture:block/noxis_light"
+    },
+    "level=4": {
+      "model": "noxis_culture:block/noxis_light"
+    },
+    "level=5": {
+      "model": "noxis_culture:block/noxis_light"
+    },
+    "level=6": {
+      "model": "noxis_culture:block/noxis_light"
+    },
+    "level=7": {
+      "model": "noxis_culture:block/noxis_light"
+    },
+    "level=8": {
+      "model": "noxis_culture:block/noxis_light"
+    },
+    "level=9": {
+      "model": "noxis_culture:block/noxis_light"
+    },
+    "level=10": {
+      "model": "noxis_culture:block/noxis_light"
+    },
+    "level=11": {
+      "model": "noxis_culture:block/noxis_light"
+    },
+    "level=12": {
+      "model": "noxis_culture:block/noxis_light"
+    },
+    "level=13": {
+      "model": "noxis_culture:block/noxis_light"
+    },
+    "level=14": {
+      "model": "noxis_culture:block/noxis_light"
+    },
+    "level=15": {
+      "model": "noxis_culture:block/noxis_light"
+    }
+  }
+}
