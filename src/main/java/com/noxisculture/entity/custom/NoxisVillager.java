@@ -1,6 +1,9 @@
 package com.noxisculture.entity.custom;
 
+import com.noxisculture.entity.ai.NoxisRestGoal;
+import com.noxisculture.entity.ai.NoxisRestful;
 import com.noxisculture.entity.light.NoxisLightController;
+import com.noxisculture.sound.ModSounds;
 import com.noxisculture.entity.light.NoxisLightSource;
 import com.noxisculture.entity.mood.NoxisMood;
 import com.noxisculture.entity.mood.NoxisMoodController;
@@ -48,10 +51,9 @@ import org.jspecify.annotations.Nullable;
  * nos da gratis el menú de comercio vanilla, el guardado de ofertas y la
  * integración con TradeWithPlayerGoal, sin el sistema de profesiones/cerebro.
  */
-public class NoxisVillager extends AbstractVillager implements NoxisLightSource {
+public class NoxisVillager extends AbstractVillager implements NoxisLightSource, NoxisRestful {
     /** Reposición de ofertas: dos veces por día de Minecraft. */
     private static final long RESTOCK_INTERVAL_TICKS = 12_000L;
-    private static final float VOICE_PITCH_MULTIPLIER = 1.4F; // voz aguda = "cute"
     /** 1 de cada N ticks larga humito el sombrero (~cada 6 s en promedio). */
     private static final int HAT_SMOKE_CHANCE = 120;
     private static final double HAT_TOP_HEIGHT = 1.75D;
@@ -60,7 +62,12 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource 
             SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BYTE);
     private static final EntityDataAccessor<Boolean> TORCH =
             SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> RESTING =
+            SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BOOLEAN);
     private static final int HAPPY_AFTER_TRADE_TICKS = 60;
+    /** ~1 vez por día de Minecraft (24000 ticks), con algo de azar. */
+    private static final int REST_COOLDOWN_TICKS = 20_000;
+    private static final int REST_COOLDOWN_RANDOM = 6_000;
 
     // Luz dinámica: gemas y ojos (siempre), más fuerte al estar feliz, máxima con la antorcha.
     private static final int LIGHT_BASE = 6;
@@ -83,6 +90,9 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource 
     private float happyAnim;
     private float scaredAnim;
     private float torchAnim;
+    private float restAnim;
+    /** El primer descanso llega pronto (1-5 min) para poder verlo; después, ~1 por día. */
+    private int restCooldown = 1_200 + (int) (Math.random() * 4_800);
 
     public NoxisVillager(EntityType<? extends NoxisVillager> type, Level level) {
         super(type, level);
@@ -93,6 +103,7 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource 
         super.defineSynchedData(builder);
         builder.define(MOOD, NoxisMood.NEUTRAL.id());
         builder.define(TORCH, false);
+        builder.define(RESTING, false);
     }
 
     public NoxisMood getMood() {
@@ -115,6 +126,36 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource 
         return this.entityData.get(TORCH);
     }
 
+    public float getRestAnim() {
+        return this.restAnim;
+    }
+
+    // ---------------- Descanso (NoxisRestful) ----------------
+
+    public boolean isResting() {
+        return this.entityData.get(RESTING);
+    }
+
+    @Override
+    public boolean wantsToRest() {
+        return this.restCooldown <= 0 && this.isSafeToRest();
+    }
+
+    @Override
+    public boolean isSafeToRest() {
+        return this.getMood() == NoxisMood.NEUTRAL && !this.isTrading() && !this.isHoldingTorch();
+    }
+
+    @Override
+    public void setResting(boolean resting) {
+        this.entityData.set(RESTING, resting);
+    }
+
+    @Override
+    public void onRestFinished() {
+        this.restCooldown = REST_COOLDOWN_TICKS + this.random.nextInt(REST_COOLDOWN_RANDOM);
+    }
+
     public static AttributeSupplier.Builder createAttributes() {
         return Mob.createMobAttributes()
                 .add(Attributes.MAX_HEALTH, 16.0D)       // aldeano vanilla: 20
@@ -129,6 +170,7 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource 
         this.goalSelector.addGoal(1, new AvoidEntityGoal<>(this, Monster.class, 8.0F, 0.5D, 0.6D));
         this.goalSelector.addGoal(1, new PanicGoal(this, 0.6D));
         this.goalSelector.addGoal(2, new LookAtTradingPlayerGoal(this));
+        this.goalSelector.addGoal(3, new NoxisRestGoal<>(this));
         this.goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 0.35D));
         this.goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 6.0F));
         this.goalSelector.addGoal(9, new RandomLookAroundGoal(this));
@@ -221,6 +263,9 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource 
             return;
         }
         // Emociones (servidor -> se sincroniza solo al cambiar).
+        if (this.restCooldown > 0) {
+            this.restCooldown--;
+        }
         NoxisMood mood = this.moodController.tick(this);
         if (mood != this.getMood()) {
             this.entityData.set(MOOD, mood.id());
@@ -253,6 +298,9 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource 
         this.happyAnim = approach(this.happyAnim, mood == NoxisMood.HAPPY ? 1.0F : 0.0F);
         this.scaredAnim = approach(this.scaredAnim, mood == NoxisMood.SCARED ? 1.0F : 0.0F);
         this.torchAnim = approach(this.torchAnim, this.isHoldingTorch() ? 1.0F : 0.0F);
+        // Sentarse es más lento y pesado que el resto de las transiciones.
+        float restTarget = this.isResting() ? 1.0F : 0.0F;
+        this.restAnim += Mth.clamp(restTarget - this.restAnim, -0.06F, 0.06F);
 
         // Llamita en la punta de la antorcha.
         if (this.torchAnim > 0.9F && this.random.nextInt(5) == 0) {
@@ -302,6 +350,7 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource 
         output.putLong("last_restock", this.lastRestockGameTime);
         output.putInt("merchant_level", this.merchantLevel);
         output.putInt("merchant_xp", this.merchantXp);
+        output.putInt("rest_cooldown", this.restCooldown);
     }
 
     @Override
@@ -310,6 +359,7 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource 
         this.lastRestockGameTime = input.getLong("last_restock").orElse(0L);
         this.merchantLevel = Math.max(1, input.getInt("merchant_level").orElse(1));
         this.merchantXp = input.getInt("merchant_xp").orElse(0);
+        this.restCooldown = input.getInt("rest_cooldown").orElse(this.restCooldown);
     }
 
     /** Al desaparecer (muerte, descarga del chunk...), se lleva su luz. */
@@ -331,36 +381,44 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource 
         return null;
     }
 
-    // ---------------- Sonidos (placeholders vanilla con tono agudo) ----------------
-    // Reemplazar por SoundEvents propios en la etapa de "Sonidos".
+    // ---------------- Voz Noxis (gato + extraterrestre), según su emoción ----------------
 
     @Override
     protected SoundEvent getAmbientSound() {
-        return this.isTrading() ? SoundEvents.WANDERING_TRADER_TRADE : SoundEvents.WANDERING_TRADER_AMBIENT;
+        if (this.isResting()) return ModSounds.NOXIS_YAWN;
+        if (this.isTrading()) return ModSounds.NOXIS_TRADE;
+        return switch (this.getMood()) {
+            case HAPPY -> ModSounds.NOXIS_HAPPY;
+            case SCARED -> ModSounds.NOXIS_SCARED;
+            default -> ModSounds.NOXIS_AMBIENT;
+        };
+    }
+
+    /** Asustados "hablan" más seguido; descansando, casi nada. */
+    @Override
+    public int getAmbientSoundInterval() {
+        if (this.isResting()) return 400;
+        return this.getMood() == NoxisMood.SCARED ? 40 : 120;
     }
 
     @Override
     protected SoundEvent getHurtSound(DamageSource source) {
-        return SoundEvents.WANDERING_TRADER_HURT;
+        return ModSounds.NOXIS_HURT;
     }
 
     @Override
     protected SoundEvent getDeathSound() {
-        return SoundEvents.WANDERING_TRADER_DEATH;
+        return ModSounds.NOXIS_DEATH;
     }
 
     @Override
     protected SoundEvent getTradeUpdatedSound(boolean validTrade) {
-        return validTrade ? SoundEvents.WANDERING_TRADER_YES : SoundEvents.WANDERING_TRADER_NO;
+        return validTrade ? ModSounds.NOXIS_YES : ModSounds.NOXIS_NO;
     }
 
     @Override
     public SoundEvent getNotifyTradeSound() {
-        return SoundEvents.WANDERING_TRADER_YES;
+        return ModSounds.NOXIS_YES;
     }
 
-    @Override
-    public float getVoicePitch() {
-        return super.getVoicePitch() * VOICE_PITCH_MULTIPLIER;
-    }
 }

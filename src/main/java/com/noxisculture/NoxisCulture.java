@@ -2,6 +2,7 @@ package com.noxisculture;
 
 import com.noxisculture.block.ModBlocks;
 import com.noxisculture.fluid.ModFluids;
+import com.noxisculture.sound.ModSounds;
 import com.noxisculture.block.entity.ModBlockEntities;
 import com.noxisculture.entity.ModEntityTypes;
 import com.noxisculture.item.ModCreativeTabs;
@@ -24,6 +25,7 @@ public final class NoxisCulture implements ModInitializer {
     @Override
     public void onInitialize() {
         // El orden importa: los bloques registran sus BlockItems antes que el resto de ítems.
+        ModSounds.initialize();
         ModFluids.initialize();
         ModBlocks.initialize();
         ModItems.initialize();

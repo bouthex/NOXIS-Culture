@@ -10,4 +10,6 @@ public class NoxisVillagerRenderState extends LivingEntityRenderState {
     public float scaredAnim;
     /** 0..1: cuánto levantó la antorcha (animación de sacarla). */
     public float torchAnim;
+    /** 0..1: cuánto está sentado descansando. */
+    public float restAnim;
 }
