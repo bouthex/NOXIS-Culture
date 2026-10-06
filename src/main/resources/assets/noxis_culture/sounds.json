@@ -57,5 +57,11 @@
     "sounds": [
       "noxis_culture:noxis/yawn"
     ]
+  },
+  "entity.noxis.celebrate": {
+    "subtitle": "subtitles.noxis_culture.noxis.celebrate",
+    "sounds": [
+      "noxis_culture:noxis/celebrate"
+    ]
   }
 }
