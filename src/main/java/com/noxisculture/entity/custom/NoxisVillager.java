@@ -206,24 +206,26 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
     }
 
     /**
-     * Al cerrar el menú: sube de nivel si corresponde y renueva las ofertas agotadas.
-     * (Arregla que el menú siguiera mostrando tradeos ya usados.)
+     * Al cerrar el menú (como vanilla): si juntó la experiencia necesaria, sube de nivel
+     * (puede subir más de uno si comerciaste mucho), desbloquea 2 tradeos nuevos por nivel
+     * y lo festeja con partículas y su sonido de alegría.
      */
     @Override
     protected void stopTrading() {
         super.stopTrading();
-        if (!(this.level() instanceof ServerLevel serverLevel)) {
+        if (!(this.level() instanceof ServerLevel serverLevel) || !this.pendingLevelUp) {
             return;
         }
-        if (this.pendingLevelUp) {
-            this.pendingLevelUp = false;
+        this.pendingLevelUp = false;
+        while (this.merchantLevel < NoxisVillagerTrades.MAX_LEVEL
+                && this.merchantXp >= NoxisVillagerTrades.xpToLevelUp(this.merchantLevel)) {
             this.merchantLevel++;
             NoxisVillagerTrades.addLevelOffers(this.merchantLevel, this.getOffers(), serverLevel, this.random);
-            serverLevel.sendParticles(ParticleTypes.HAPPY_VILLAGER,
-                    this.getX(), this.getY() + 1.2D, this.getZ(), 12, 0.4D, 0.4D, 0.4D, 0.0D);
-            this.moodController.makeHappy(HAPPY_AFTER_TRADE_TICKS * 2);
         }
-        NoxisVillagerTrades.replaceExhausted(this.getOffers(), serverLevel, this.random);
+        serverLevel.sendParticles(ParticleTypes.HAPPY_VILLAGER,
+                this.getX(), this.getY() + 1.2D, this.getZ(), 16, 0.4D, 0.4D, 0.4D, 0.0D);
+        this.playSound(ModSounds.NOXIS_CELEBRATE, 1.2F, 1.1F);
+        this.moodController.makeHappy(HAPPY_AFTER_TRADE_TICKS * 2);
     }
 
     @Override
@@ -418,7 +420,7 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
 
     @Override
     public SoundEvent getNotifyTradeSound() {
-        return ModSounds.NOXIS_YES;
+        return ModSounds.NOXIS_CELEBRATE; // festejo original al concretar cada tradeo
     }
 
 }

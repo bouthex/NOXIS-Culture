@@ -1,11 +1,9 @@
 package com.noxisculture.entity.trade;
 
+import com.noxisculture.block.ModBlocks;
 import com.noxisculture.item.ModItems;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.Random;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
@@ -20,11 +18,14 @@ import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.item.trading.MerchantOffers;
 
 /**
- * Tabla de comercio del Aldeano Noxis, por NIVELES (como los aldeanos vanilla).
- *  Nivel 1: 2 compras + 3 ventas básicas.
- *  Nivel 2: +2 ofertas de Noxus.
- *  Nivel 3: +Pico del Cosmos garantizado.
- * Las ofertas agotadas se reemplazan por otras nuevas al terminar de comerciar.
+ * Comercio del Aldeano Noxis, IGUAL que los aldeanos vanilla:
+ *  - 5 niveles: Novato, Aprendiz, Oficial, Experto y Maestro.
+ *  - Cada nivel desbloquea 2 tradeos (1 compra + 1 venta) => 10 tradeos en Maestro.
+ *  - Sube de nivel juntando experiencia de comercio (mismos umbrales que vanilla).
+ *  - Las ofertas agotadas se bloquean y vuelven al reponer (2 veces por día).
+ *
+ * Cada nivel elige al azar de un grupito, así cada Noxis es un poco distinto;
+ * el Maestro siempre ofrece lo mejor: la Gema de Noxus y el Pico del Cosmos.
  */
 public final class NoxisVillagerTrades {
     private NoxisVillagerTrades() {}
@@ -34,97 +35,95 @@ public final class NoxisVillagerTrades {
         MerchantOffer create(ServerLevel level, RandomSource random);
     }
 
-    public static final int MAX_LEVEL = 3;
+    public static final int MAX_LEVEL = 5;
 
-    /** XP total necesaria para pasar del nivel N al N+1 (mismos umbrales que vanilla). */
+    /** XP TOTAL necesaria para alcanzar el siguiente nivel (mismos valores que vanilla). */
     public static int xpToLevelUp(int level) {
         return switch (level) {
             case 1 -> 10;
             case 2 -> 70;
+            case 3 -> 150;
+            case 4 -> 250;
             default -> Integer.MAX_VALUE;
         };
     }
 
-    /** Lo que el Noxis le COMPRA al jugador (fuente de esmeraldas). */
-    private static final List<TradeFactory> BUYS = List.of(
-            (l, r) -> buy(new ItemCost(Items.CRYING_OBSIDIAN, 4), 1, 12),
-            (l, r) -> buy(new ItemCost(Items.AMETHYST_SHARD, 16), 1, 12),
-            (l, r) -> buy(new ItemCost(Items.SCULK, 12), 1, 12),
-            (l, r) -> buy(new ItemCost(Items.ECHO_SHARD, 1), 4, 4),
-            (l, r) -> buy(new ItemCost(ModItems.NIXIL, 2), 3, 8)
-    );
+    // XP que da cada tradeo según el nivel en que se desbloquea (como vanilla).
+    private static final int XP_L1 = 2;
+    private static final int XP_L2 = 5;
+    private static final int XP_L3 = 10;
+    private static final int XP_L4 = 15;
+    private static final int XP_L5 = 30;
 
-    /** Lo que el Noxis le VENDE al jugador. Precios pensados para inicio/mid-game. */
-    private static final List<TradeFactory> SELLS = List.of(
-            (l, r) -> sell(new ItemCost(Items.EMERALD, 10), null, new ItemStack(Items.DIAMOND), 4, 10),
+    // ---------------- Nivel 1: Novato ----------------
+    private static final List<TradeFactory> L1_BUY = List.of(
+            (l, r) -> buy(new ItemCost(Items.CRYING_OBSIDIAN, 4), 1, 12, XP_L1),
+            (l, r) -> buy(new ItemCost(Items.AMETHYST_SHARD, 16), 1, 12, XP_L1),
+            (l, r) -> buy(new ItemCost(Items.SCULK, 12), 1, 12, XP_L1));
+    private static final List<TradeFactory> L1_SELL = List.of(
+            (l, r) -> sell(new ItemCost(Items.EMERALD, 1), null, new ItemStack(ModBlocks.NOXITE_BRICKS, 4), 12, XP_L1),
+            (l, r) -> sell(new ItemCost(Items.EMERALD, 3), null, new ItemStack(ModBlocks.GLOWING_NOXITE_BRICKS, 2), 12, XP_L1));
+
+    // ---------------- Nivel 2: Aprendiz ----------------
+    private static final List<TradeFactory> L2_BUY = List.of(
+            (l, r) -> buy(new ItemCost(ModItems.NIXIL, 2), 3, 8, XP_L2),
+            (l, r) -> buy(new ItemCost(Items.ECHO_SHARD, 1), 4, 4, XP_L2));
+    private static final List<TradeFactory> L2_SELL = List.of(
+            (l, r) -> sell(new ItemCost(Items.EMERALD, 10), null, new ItemStack(Items.DIAMOND), 4, XP_L2),
             (l, r) -> sell(new ItemCost(Items.EMERALD, 22), new ItemCost(Items.DIAMOND, 1),
-                    enchant(l, new ItemStack(Items.DIAMOND_PICKAXE), Enchantments.EFFICIENCY, 3, Enchantments.UNBREAKING, 2), 3, 15),
+                    enchant(l, new ItemStack(Items.DIAMOND_PICKAXE), Enchantments.EFFICIENCY, 3, Enchantments.UNBREAKING, 2), 3, XP_L2));
+
+    // ---------------- Nivel 3: Oficial ----------------
+    private static final List<TradeFactory> L3_BUY = List.of(
+            (l, r) -> buy(new ItemCost(ModItems.RAW_NOXUS, 1), 8, 6, XP_L3));
+    private static final List<TradeFactory> L3_SELL = List.of(
             (l, r) -> sell(new ItemCost(Items.EMERALD, 22), new ItemCost(Items.DIAMOND, 1),
-                    enchant(l, new ItemStack(Items.DIAMOND_AXE), Enchantments.EFFICIENCY, 3, Enchantments.UNBREAKING, 2), 3, 15),
+                    enchant(l, new ItemStack(Items.DIAMOND_AXE), Enchantments.EFFICIENCY, 3, Enchantments.UNBREAKING, 2), 3, XP_L3),
             (l, r) -> sell(new ItemCost(Items.EMERALD, 20), new ItemCost(Items.DIAMOND, 1),
-                    enchant(l, new ItemStack(Items.DIAMOND_SWORD), Enchantments.SHARPNESS, 3, Enchantments.LOOTING, 1), 3, 15),
+                    enchant(l, new ItemStack(Items.DIAMOND_SWORD), Enchantments.SHARPNESS, 3, Enchantments.LOOTING, 1), 3, XP_L3));
+
+    // ---------------- Nivel 4: Experto ----------------
+    private static final List<TradeFactory> L4_BUY = List.of(
+            (l, r) -> buy(new ItemCost(Items.ECHO_SHARD, 2), 9, 4, XP_L4),
+            (l, r) -> buy(new ItemCost(ModItems.NIXIL, 4), 7, 6, XP_L4));
+    private static final List<TradeFactory> L4_SELL = List.of(
             (l, r) -> sell(new ItemCost(Items.EMERALD, 28), new ItemCost(Items.DIAMOND, 2),
-                    enchant(l, new ItemStack(Items.DIAMOND_CHESTPLATE), Enchantments.PROTECTION, 3, Enchantments.UNBREAKING, 1), 2, 20),
+                    enchant(l, new ItemStack(Items.DIAMOND_CHESTPLATE), Enchantments.PROTECTION, 3, Enchantments.UNBREAKING, 1), 2, XP_L4),
             (l, r) -> sell(new ItemCost(Items.EMERALD, 18), new ItemCost(Items.DIAMOND, 1),
-                    enchant(l, new ItemStack(Items.DIAMOND_BOOTS), Enchantments.FEATHER_FALLING, 3, Enchantments.PROTECTION, 2), 3, 15)
-    );
+                    enchant(l, new ItemStack(Items.DIAMOND_BOOTS), Enchantments.FEATHER_FALLING, 3, Enchantments.PROTECTION, 2), 3, XP_L4),
+            (l, r) -> sell(new ItemCost(Items.EMERALD, 24), null, new ItemStack(ModItems.RAW_NOXUS), 2, XP_L4));
 
-    /** Nivel 2: el Noxus (lo valoran mucho, así que lo pagan bien y lo venden caro). */
-    private static final List<TradeFactory> NOXUS_TRADES = List.of(
-            (l, r) -> buy(new ItemCost(ModItems.RAW_NOXUS, 1), 8, 6),
-            (l, r) -> sell(new ItemCost(Items.EMERALD, 24), null, new ItemStack(ModItems.RAW_NOXUS), 2, 20),
-            (l, r) -> sell(new ItemCost(Items.EMERALD, 36), new ItemCost(Items.DIAMOND, 1),
-                    new ItemStack(ModItems.NOXUS_INGOT), 1, 25)
-    );
+    // ---------------- Nivel 5: Maestro (siempre los mismos: lo mejor) ----------------
+    private static final TradeFactory MASTER_GEM = (l, r) ->
+            sell(new ItemCost(Items.EMERALD, 36), new ItemCost(Items.DIAMOND, 1), new ItemStack(ModItems.NOXUS_INGOT), 1, XP_L5);
+    private static final TradeFactory MASTER_COSMOS = (l, r) ->
+            sell(new ItemCost(Items.EMERALD, 40), new ItemCost(Items.DIAMOND, 2), new ItemStack(ModItems.COSMOS_PICKAXE), 1, XP_L5);
 
-    /** Nivel 3: oferta estrella, 1 sola unidad por reposición. */
-    private static final TradeFactory COSMOS_PICKAXE = (l, r) ->
-            sell(new ItemCost(Items.EMERALD, 40), new ItemCost(Items.DIAMOND, 2),
-                    new ItemStack(ModItems.COSMOS_PICKAXE), 1, 30);
-
-    /** Agrega las ofertas que desbloquea un nivel. */
+    /** Agrega los 2 tradeos que desbloquea un nivel. */
     public static void addLevelOffers(int level, MerchantOffers offers, ServerLevel serverLevel, RandomSource random) {
         switch (level) {
-            case 1 -> {
-                addRandom(offers, BUYS, 2, serverLevel, random);
-                addRandom(offers, SELLS, 3, serverLevel, random);
+            case 1 -> addPair(offers, L1_BUY, L1_SELL, serverLevel, random);
+            case 2 -> addPair(offers, L2_BUY, L2_SELL, serverLevel, random);
+            case 3 -> addPair(offers, L3_BUY, L3_SELL, serverLevel, random);
+            case 4 -> addPair(offers, L4_BUY, L4_SELL, serverLevel, random);
+            case 5 -> {
+                offers.add(MASTER_GEM.create(serverLevel, random));
+                offers.add(MASTER_COSMOS.create(serverLevel, random));
             }
-            case 2 -> addRandom(offers, NOXUS_TRADES, 2, serverLevel, random);
-            case 3 -> offers.add(COSMOS_PICKAXE.create(serverLevel, random));
             default -> { }
         }
     }
 
-    /**
-     * Rotación: cambia cada oferta AGOTADA por una nueva del mismo tipo.
-     * Se llama al cerrar el menú de comercio, así nunca cambia algo mientras lo estás usando.
-     */
-    public static boolean replaceExhausted(MerchantOffers offers, ServerLevel level, RandomSource random) {
-        boolean changed = false;
-        for (int i = 0; i < offers.size(); i++) {
-            MerchantOffer old = offers.get(i);
-            if (!old.isOutOfStock() || old.getResult().is(ModItems.COSMOS_PICKAXE)) {
-                continue; // el Pico del Cosmos solo vuelve con la reposición normal
-            }
-            boolean isBuy = old.getResult().is(Items.EMERALD);
-            List<TradeFactory> pool = isBuy ? BUYS : SELLS;
-            offers.set(i, pool.get(random.nextInt(pool.size())).create(level, random));
-            changed = true;
-        }
-        return changed;
+    private static void addPair(MerchantOffers offers, List<TradeFactory> buys, List<TradeFactory> sells,
+                                ServerLevel level, RandomSource random) {
+        offers.add(buys.get(random.nextInt(buys.size())).create(level, random));
+        offers.add(sells.get(random.nextInt(sells.size())).create(level, random));
     }
 
     // ---------------- Helpers ----------------
 
-    private static void addRandom(MerchantOffers offers, List<TradeFactory> pool, int amount,
-                                  ServerLevel level, RandomSource random) {
-        List<TradeFactory> shuffled = new ArrayList<>(pool);
-        Collections.shuffle(shuffled, new Random(random.nextLong()));
-        shuffled.stream().limit(amount).forEach(f -> offers.add(f.create(level, random)));
-    }
-
-    private static MerchantOffer buy(ItemCost cost, int emeralds, int maxUses) {
-        return new MerchantOffer(cost, new ItemStack(Items.EMERALD, emeralds), maxUses, 2, 0.05F);
+    private static MerchantOffer buy(ItemCost cost, int emeralds, int maxUses, int xp) {
+        return new MerchantOffer(cost, new ItemStack(Items.EMERALD, emeralds), maxUses, xp, 0.05F);
     }
 
     private static MerchantOffer sell(ItemCost costA, ItemCost costB, ItemStack result, int maxUses, int xp) {

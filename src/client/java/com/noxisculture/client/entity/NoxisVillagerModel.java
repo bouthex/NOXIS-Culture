@@ -51,6 +51,7 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
     private final ModelPart torch;
     private final ModelPart rightLid;
     private final ModelPart leftLid;
+    private boolean restRising;
     private final ModelPart leftArm;
     private final ModelPart rightLeg;
     private final ModelPart leftLeg;
@@ -90,8 +91,8 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
                 CubeListBuilder.create().texOffs(0, 40).addBox(0.0F, 0.0F, -0.5F, 3.0F, 1.0F, 1.0F),
                 PartPose.offset(-4.0F, -6.0F, -4.0F));
         head.addOrReplaceChild(LEFT_LID,
-                CubeListBuilder.create().texOffs(0, 40).addBox(0.0F, 0.0F, -0.5F, 3.0F, 1.0F, 1.0F),
-                PartPose.offset(1.0F, -6.0F, -4.0F));
+                CubeListBuilder.create().texOffs(0, 40).addBox(-3.0F, 0.0F, -0.5F, 3.0F, 1.0F, 1.0F),
+                PartPose.offset(4.0F, -6.0F, -4.0F));
         head.addOrReplaceChild(PartNames.LEFT_EAR,
                 CubeListBuilder.create().texOffs(0, 28).mirror().addBox(-1.5F, -3.0F, -0.5F, 3.0F, 3.0F, 1.0F),
                 PartPose.offsetAndRotation(4.5F, -9.0F, 0.0F, 0.0F, 0.0F, EAR_BASE_ANGLE));
@@ -154,8 +155,17 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         return LayerDefinition.create(mesh, 64, 64);
     }
 
+    /** Curva con pequeño sobrepaso: hace que el "plop" al sentarse rebote un poquito. */
+    private static float easeOutBack(float x) {
+        float c1 = 1.70158F;
+        float c3 = c1 + 1.0F;
+        float k = x - 1.0F;
+        return 1.0F + c3 * k * k * k + c1 * k * k;
+    }
+
     @Override
     public void setupAnim(NoxisVillagerRenderState state) {
+        this.restRising = state.restRising;
         super.setupAnim(state);
         float age = state.ageInTicks;
         float pos = state.walkAnimationPos;
@@ -170,7 +180,10 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         float roll = waddle[0];
         float bounce = waddle[1];
         float hop = Math.abs(Mth.sin(age * 0.3F)) * 0.6F * happy * (1.0F - amount);
-        float sitDrop = 2.0F * rest; // al sentarse, todo baja
+        // Sentarse en dos tiempos: primero dobla las patitas, después "plop" con un rebotito.
+        float legPhase = Mth.clamp(rest * 1.6F, 0.0F, 1.0F);
+        float plop = easeOutBack(Mth.clamp((rest - 0.2F) / 0.8F, 0.0F, 1.0F));
+        float sitDrop = 2.0F * plop;
 
         this.body.zRot = roll;
         this.body.xRot = 0.12F * torchAnim - 0.08F * rest; // se inclina para ver / se recuesta un poquito
@@ -182,8 +195,11 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         boolean dozing = (t % 160) < 22;                            // cabeceo de sueño de vez en cuando
         float doze = rest * (Mth.sin(age * 0.05F) * 0.06F + (dozing ? 0.22F : 0.0F));
         this.head.yRot = state.yRot * Mth.DEG_TO_RAD + 0.3F * torchAnim;   // mira hacia la luz
-        this.head.xRot = state.xRot * Mth.DEG_TO_RAD + life[0] + 0.25F * scared + 0.15F * rest + doze;
-        this.head.zRot = roll * 1.4F + life[1] + NoxisMoodAnimator.headTremble(age, scared) + 0.12F * rest;
+        this.head.xRot = state.xRot * Mth.DEG_TO_RAD + life[0] + 0.25F * scared + 0.1F * torchAnim
+                + 0.15F * rest + doze;
+        // Con la antorcha ladea la cabecita (como esforzándose por ver); cansado, la deja caer de lado.
+        this.head.zRot = roll * 1.4F + life[1] + NoxisMoodAnimator.headTremble(age, scared)
+                + 0.2F * torchAnim + 0.12F * rest;
         this.head.x = -roll * 3.0F;
         this.head.z = -0.9F * torchAnim;                             // estira el cuello para ver mejor
         this.head.y = HEAD_Y - bounce - hop + 0.8F * scared + sitDrop;
@@ -193,28 +209,42 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         NoxisMoodAnimator.animateHat(this.hat, HAT_Y, HAT_BASE_TILT, age, pos, amount, happy, scared);
         NoxisMoodAnimator.animateTail(this.tail, TAIL_BASE_ANGLE, age, happy, scared);
         // Cansado: orejitas caídas, sombrero que se resbala sobre los ojos, cola enroscada en el piso.
-        this.rightEar.zRot -= 0.55F * rest;
-        this.leftEar.zRot += 0.55F * rest;
+        float plopBounce = Mth.sin(Mth.clamp((rest - 0.2F) / 0.8F, 0.0F, 1.0F) * Mth.PI) * (this.restRising ? 0.0F : 1.0F);
+        this.rightEar.zRot -= 0.55F * rest - 0.35F * plopBounce;
+        this.leftEar.zRot += 0.55F * rest - 0.35F * plopBounce;
         this.hat.xRot = -0.05F + 0.2F * rest;
         this.tail.xRot = Mth.lerp(rest, this.tail.xRot, -0.15F);
         this.tail.yRot = Mth.lerp(rest, this.tail.yRot, 1.25F);
 
         // ---- Párpados (expresión) ----
         // esfuerzo por ver con la antorcha: entrecierra; cansado: casi cierra y parpadea lento.
+        // Con la antorcha: el párpado tapa solo 1 fila y se inclina hacia adentro (ceño de esfuerzo),
+        // así quedan 2 píxeles de ojo bizco visibles a cada lado.
+        // Cansado: casi cerrados y rectos, con parpadeo lento.
         boolean blink = (t % 70) < 4 || dozing;
-        float lids = Math.max(2.0F * torchAnim, rest * (blink ? 3.0F : 2.0F));
+        float lids = Math.max(1.3F * torchAnim, rest * (blink ? 3.0F : 2.0F));
+        float frown = 0.32F * torchAnim * (1.0F - rest);
         this.rightLid.visible = lids > 0.05F;
         this.leftLid.visible = lids > 0.05F;
         this.rightLid.yScale = lids;
         this.leftLid.yScale = lids;
+        this.rightLid.zRot = frown;
+        this.leftLid.zRot = -frown;
 
         // ---- Patitas: pasitos, o estiradas hacia adelante al sentarse ----
-        this.rightLeg.xRot = Mth.lerp(rest, Mth.cos(pos * 1.2F) * 1.1F * amount, -1.45F);
-        this.leftLeg.xRot = Mth.lerp(rest, Mth.cos(pos * 1.2F + Mth.PI) * 1.1F * amount, -1.45F);
-        this.rightLeg.yRot = 0.25F * rest;
-        this.leftLeg.yRot = -0.25F * rest;
-        this.rightLeg.y = 22.0F + 1.0F * rest;
-        this.leftLeg.y = 22.0F + 1.0F * rest;
+        // Sentado: patitas hacia adelante, un poquito para arriba y abiertas en V, asomando
+        // delante de la pancita (se mueven hacia adelante para que el cuerpo no las tape).
+        float kick = Mth.sin(age * 0.15F) * 0.08F * rest;   // las balancea suavecito
+        this.rightLeg.xRot = Mth.lerp(legPhase, Mth.cos(pos * 1.2F) * 1.1F * amount, -1.65F + kick);
+        this.leftLeg.xRot = Mth.lerp(legPhase, Mth.cos(pos * 1.2F + Mth.PI) * 1.1F * amount, -1.65F - kick);
+        this.rightLeg.yRot = 0.35F * legPhase;
+        this.leftLeg.yRot = -0.35F * legPhase;
+        this.rightLeg.x = -1.5F - 0.8F * legPhase;
+        this.leftLeg.x = 1.5F + 0.8F * legPhase;
+        this.rightLeg.z = -2.2F * legPhase;
+        this.leftLeg.z = -2.2F * legPhase;
+        this.rightLeg.y = 22.0F + 1.0F * plop;
+        this.leftLeg.y = 22.0F + 1.0F * plop;
 
         // ---- Brazos ----
         float armY = 17.5F - bounce - hop + sitDrop;
@@ -229,10 +259,11 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         float rightZ = 0.15F + roll + (0.9F + wave) * happy - 0.5F * scared;
         float leftZ = -0.15F + roll - (0.9F - wave) * happy + 0.5F * scared;
         // Sentado: manitos apoyadas sobre la pancita.
-        rightX = Mth.lerp(rest, rightX, -0.55F);
-        leftX = Mth.lerp(rest, leftX, -0.55F);
-        rightZ = Mth.lerp(rest, rightZ, -0.15F);
-        leftZ = Mth.lerp(rest, leftZ, 0.15F);
+        float armsPhase = rest * rest; // las manitos llegan a la pancita al final
+        rightX = Mth.lerp(armsPhase, rightX, -0.55F);
+        leftX = Mth.lerp(armsPhase, leftX, -0.55F);
+        rightZ = Mth.lerp(armsPhase, rightZ, -0.15F);
+        leftZ = Mth.lerp(armsPhase, leftZ, 0.15F);
         // Antorcha: brazo derecho ESTIRADO al costado y adelante, apenas arriba del hombro
         // (como sosteniendo un farol para ver), y el izquierdo adelante, con cuidado.
         float sway = Mth.sin(age * 0.12F) * 0.05F + Mth.cos(pos * 1.2F) * 0.08F * amount;
