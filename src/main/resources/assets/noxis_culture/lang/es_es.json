@@ -17,5 +17,14 @@
   "item.noxis_culture.noyux_bucket.lore": "¡Corrosivo! Disuelve la piedra",
   "block.noxis_culture.noyux": "Noyux",
   "block.noxis_culture.noxis_light": "Luz Noxis",
-  "itemGroup.noxis_culture": "Noxis Culture"
+  "itemGroup.noxis_culture": "Noxis Culture",
+  "subtitles.noxis_culture.noxis.ambient": "Noxis maúlla",
+  "subtitles.noxis_culture.noxis.happy": "Noxis trina feliz",
+  "subtitles.noxis_culture.noxis.scared": "Noxis chilla asustado",
+  "subtitles.noxis_culture.noxis.hurt": "Noxis se lastima",
+  "subtitles.noxis_culture.noxis.death": "Noxis muere",
+  "subtitles.noxis_culture.noxis.yes": "Noxis acepta",
+  "subtitles.noxis_culture.noxis.no": "Noxis refunfuña",
+  "subtitles.noxis_culture.noxis.trade": "Noxis comercia",
+  "subtitles.noxis_culture.noxis.yawn": "Noxis bosteza"
 }

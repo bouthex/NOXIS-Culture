@@ -17,5 +17,14 @@
   "item.noxis_culture.noyux_bucket.lore": "Corrosive! Dissolves stone",
   "block.noxis_culture.noyux": "Noyux",
   "block.noxis_culture.noxis_light": "Noxis Light",
-  "itemGroup.noxis_culture": "Noxis Culture"
+  "itemGroup.noxis_culture": "Noxis Culture",
+  "subtitles.noxis_culture.noxis.ambient": "Noxis mews",
+  "subtitles.noxis_culture.noxis.happy": "Noxis trills happily",
+  "subtitles.noxis_culture.noxis.scared": "Noxis squeaks in fear",
+  "subtitles.noxis_culture.noxis.hurt": "Noxis hurts",
+  "subtitles.noxis_culture.noxis.death": "Noxis dies",
+  "subtitles.noxis_culture.noxis.yes": "Noxis agrees",
+  "subtitles.noxis_culture.noxis.no": "Noxis grumbles",
+  "subtitles.noxis_culture.noxis.trade": "Noxis trades",
+  "subtitles.noxis_culture.noxis.yawn": "Noxis yawns"
 }
