@@ -1,0 +1,15 @@
+{
+  "variants": {
+    "": [
+      {
+        "model": "noxis_culture:block/noxus_ore"
+      },
+      {
+        "model": "noxis_culture:block/noxus_ore_2"
+      },
+      {
+        "model": "noxis_culture:block/noxus_ore_3"
+      }
+    ]
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "parent": "noxis_culture:block/ore_overlay",
+  "textures": {
+    "base": "minecraft:block/stone",
+    "overlay": "noxis_culture:block/noxus_ore_overlay"
+  }
+}

@@ -3,5 +3,17 @@
   "item.noxis_culture.cosmos_pickaxe": "Cosmos Pickaxe",
   "item.noxis_culture.cosmos_pickaxe.lore": "Right-click: Stellar Pulse",
   "item.noxis_culture.cosmos_pickaxe.pulse": "✦ Stellar Pulse: %s ore veins nearby",
-  "entity.noxis_culture.noxis_villager": "Noxis Villager"
+  "entity.noxis_culture.noxis_villager": "Noxis Villager",
+  "block.noxis_culture.glowing_noxite_bricks": "Glowing Noxite Bricks",
+  "block.noxis_culture.noxus_ore": "Noxus Ore",
+  "block.noxis_culture.deepslate_noxus_ore": "Deepslate Noxus Ore",
+  "block.noxis_culture.noxus_block": "Block of Noxus",
+  "item.noxis_culture.raw_noxus": "Raw Noxus",
+  "item.noxis_culture.noxus_ingot": "Noxus Ingot",
+  "item.noxis_culture.nixil": "Nixil",
+  "item.noxis_culture.noxis_villager_spawn_egg": "Noxis Villager Spawn Egg",
+  "block.noxis_culture.noyux_cauldron": "Noyux Cauldron",
+  "item.noxis_culture.noyux_bucket": "Noyux Bucket",
+  "item.noxis_culture.noyux_bucket.lore": "Corrosive! Dissolves stone",
+  "block.noxis_culture.noyux": "Noyux"
 }

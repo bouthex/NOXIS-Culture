@@ -3,5 +3,17 @@
   "item.noxis_culture.cosmos_pickaxe": "Pico del Cosmos",
   "item.noxis_culture.cosmos_pickaxe.lore": "Clic derecho: Pulso Estelar",
   "item.noxis_culture.cosmos_pickaxe.pulse": "✦ Pulso Estelar: %s vetas cerca",
-  "entity.noxis_culture.noxis_villager": "Aldeano Noxis"
+  "entity.noxis_culture.noxis_villager": "Aldeano Noxis",
+  "block.noxis_culture.glowing_noxite_bricks": "Ladrillos de Noxita Resplandecientes",
+  "block.noxis_culture.noxus_ore": "Mena de Noxus",
+  "block.noxis_culture.deepslate_noxus_ore": "Mena de Noxus de Pizarra Profunda",
+  "block.noxis_culture.noxus_block": "Bloque de Noxus",
+  "item.noxis_culture.raw_noxus": "Noxus en Bruto",
+  "item.noxis_culture.noxus_ingot": "Lingote de Noxus",
+  "item.noxis_culture.nixil": "Nixil",
+  "item.noxis_culture.noxis_villager_spawn_egg": "Huevo de Aldeano Noxis",
+  "block.noxis_culture.noyux_cauldron": "Caldero de Noyux",
+  "item.noxis_culture.noyux_bucket": "Cubo de Noyux",
+  "item.noxis_culture.noyux_bucket.lore": "¡Corrosivo! Disuelve la piedra",
+  "block.noxis_culture.noyux": "Noyux"
 }

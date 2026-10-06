@@ -1,0 +1,12 @@
+{
+  "variants": {
+    "": [
+      {
+        "model": "noxis_culture:block/noxus_block"
+      },
+      {
+        "model": "noxis_culture:block/noxus_block_2"
+      }
+    ]
+  }
+}

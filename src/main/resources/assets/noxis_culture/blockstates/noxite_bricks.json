@@ -1,1 +1,7 @@
-{"variants":{"":{"model":"noxis_culture:block/noxite_bricks"}}}
+{
+  "variants": {
+    "": {
+      "model": "noxis_culture:block/noxite_bricks"
+    }
+  }
+}

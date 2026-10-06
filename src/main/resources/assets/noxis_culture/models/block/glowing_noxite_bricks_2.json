@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:block/cube_all",
   "textures": {
-    "all": "noxis_culture:block/noxite_bricks"
+    "all": "noxis_culture:block/glowing_noxite_bricks_2"
   }
 }

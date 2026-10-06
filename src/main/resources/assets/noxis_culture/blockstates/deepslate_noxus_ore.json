@@ -1,0 +1,15 @@
+{
+  "variants": {
+    "": [
+      {
+        "model": "noxis_culture:block/deepslate_noxus_ore"
+      },
+      {
+        "model": "noxis_culture:block/deepslate_noxus_ore_2"
+      },
+      {
+        "model": "noxis_culture:block/deepslate_noxus_ore_3"
+      }
+    ]
+  }
+}

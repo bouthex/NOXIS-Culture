@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "noxis_culture:block/noxite_bricks"
+    "model": "noxis_culture:block/noxus_block"
   }
 }
