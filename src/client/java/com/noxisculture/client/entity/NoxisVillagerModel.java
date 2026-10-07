@@ -37,9 +37,6 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
     private static final String EYES_OPEN = "eyes_open";
     private static final String UMBRELLA = "umbrella";
     private static final String PONCHO_V = "poncho_v";
-    private static final String PONCHO_SKIRT = "poncho_skirt";
-    private static final String PONCHO_LOW_R = "poncho_low_r";
-    private static final String PONCHO_LOW_L = "poncho_low_l";
     private static final String P_ARM_R = "poncho_arm_r";
     private static final String P_ARM_L = "poncho_arm_l";
     private static final String P_TORCH = "poncho_torch";
@@ -70,9 +67,6 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
     private final ModelPart umbrella;
     private final ModelPart poncho;
     private final ModelPart ponchoV;
-    private final ModelPart ponchoSkirt;
-    private final ModelPart ponchoLowR;
-    private final ModelPart ponchoLowL;
     private final ModelPart pArmR;
     private final ModelPart pArmL;
     private final ModelPart pTorch;
@@ -97,9 +91,6 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         this.umbrella = root.getChild(UMBRELLA);
         this.poncho = this.body.getChild(PONCHO);
         this.ponchoV = this.body.getChild(PONCHO_V);
-        this.ponchoSkirt = this.ponchoV.getChild(PONCHO_SKIRT);
-        this.ponchoLowR = this.ponchoV.getChild(PONCHO_LOW_R);
-        this.ponchoLowL = this.ponchoV.getChild(PONCHO_LOW_L);
         this.pArmR = this.body.getChild(P_ARM_R);
         this.pArmL = this.body.getChild(P_ARM_L);
         this.pTorch = this.body.getChild(P_TORCH);
@@ -172,46 +163,86 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
                 CubeListBuilder.create().texOffs(20, 30).addBox(-3.5F, -0.2F, -3.0F, 7.0F, 3.0F, 6.0F),
                 PartPose.ZERO);
         // ===== Poncho (variante) =====
-        // Una sola prenda de tela: dos grandes paneles que caen desde debajo de la cabeza en tres
-        // escalones, abertura triangular al frente, agujero real para la cola y DOS agujeros
-        // pequeños para los brazos, cerrados por la propia tela. Sin capucha.
+        // Una sola prenda de tela hecha con POCOS PLANOS GRANDES inclinados (campana octogonal):
+        // frente en dos mitades con abertura triangular, espalda con el agujero de la cola,
+        // costados con los agujeros de los brazos (cerrados por la propia tela) y 4 esquinas.
+        // Geometría generada desde la misma definición que la vista previa aprobada. Sin capucha.
         PartDefinition ponchoTela = body.addOrReplaceChild(PONCHO_V,
                 CubeListBuilder.create()
-                        .texOffs(64, 0).addBox(-0.50F, 0.20F, -4.15F, 1.00F, 1.00F, 0.55F)
-                        .texOffs(69, 0).addBox(-5.00F, -0.20F, 2.90F, 10.00F, 1.30F, 0.50F)
-                        .texOffs(91, 0).addBox(-5.60F, 1.10F, 3.20F, 3.85F, 3.40F, 0.50F)
-                        .texOffs(101, 0).addBox(1.75F, 1.10F, 3.20F, 3.85F, 3.40F, 0.50F)
-                        .texOffs(111, 0).addBox(-5.60F, 0.05F, -3.60F, 0.50F, 1.95F, 0.70F)
-                        .texOffs(115, 0).addBox(-5.60F, 0.05F, 0.72F, 0.50F, 1.95F, 2.48F)
-                        .texOffs(64, 6).addBox(-5.60F, 0.05F, -2.90F, 0.50F, 0.30F, 3.62F)
-                        .texOffs(74, 6).addBox(-5.60F, 0.05F, -4.10F, 5.60F, 1.95F, 0.50F)
-                        .texOffs(88, 6).addBox(-6.10F, 2.00F, -4.10F, 0.50F, 2.20F, 1.20F)
-                        .texOffs(93, 6).addBox(-6.10F, 2.00F, 0.72F, 0.50F, 2.20F, 2.88F)
-                        .texOffs(101, 6).addBox(-6.10F, 2.76F, -2.90F, 0.50F, 1.44F, 3.62F)
-                        .texOffs(111, 6).addBox(-6.10F, 2.00F, -4.60F, 5.10F, 2.20F, 0.50F)
-                        .texOffs(64, 13).addBox(5.10F, 0.05F, -3.60F, 0.50F, 1.95F, 1.78F)
-                        .texOffs(70, 13).addBox(5.10F, 0.05F, 0.86F, 0.50F, 1.95F, 2.34F)
-                        .texOffs(77, 13).addBox(5.10F, 0.05F, -1.82F, 0.50F, 0.27F, 2.68F)
-                        .texOffs(85, 13).addBox(0.00F, 0.05F, -4.10F, 5.60F, 1.95F, 0.50F)
-                        .texOffs(99, 13).addBox(5.60F, 2.00F, -4.10F, 0.50F, 2.20F, 2.28F)
-                        .texOffs(106, 13).addBox(5.60F, 2.00F, 0.86F, 0.50F, 2.20F, 2.74F)
-                        .texOffs(114, 13).addBox(5.60F, 2.62F, -1.82F, 0.50F, 1.58F, 2.68F)
-                        .texOffs(64, 19).addBox(1.00F, 2.00F, -4.60F, 5.10F, 2.20F, 0.50F),
+                        .texOffs(64, 0).addBox(-0.5000F, 0.2000F, -4.1500F, 1.0000F, 1.0000F, 0.5500F),
                 PartPose.ZERO);
-        ponchoTela.addOrReplaceChild(PONCHO_SKIRT,
+        PartDefinition pt1 = ponchoTela.addOrReplaceChild("pt1",
                 CubeListBuilder.create()
-                        .texOffs(77, 19).addBox(-6.20F, 0.00F, -0.25F, 12.40F, 1.80F, 0.50F),
-                PartPose.offsetAndRotation(0.0F, 4.5F, 3.85F, 0.12F, 0.0F, 0.0F));
-        ponchoTela.addOrReplaceChild(PONCHO_LOW_R,
+                        .texOffs(69, 0).addBox(-0.2500F, 0.0000F, -3.0000F, 0.5000F, 4.2461F, 0.3042F)
+                        .texOffs(72, 0).addBox(-0.2500F, 4.2461F, -3.0000F, 0.5000F, 2.1000F, 0.3042F)
+                        .texOffs(75, 0).addBox(-0.2500F, 0.0000F, 0.8113F, 0.5000F, 4.2461F, 2.0887F)
+                        .texOffs(82, 0).addBox(-0.2500F, 4.2461F, 0.8113F, 0.5000F, 2.1000F, 2.0887F)
+                        .texOffs(89, 0).addBox(-0.2500F, 0.0000F, -2.6958F, 0.5000F, 0.3206F, 3.5071F)
+                        .texOffs(99, 0).addBox(-0.2500F, 2.7229F, -2.6958F, 0.5000F, 1.5232F, 3.5071F)
+                        .texOffs(109, 0).addBox(-0.2500F, 4.2461F, -2.6958F, 0.5000F, 2.1000F, 3.5071F),
+                PartPose.offsetAndRotation(-5.3500F, 0.0500F, -0.2000F, 0.0000F, 0.0000F, 0.1742F));
+        PartDefinition pt2 = ponchoTela.addOrReplaceChild("pt2",
                 CubeListBuilder.create()
-                        .texOffs(64, 30).addBox(-6.70F, 0.00F, -4.60F, 0.50F, 2.10F, 8.60F)
-                        .texOffs(84, 30).addBox(-6.70F, 0.00F, -5.10F, 4.80F, 2.10F, 0.50F),
-                PartPose.offset(0.0F, 4.2F, 0.0F));
-        ponchoTela.addOrReplaceChild(PONCHO_LOW_L,
+                        .texOffs(119, 0).addBox(-0.2500F, 0.0000F, -3.0000F, 0.5000F, 4.2461F, 1.4031F)
+                        .texOffs(64, 8).addBox(-0.2500F, 4.2461F, -3.0000F, 0.5000F, 2.1000F, 1.4031F)
+                        .texOffs(69, 8).addBox(-0.2500F, 0.0000F, 1.0157F, 0.5000F, 4.2461F, 1.8843F)
+                        .texOffs(75, 8).addBox(-0.2500F, 4.2461F, 1.0157F, 0.5000F, 2.1000F, 1.8843F)
+                        .texOffs(81, 8).addBox(-0.2500F, 0.0000F, -1.5969F, 0.5000F, 0.2539F, 2.6126F)
+                        .texOffs(89, 8).addBox(-0.2500F, 2.6321F, -1.5969F, 0.5000F, 1.6140F, 2.6126F)
+                        .texOffs(97, 8).addBox(-0.2500F, 4.2461F, -1.5969F, 0.5000F, 2.1000F, 2.6126F),
+                PartPose.offsetAndRotation(5.3500F, 0.0500F, -0.2000F, 0.0000F, 0.0000F, -0.1742F));
+        PartDefinition pt3 = ponchoTela.addOrReplaceChild("pt3",
                 CubeListBuilder.create()
-                        .texOffs(96, 30).addBox(6.20F, 0.00F, -4.60F, 0.50F, 2.10F, 8.60F)
-                        .texOffs(116, 30).addBox(1.90F, 0.00F, -5.10F, 4.80F, 2.10F, 0.50F),
-                PartPose.offset(0.0F, 4.2F, 0.0F));
+                        .texOffs(105, 8).addBox(-4.7500F, 0.0000F, -0.2500F, 3.1921F, 4.2010F, 0.5000F)
+                        .texOffs(114, 8).addBox(-4.7500F, 4.2010F, -0.2500F, 3.1921F, 2.1000F, 0.5000F)
+                        .texOffs(64, 16).addBox(1.5579F, 0.0000F, -0.2500F, 3.1921F, 4.2010F, 0.5000F)
+                        .texOffs(73, 16).addBox(1.5579F, 4.2010F, -0.2500F, 3.1921F, 2.1000F, 0.5000F)
+                        .texOffs(82, 16).addBox(-1.5579F, 0.0000F, -0.2500F, 3.1158F, 0.5118F, 0.5000F)
+                        .texOffs(91, 16).addBox(-1.5579F, 4.7451F, -0.2500F, 3.1158F, 1.5559F, 0.5000F),
+                PartPose.offsetAndRotation(0.0000F, 0.0500F, 3.4500F, 0.1273F, 0.0000F, 0.0000F));
+        PartDefinition pt4 = ponchoTela.addOrReplaceChild("pt4",
+                CubeListBuilder.create()
+                        .texOffs(100, 16).addBox(-4.7500F, 0.0000F, -0.2500F, 4.7500F, 1.9500F, 0.5000F)
+                        .texOffs(112, 16).addBox(-4.7500F, 1.9500F, -0.2500F, 3.7500F, 2.2000F, 0.5000F)
+                        .texOffs(64, 22).addBox(-4.7500F, 4.1500F, -0.2500F, 2.8500F, 0.0795F, 0.5000F)
+                        .texOffs(72, 22).addBox(-4.7500F, 4.2295F, -0.2500F, 2.8500F, 2.1000F, 0.5000F)
+                        .texOffs(80, 22).addBox(0.0000F, 0.0000F, -0.2500F, 4.7500F, 1.9500F, 0.5000F)
+                        .texOffs(92, 22).addBox(1.0000F, 1.9500F, -0.2500F, 3.7500F, 2.2000F, 0.5000F)
+                        .texOffs(102, 22).addBox(1.9000F, 4.1500F, -0.2500F, 2.8500F, 0.0795F, 0.5000F)
+                        .texOffs(110, 22).addBox(1.9000F, 4.2295F, -0.2500F, 2.8500F, 2.1000F, 0.5000F),
+                PartPose.offsetAndRotation(0.0000F, 0.0500F, -3.8500F, -0.1587F, 0.0000F, 0.0000F));
+        PartDefinition pt5 = ponchoTela.addOrReplaceChild("pt5",
+                CubeListBuilder.create(),
+                PartPose.offsetAndRotation(-4.9000F, 0.0500F, -3.4000F, 0.0000F, 2.3562F, 0.0000F));
+        PartDefinition pt6 = pt5.addOrReplaceChild("pt6",
+                CubeListBuilder.create()
+                        .texOffs(118, 22).addBox(-0.2500F, 0.0000F, -0.8132F, 0.5000F, 4.2520F, 1.6263F)
+                        .texOffs(64, 30).addBox(-0.2500F, 4.2520F, -0.8132F, 0.5000F, 2.1000F, 1.6263F),
+                PartPose.offsetAndRotation(0.0000F, 0.0000F, 0.0000F, 0.0000F, 0.0000F, -0.1794F));
+        PartDefinition pt7 = ponchoTela.addOrReplaceChild("pt7",
+                CubeListBuilder.create(),
+                PartPose.offsetAndRotation(-4.9000F, 0.0500F, 3.0000F, 0.0000F, -2.3562F, 0.0000F));
+        PartDefinition pt8 = pt7.addOrReplaceChild("pt8",
+                CubeListBuilder.create()
+                        .texOffs(70, 30).addBox(-0.2500F, 0.0000F, -0.8132F, 0.5000F, 4.2315F, 1.6263F)
+                        .texOffs(76, 30).addBox(-0.2500F, 4.2315F, -0.8132F, 0.5000F, 2.1000F, 1.6263F),
+                PartPose.offsetAndRotation(0.0000F, 0.0000F, 0.0000F, 0.0000F, 0.0000F, -0.1606F));
+        PartDefinition pt9 = ponchoTela.addOrReplaceChild("pt9",
+                CubeListBuilder.create(),
+                PartPose.offsetAndRotation(4.9000F, 0.0500F, -3.4000F, 0.0000F, 0.7854F, 0.0000F));
+        PartDefinition pt10 = pt9.addOrReplaceChild("pt10",
+                CubeListBuilder.create()
+                        .texOffs(82, 30).addBox(-0.2500F, 0.0000F, -0.8132F, 0.5000F, 4.2520F, 1.6263F)
+                        .texOffs(88, 30).addBox(-0.2500F, 4.2520F, -0.8132F, 0.5000F, 2.1000F, 1.6263F),
+                PartPose.offsetAndRotation(0.0000F, 0.0000F, 0.0000F, 0.0000F, 0.0000F, -0.1794F));
+        PartDefinition pt11 = ponchoTela.addOrReplaceChild("pt11",
+                CubeListBuilder.create(),
+                PartPose.offsetAndRotation(4.9000F, 0.0500F, 3.0000F, 0.0000F, -0.7854F, 0.0000F));
+        PartDefinition pt12 = pt11.addOrReplaceChild("pt12",
+                CubeListBuilder.create()
+                        .texOffs(94, 30).addBox(-0.2500F, 0.0000F, -0.8132F, 0.5000F, 4.2315F, 1.6263F)
+                        .texOffs(100, 30).addBox(-0.2500F, 4.2315F, -0.8132F, 0.5000F, 2.1000F, 1.6263F),
+                PartPose.offsetAndRotation(0.0000F, 0.0000F, 0.0000F, 0.0000F, 0.0000F, -0.1606F));
         // Brazos y objetos del poncho: siguen al cuerpo, así salen limpios por su agujero.
         body.addOrReplaceChild(P_ARM_R,
                 CubeListBuilder.create().texOffs(22, 16).addBox(-1.0F, 0.0F, -1.0F, 2.0F, 3.0F, 2.0F),
@@ -469,15 +500,6 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         float rT = smooth(torchAnim);
         float rU = smooth(umb);
         if (hasPoncho) {
-            // La tela de abajo acompaña el bamboleo con un pequeño retraso.
-            float step = pos * 0.6F;
-            float lagRoll = (-Mth.sin(step - 0.6F) * 0.14F * amount + roll) * 0.8F;
-            this.ponchoLowR.zRot = lagRoll;
-            this.ponchoLowL.zRot = lagRoll;
-            this.ponchoLowR.xRot = 0.04F * amount * Mth.sin(step - 0.6F);
-            this.ponchoLowL.xRot = this.ponchoLowR.xRot;
-            this.ponchoSkirt.xRot = 0.12F + 0.25F * amount;
-            this.ponchoSkirt.zRot = lagRoll;
             // Con poncho los brazos viven ADENTRO: solo aparecen saliendo por su agujero al usar algo.
             this.rightArm.visible = false;
             this.leftArm.visible = false;
