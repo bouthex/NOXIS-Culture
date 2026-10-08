@@ -19,6 +19,19 @@ public class NoxisVillagerRenderState extends LivingEntityRenderState {
     /** Física de la capa: movimiento (0..1) y giro con retraso (-1..1). */
     public float capeSwing;
     public float capeTurn;
+    /** Curiosidad: intensidad (0..1), lado (+1/-1) y golpecito de oreja (0..1). */
+    public float curious;
+    public float curiousSide = 1.0F;
+    public float curiousFlick;
+    /** Fascinación por los cristales: cuánto mira (0..1), brillo extra de ojos, saltito, orejas. */
+    public float crystalAmount;
+    public float crystalGlow;
+    public float crystalHop;
+    public float crystalTwitch;
+    public float crystalSide = 1.0F;
+    /** Hacia dónde está el cristal, relativo al cuerpo (radianes). */
+    public float crystalYaw;
+    public float crystalPitch;
     /** true mientras se está levantando (para no repetir el rebote del "plop" al revés). */
     public boolean restRising;
 }

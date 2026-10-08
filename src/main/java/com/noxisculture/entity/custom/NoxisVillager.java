@@ -1,5 +1,7 @@
 package com.noxisculture.entity.custom;
 
+import com.noxisculture.entity.idle.NoxisCrystalFascination;
+import com.noxisculture.entity.idle.NoxisCuriosity;
 import com.noxisculture.entity.cape.NoxisCapePhysics;
 import com.noxisculture.entity.ai.NoxisRestGoal;
 import com.noxisculture.entity.ai.NoxisRestful;
@@ -112,6 +114,8 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
     private float umbrellaAnim;
     private boolean variantChosen;
     private final NoxisCapePhysics capePhysics = new NoxisCapePhysics();
+    private final NoxisCuriosity curiosity = new NoxisCuriosity();
+    private final NoxisCrystalFascination crystalFascination = new NoxisCrystalFascination();
     /** El primer descanso llega pronto (1-5 min) para poder verlo; después, ~1 por día. */
     private int restCooldown = 1_200 + (int) (Math.random() * 4_800);
 
@@ -155,6 +159,16 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
 
     public boolean hasCape() {
         return this.getVariant() >= VARIANT_CAPE;
+    }
+
+    /** Gesto de curiosidad (solo visual, cliente). */
+    public NoxisCuriosity getCuriosity() {
+        return this.curiosity;
+    }
+
+    /** Fascinación por los cristales (solo visual, cliente). */
+    public NoxisCrystalFascination getCrystalFascination() {
+        return this.crystalFascination;
     }
 
     /** Física visual de la capa (solo se usa en el cliente). */
@@ -381,6 +395,20 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
         if (this.hasCape()) {
             this.capePhysics.tick(this);
         }
+        // Curiosidad: solo quieto y tranquilo, sin ninguna otra animación en curso.
+        double dx = this.getX() - this.xo;
+        double dz = this.getZ() - this.zo;
+        boolean calm = this.getMood() == NoxisMood.NEUTRAL
+                && this.happyAnim < 0.02F && this.scaredAnim < 0.02F
+                && !this.isTrading() && !this.isResting() && this.restAnim < 0.01F
+                && !this.isHoldingTorch() && this.torchAnim < 0.01F
+                && !this.isHoldingUmbrella() && this.umbrellaAnim < 0.01F
+                && dx * dx + dz * dz < 1.0E-4D;
+        // Los dos gestos tranquilos nunca se pisan: el que empezó primero termina antes que el otro.
+        boolean fascinated = this.crystalFascination.isActive() || this.crystalFascination.getAmount(1.0F) > 0.01F;
+        this.curiosity.tick(calm && !fascinated, this.random);
+        boolean curious = this.curiosity.getAmount(1.0F) > 0.01F;
+        this.crystalFascination.tick(this, calm && (!curious || this.crystalFascination.isActive()), this.random);
         NoxisMood mood = this.getMood();
         this.happyAnim = approach(this.happyAnim, mood == NoxisMood.HAPPY ? 1.0F : 0.0F);
         this.scaredAnim = approach(this.scaredAnim, mood == NoxisMood.SCARED ? 1.0F : 0.0F);

@@ -37,6 +37,47 @@ public final class NoxisMoodAnimator {
         leftEar.xRot = EARS_FLAT_BACK * scared;
     }
 
+    /**
+     * Curiosidad repentina (compartida por todas las especies): ladea apenas la cabecita y
+     * para la orejita del lado de arriba, con un par de golpecitos como si escuchara algo.
+     * Se suma ENCIMA de la pose actual, así que con curious = 0 no cambia nada.
+     */
+    /**
+     * Fascinación por un cristal (gesto aditivo, compartido por todas las especies): la cabeza
+     * gira hacia el cristal y lo mira, se ladea con ternura, las dos orejitas se paran hacia
+     * adelante y cada tanto una da un golpecito.
+     */
+    public static void applyFascination(ModelPart head, ModelPart rightEar, ModelPart leftEar,
+                                        float amount, float yaw, float pitch, float side, float twitch) {
+        if (amount <= 0.0F) return;
+        head.yRot = Mth.lerp(amount, head.yRot, yaw);
+        head.xRot = Mth.lerp(amount, head.xRot, pitch - 0.06F);   // apenas hacia arriba: "¡qué lindo!"
+        head.zRot += 0.2F * amount * side;
+        // Orejitas paradas y hacia adelante, atentas.
+        rightEar.xRot -= 0.3F * amount;
+        leftEar.xRot -= 0.3F * amount;
+        rightEar.zRot += 0.15F * amount;
+        leftEar.zRot -= 0.15F * amount;
+        // Golpecito alternado (+ derecha, - izquierda).
+        if (twitch > 0.0F) rightEar.zRot -= 0.35F * twitch;
+        if (twitch < 0.0F) leftEar.zRot -= 0.35F * twitch;
+    }
+
+    public static void applyCuriosity(ModelPart head, ModelPart rightEar, ModelPart leftEar,
+                                      float curious, float side, float flick) {
+        if (curious <= 0.0F) {
+            return;
+        }
+        head.zRot += 0.22F * curious * side;   // ladea la cabecita
+        head.xRot -= 0.05F * curious;          // la levanta un pelín, atento
+        // La orejita del lado de arriba se para (más derecha) y hace los golpecitos.
+        ModelPart listening = side > 0.0F ? rightEar : leftEar;
+        float out = side > 0.0F ? -1.0F : 1.0F;     // dirección "hacia afuera" de esa oreja
+        listening.zRot -= out * 0.18F * curious;      // se para
+        listening.zRot += out * 0.35F * flick;        // golpecito
+        listening.xRot -= 0.12F * curious;            // apunta un poquito hacia adelante
+    }
+
     public static void animateHat(ModelPart hat, float baseY, float baseTilt, float age,
                                   float walkPos, float walkAmount, float happy, float scared) {
         hat.zRot = baseTilt

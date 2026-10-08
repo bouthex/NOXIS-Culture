@@ -62,8 +62,16 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
     private final ModelPart rightLeg;
     private final ModelPart leftLeg;
 
+    /** true en la copia del modelo que solo dibuja los ojos (brillo de fascinación). */
+    private final boolean eyesOnly;
+
     public NoxisVillagerModel(ModelPart root) {
+        this(root, false);
+    }
+
+    public NoxisVillagerModel(ModelPart root, boolean eyesOnly) {
         super(root);
+        this.eyesOnly = eyesOnly;
         this.head = root.getChild(PartNames.HEAD);
         this.body = root.getChild(PartNames.BODY);
         this.hat = this.head.getChild(HAT);
@@ -248,6 +256,12 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         this.hat.xRot = -0.05F + 0.2F * rest;
         this.tail.xRot = Mth.lerp(rest, this.tail.xRot, -0.15F);
         this.tail.yRot = Mth.lerp(rest, this.tail.yRot, 1.25F);
+        // Curiosidad repentina (gesto compartido; solo aparece estando quieto y tranquilo).
+        NoxisMoodAnimator.applyCuriosity(this.head, this.rightEar, this.leftEar,
+                state.curious, state.curiousSide, state.curiousFlick);
+        // Fascinación por un cristal: lo mira, ladea la cabeza y para las orejitas.
+        NoxisMoodAnimator.applyFascination(this.head, this.rightEar, this.leftEar,
+                state.crystalAmount, state.crystalYaw, state.crystalPitch, state.crystalSide, state.crystalTwitch);
 
         // ---- Párpados (expresión) ----
         // esfuerzo por ver con la antorcha: entrecierra; cansado: casi cierra y parpadea lento.
@@ -362,6 +376,19 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
             this.torch.zScale = scale;
         }
 
+        // ---- Saltito de entusiasmo (fascinación, muy raro): todo el cuerpo sube un poquito ----
+        float jump = 1.8F * state.crystalHop;
+        if (jump > 0.0F) {
+            this.head.y -= jump;
+            this.body.y -= jump;
+            this.rightArm.y -= jump;
+            this.leftArm.y -= jump;
+            this.rightLeg.y -= jump;
+            this.leftLeg.y -= jump;
+            this.rightArm.zRot += 0.35F * state.crystalHop;   // bracitos un poco abiertos de alegría
+            this.leftArm.zRot -= 0.35F * state.crystalHop;
+        }
+
         // ---- Variante de ropa: capa de espalda (componente reutilizable por todas las especies Noxis) ----
         int capeStyle = state.variant - 1;          // 0 = sin capa; 1..3 = estilos de capa
         boolean hasCape = capeStyle >= 0;
@@ -369,6 +396,21 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         if (hasCape) {
             // Sentado con capa: la colita sale derecha por su ojal (no hacia el costado).
             this.tail.yRot = Mth.lerp(rest, this.tail.yRot, 0.0F);
+        }
+
+        if (this.eyesOnly) {
+            // Copia "solo ojos": la cabeza queda (su zona de la textura emisiva está vacía) con
+            // sus ojitos; todo lo demás se oculta para que el brillo extra no toque nada más.
+            this.body.visible = false;
+            this.rightArm.visible = false;
+            this.leftArm.visible = false;
+            this.rightLeg.visible = false;
+            this.leftLeg.visible = false;
+            this.torch.visible = false;
+            this.umbrella.visible = false;
+            this.hat.visible = false;
+            this.rightEar.visible = false;
+            this.leftEar.visible = false;
         }
     }
 }
