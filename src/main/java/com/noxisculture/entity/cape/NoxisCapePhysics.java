@@ -22,8 +22,10 @@ public final class NoxisCapePhysics {
         double dx = entity.getX() - entity.xo;
         double dz = entity.getZ() - entity.zo;
         float speed = (float) Math.sqrt(dx * dx + dz * dz);
-        float swingTarget = Mth.clamp(speed * 5.0F, 0.0F, 1.0F);
-        this.swing += (swingTarget - this.swing) * 0.2F;          // inercia al arrancar y al frenar
+        float swingTarget = Mth.clamp(speed * 7.0F, 0.0F, 1.0F);
+        // Sube rápido con el "viento" y, al frenar, tarda un instante en volver a caer.
+        float rate = swingTarget > this.swing ? 0.22F : 0.07F;
+        this.swing += (swingTarget - this.swing) * rate;
         float yawDelta = Mth.wrapDegrees(entity.yBodyRot - entity.yBodyRotO);
         float turnTarget = Mth.clamp(-yawDelta / 15.0F, -1.0F, 1.0F);
         this.turn += (turnTarget - this.turn) * 0.18F;            // se acomoda despacito al dejar de girar

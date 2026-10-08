@@ -94,13 +94,14 @@ public final class NoxisCape {
         }
         ModelPart cape = body.getChild(capeName(style));
         ModelPart lower = cape.getChild(CAPE_LOWER);
-        // Tramo alto: casi quieto (sostiene el emblema y el ojal de la cola).
-        cape.xRot = 0.03F * swing;
-        cape.zRot = 0.03F * turn;
-        // Tramo bajo: la tela que acompaña el movimiento, con un leve ondear al correr.
-        float flutter = Mth.sin(age * 0.35F) * 0.05F * swing;
-        float flap = 0.05F + 0.75F * swing + flutter;
+        // Como la capa del jugador: toda la capa se despega de la espalda y se levanta hacia
+        // atrás con el movimiento (quieto ~0, caminando ~30°, corriendo ~55°).
+        float flutter = Mth.sin(age * 0.35F) * 0.06F * swing;
+        cape.xRot = (0.04F + 0.9F * swing + flutter * 0.5F) * (1.0F - rest);
+        cape.zRot = 0.15F * turn * (1.0F - rest);
+        // Tramo bajo: se curva un poco más por el "viento", con un leve ondear.
+        float flap = 0.05F + 0.35F * swing + flutter;
         lower.xRot = Mth.lerp(rest, flap, 1.15F);
-        lower.zRot = 0.2F * turn * (1.0F - rest);
+        lower.zRot = 0.25F * turn * (1.0F - rest);
     }
 }
