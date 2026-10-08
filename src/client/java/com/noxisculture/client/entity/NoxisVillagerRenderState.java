@@ -14,8 +14,11 @@ public class NoxisVillagerRenderState extends LivingEntityRenderState {
     public float restAnim;
     /** 0..1: cuánto sacó el paraguas (lluvia). */
     public float umbrellaAnim;
-    /** Variante de ropa (0 = poncho de hojas, 1 = poncho de tela). */
+    /** Variante de ropa (0 = sin capa, 1..3 = capa con su estilo). */
     public byte variant;
+    /** Física de la capa: movimiento (0..1) y giro con retraso (-1..1). */
+    public float capeSwing;
+    public float capeTurn;
     /** true mientras se está levantando (para no repetir el rebote del "plop" al revés). */
     public boolean restRising;
 }

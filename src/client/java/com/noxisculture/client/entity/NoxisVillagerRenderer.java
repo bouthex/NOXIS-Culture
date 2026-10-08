@@ -28,6 +28,8 @@ public class NoxisVillagerRenderer extends MobRenderer<NoxisVillager, NoxisVilla
         state.restAnim = entity.getRestAnim();
         state.umbrellaAnim = entity.getUmbrellaAnim();
         state.variant = entity.getVariant();
+        state.capeSwing = entity.getCapePhysics().getSwing(partialTick);
+        state.capeTurn = entity.getCapePhysics().getTurn(partialTick);
         state.restRising = !entity.isResting();
     }
 

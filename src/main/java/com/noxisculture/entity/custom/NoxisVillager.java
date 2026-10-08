@@ -1,5 +1,6 @@
 package com.noxisculture.entity.custom;
 
+import com.noxisculture.entity.cape.NoxisCapePhysics;
 import com.noxisculture.entity.ai.NoxisRestGoal;
 import com.noxisculture.entity.ai.NoxisRestful;
 import com.noxisculture.entity.ai.NoxisWorkAtTableGoal;
@@ -70,12 +71,14 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
             SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> UMBRELLA =
             SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BOOLEAN);
-    /** Variante de ropa: 0 = poncho de hojas, 1 = poncho de tela (con agujeros para brazos y cola). */
+    /** Variante de ropa: 0 = sin capa, 1..3 = capa de espalda con su estilo (se elige una vez y se guarda en NBT). */
     private static final EntityDataAccessor<Byte> VARIANT =
             SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BYTE);
-    public static final byte VARIANT_PONCHO = 0;
+    public static final byte VARIANT_PLAIN = 0;
     public static final byte VARIANT_CAPE = 1;
-    private static final float CAPE_CHANCE = 0.4F;
+    /** ~3 de cada 10 Noxis tienen capa. */
+    private static final float CAPE_CHANCE = 0.3F;
+    private static final int CAPE_STYLES = 3;
     private static final EntityDataAccessor<Boolean> RESTING =
             SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BOOLEAN);
     private static final int HAPPY_AFTER_TRADE_TICKS = 60;
@@ -108,6 +111,7 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
     private float restAnim;
     private float umbrellaAnim;
     private boolean variantChosen;
+    private final NoxisCapePhysics capePhysics = new NoxisCapePhysics();
     /** El primer descanso llega pronto (1-5 min) para poder verlo; después, ~1 por día. */
     private int restCooldown = 1_200 + (int) (Math.random() * 4_800);
 
@@ -122,7 +126,7 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
         builder.define(TORCH, false);
         builder.define(RESTING, false);
         builder.define(UMBRELLA, false);
-        builder.define(VARIANT, VARIANT_PONCHO);
+        builder.define(VARIANT, VARIANT_PLAIN);
     }
 
     public NoxisMood getMood() {
@@ -149,9 +153,13 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
         return this.entityData.get(VARIANT);
     }
 
-    /** Manos ocupadas (antorcha o paraguas): no puede acomodarse la capa. */
-    public boolean hasHandsBusy() {
-        return this.isHoldingTorch() || this.isHoldingUmbrella();
+    public boolean hasCape() {
+        return this.getVariant() >= VARIANT_CAPE;
+    }
+
+    /** Física visual de la capa (solo se usa en el cliente). */
+    public NoxisCapePhysics getCapePhysics() {
+        return this.capePhysics;
     }
 
     public float getUmbrellaAnim() {
@@ -336,7 +344,8 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
         // Variante de ropa: se elige una sola vez, al aparecer.
         if (!this.variantChosen) {
             this.variantChosen = true;
-            this.entityData.set(VARIANT, this.random.nextFloat() < CAPE_CHANCE ? VARIANT_CAPE : VARIANT_PONCHO);
+            this.entityData.set(VARIANT, this.random.nextFloat() < CAPE_CHANCE
+                    ? (byte) (VARIANT_CAPE + this.random.nextInt(CAPE_STYLES)) : VARIANT_PLAIN);
         }
         NoxisMood mood = this.moodController.tick(this);
         if (mood != this.getMood()) {
@@ -369,6 +378,9 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
     }
 
     private void clientTick() {
+        if (this.hasCape()) {
+            this.capePhysics.tick(this);
+        }
         NoxisMood mood = this.getMood();
         this.happyAnim = approach(this.happyAnim, mood == NoxisMood.HAPPY ? 1.0F : 0.0F);
         this.scaredAnim = approach(this.scaredAnim, mood == NoxisMood.SCARED ? 1.0F : 0.0F);
@@ -441,7 +453,7 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
         this.merchantXp = input.getInt("merchant_xp").orElse(0);
         this.pendingLevelUp = input.getBooleanOr("pending_level_up", false);
         this.variantChosen = input.getBooleanOr("variant_chosen", false);
-        this.entityData.set(VARIANT, (byte) input.getInt("variant").orElse(0).intValue());
+        this.entityData.set(VARIANT, (byte) Mth.clamp(input.getInt("variant").orElse(0), 0, VARIANT_CAPE + CAPE_STYLES - 1));
 
         this.restCooldown = input.getInt("rest_cooldown").orElse(this.restCooldown);
     }

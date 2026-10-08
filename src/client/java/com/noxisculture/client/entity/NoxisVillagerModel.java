@@ -36,15 +36,6 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
     private static final String EYES_CLOSED = "eyes_closed";
     private static final String EYES_OPEN = "eyes_open";
     private static final String UMBRELLA = "umbrella";
-    private static final String PONCHO_V = "poncho_v";
-    private static final String P_ARM_R = "poncho_arm_r";
-    private static final String P_ARM_L = "poncho_arm_l";
-    private static final String P_TORCH = "poncho_torch";
-    private static final String P_UMBRELLA = "poncho_umbrella";
-    private static final String P_CANOPY = "poncho_canopy";
-    /** Con poncho, el brazo sale por su agujero un poquito más abajo (lo justo para quedar bajo el borde). */
-    private static final float PONCHO_ARM_DROP_R = 1.60F;
-    private static final float PONCHO_ARM_DROP_L = 1.05F;
     private static final String UMBRELLA_CANOPY = "umbrella_canopy";
     private static final float HAT_Y = -8.0F;
     private static final float TAIL_BASE_ANGLE = 0.9F;
@@ -65,13 +56,6 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
     private final ModelPart eyesClosed;
     private final ModelPart eyesOpen;
     private final ModelPart umbrella;
-    private final ModelPart poncho;
-    private final ModelPart ponchoV;
-    private final ModelPart pArmR;
-    private final ModelPart pArmL;
-    private final ModelPart pTorch;
-    private final ModelPart pUmbrella;
-    private final ModelPart pCanopy;
     private final ModelPart umbrellaCanopy;
     private boolean restRising;
     private final ModelPart leftArm;
@@ -89,13 +73,6 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         this.eyesClosed = this.head.getChild(EYES_CLOSED);
         this.eyesOpen = this.head.getChild(EYES_OPEN);
         this.umbrella = root.getChild(UMBRELLA);
-        this.poncho = this.body.getChild(PONCHO);
-        this.ponchoV = this.body.getChild(PONCHO_V);
-        this.pArmR = this.body.getChild(P_ARM_R);
-        this.pArmL = this.body.getChild(P_ARM_L);
-        this.pTorch = this.body.getChild(P_TORCH);
-        this.pUmbrella = this.body.getChild(P_UMBRELLA);
-        this.pCanopy = this.pUmbrella.getChild(P_CANOPY);
         this.umbrellaCanopy = this.umbrella.getChild(UMBRELLA_CANOPY);
         this.tail = root.getChild(PartNames.BODY).getChild(TAIL);
         this.rightArm = root.getChild(PartNames.RIGHT_ARM);
@@ -162,111 +139,8 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         body.addOrReplaceChild(PONCHO,
                 CubeListBuilder.create().texOffs(20, 30).addBox(-3.5F, -0.2F, -3.0F, 7.0F, 3.0F, 6.0F),
                 PartPose.ZERO);
-        // ===== Poncho (variante) =====
-        // Una sola prenda de tela hecha con POCOS PLANOS GRANDES inclinados (campana octogonal):
-        // frente en dos mitades con abertura triangular, espalda con el agujero de la cola,
-        // costados con los agujeros de los brazos (cerrados por la propia tela) y 4 esquinas.
-        // Geometría generada desde la misma definición que la vista previa aprobada. Sin capucha.
-        PartDefinition ponchoTela = body.addOrReplaceChild(PONCHO_V,
-                CubeListBuilder.create()
-                        .texOffs(64, 0).addBox(-0.5000F, 0.2000F, -4.1500F, 1.0000F, 1.0000F, 0.5500F),
-                PartPose.ZERO);
-        PartDefinition pt1 = ponchoTela.addOrReplaceChild("pt1",
-                CubeListBuilder.create()
-                        .texOffs(69, 0).addBox(-0.2500F, 0.0000F, -3.0000F, 0.5000F, 4.2461F, 0.3042F)
-                        .texOffs(72, 0).addBox(-0.2500F, 4.2461F, -3.0000F, 0.5000F, 2.1000F, 0.3042F)
-                        .texOffs(75, 0).addBox(-0.2500F, 0.0000F, 0.8113F, 0.5000F, 4.2461F, 2.0887F)
-                        .texOffs(82, 0).addBox(-0.2500F, 4.2461F, 0.8113F, 0.5000F, 2.1000F, 2.0887F)
-                        .texOffs(89, 0).addBox(-0.2500F, 0.0000F, -2.6958F, 0.5000F, 0.3206F, 3.5071F)
-                        .texOffs(99, 0).addBox(-0.2500F, 2.7229F, -2.6958F, 0.5000F, 1.5232F, 3.5071F)
-                        .texOffs(109, 0).addBox(-0.2500F, 4.2461F, -2.6958F, 0.5000F, 2.1000F, 3.5071F),
-                PartPose.offsetAndRotation(-5.3500F, 0.0500F, -0.2000F, 0.0000F, 0.0000F, 0.1742F));
-        PartDefinition pt2 = ponchoTela.addOrReplaceChild("pt2",
-                CubeListBuilder.create()
-                        .texOffs(119, 0).addBox(-0.2500F, 0.0000F, -3.0000F, 0.5000F, 4.2461F, 1.4031F)
-                        .texOffs(64, 8).addBox(-0.2500F, 4.2461F, -3.0000F, 0.5000F, 2.1000F, 1.4031F)
-                        .texOffs(69, 8).addBox(-0.2500F, 0.0000F, 1.0157F, 0.5000F, 4.2461F, 1.8843F)
-                        .texOffs(75, 8).addBox(-0.2500F, 4.2461F, 1.0157F, 0.5000F, 2.1000F, 1.8843F)
-                        .texOffs(81, 8).addBox(-0.2500F, 0.0000F, -1.5969F, 0.5000F, 0.2539F, 2.6126F)
-                        .texOffs(89, 8).addBox(-0.2500F, 2.6321F, -1.5969F, 0.5000F, 1.6140F, 2.6126F)
-                        .texOffs(97, 8).addBox(-0.2500F, 4.2461F, -1.5969F, 0.5000F, 2.1000F, 2.6126F),
-                PartPose.offsetAndRotation(5.3500F, 0.0500F, -0.2000F, 0.0000F, 0.0000F, -0.1742F));
-        PartDefinition pt3 = ponchoTela.addOrReplaceChild("pt3",
-                CubeListBuilder.create()
-                        .texOffs(105, 8).addBox(-4.7500F, 0.0000F, -0.2500F, 3.1921F, 4.2010F, 0.5000F)
-                        .texOffs(114, 8).addBox(-4.7500F, 4.2010F, -0.2500F, 3.1921F, 2.1000F, 0.5000F)
-                        .texOffs(64, 16).addBox(1.5579F, 0.0000F, -0.2500F, 3.1921F, 4.2010F, 0.5000F)
-                        .texOffs(73, 16).addBox(1.5579F, 4.2010F, -0.2500F, 3.1921F, 2.1000F, 0.5000F)
-                        .texOffs(82, 16).addBox(-1.5579F, 0.0000F, -0.2500F, 3.1158F, 0.5118F, 0.5000F)
-                        .texOffs(91, 16).addBox(-1.5579F, 4.7451F, -0.2500F, 3.1158F, 1.5559F, 0.5000F),
-                PartPose.offsetAndRotation(0.0000F, 0.0500F, 3.4500F, 0.1273F, 0.0000F, 0.0000F));
-        PartDefinition pt4 = ponchoTela.addOrReplaceChild("pt4",
-                CubeListBuilder.create()
-                        .texOffs(100, 16).addBox(-4.7500F, 0.0000F, -0.2500F, 4.7500F, 1.9500F, 0.5000F)
-                        .texOffs(112, 16).addBox(-4.7500F, 1.9500F, -0.2500F, 3.7500F, 2.2000F, 0.5000F)
-                        .texOffs(64, 22).addBox(-4.7500F, 4.1500F, -0.2500F, 2.8500F, 0.0795F, 0.5000F)
-                        .texOffs(72, 22).addBox(-4.7500F, 4.2295F, -0.2500F, 2.8500F, 2.1000F, 0.5000F)
-                        .texOffs(80, 22).addBox(0.0000F, 0.0000F, -0.2500F, 4.7500F, 1.9500F, 0.5000F)
-                        .texOffs(92, 22).addBox(1.0000F, 1.9500F, -0.2500F, 3.7500F, 2.2000F, 0.5000F)
-                        .texOffs(102, 22).addBox(1.9000F, 4.1500F, -0.2500F, 2.8500F, 0.0795F, 0.5000F)
-                        .texOffs(110, 22).addBox(1.9000F, 4.2295F, -0.2500F, 2.8500F, 2.1000F, 0.5000F),
-                PartPose.offsetAndRotation(0.0000F, 0.0500F, -3.8500F, -0.1587F, 0.0000F, 0.0000F));
-        PartDefinition pt5 = ponchoTela.addOrReplaceChild("pt5",
-                CubeListBuilder.create(),
-                PartPose.offsetAndRotation(-4.9000F, 0.0500F, -3.4000F, 0.0000F, 2.3562F, 0.0000F));
-        PartDefinition pt6 = pt5.addOrReplaceChild("pt6",
-                CubeListBuilder.create()
-                        .texOffs(118, 22).addBox(-0.2500F, 0.0000F, -0.8132F, 0.5000F, 4.2520F, 1.6263F)
-                        .texOffs(64, 30).addBox(-0.2500F, 4.2520F, -0.8132F, 0.5000F, 2.1000F, 1.6263F),
-                PartPose.offsetAndRotation(0.0000F, 0.0000F, 0.0000F, 0.0000F, 0.0000F, -0.1794F));
-        PartDefinition pt7 = ponchoTela.addOrReplaceChild("pt7",
-                CubeListBuilder.create(),
-                PartPose.offsetAndRotation(-4.9000F, 0.0500F, 3.0000F, 0.0000F, -2.3562F, 0.0000F));
-        PartDefinition pt8 = pt7.addOrReplaceChild("pt8",
-                CubeListBuilder.create()
-                        .texOffs(70, 30).addBox(-0.2500F, 0.0000F, -0.8132F, 0.5000F, 4.2315F, 1.6263F)
-                        .texOffs(76, 30).addBox(-0.2500F, 4.2315F, -0.8132F, 0.5000F, 2.1000F, 1.6263F),
-                PartPose.offsetAndRotation(0.0000F, 0.0000F, 0.0000F, 0.0000F, 0.0000F, -0.1606F));
-        PartDefinition pt9 = ponchoTela.addOrReplaceChild("pt9",
-                CubeListBuilder.create(),
-                PartPose.offsetAndRotation(4.9000F, 0.0500F, -3.4000F, 0.0000F, 0.7854F, 0.0000F));
-        PartDefinition pt10 = pt9.addOrReplaceChild("pt10",
-                CubeListBuilder.create()
-                        .texOffs(82, 30).addBox(-0.2500F, 0.0000F, -0.8132F, 0.5000F, 4.2520F, 1.6263F)
-                        .texOffs(88, 30).addBox(-0.2500F, 4.2520F, -0.8132F, 0.5000F, 2.1000F, 1.6263F),
-                PartPose.offsetAndRotation(0.0000F, 0.0000F, 0.0000F, 0.0000F, 0.0000F, -0.1794F));
-        PartDefinition pt11 = ponchoTela.addOrReplaceChild("pt11",
-                CubeListBuilder.create(),
-                PartPose.offsetAndRotation(4.9000F, 0.0500F, 3.0000F, 0.0000F, -0.7854F, 0.0000F));
-        PartDefinition pt12 = pt11.addOrReplaceChild("pt12",
-                CubeListBuilder.create()
-                        .texOffs(94, 30).addBox(-0.2500F, 0.0000F, -0.8132F, 0.5000F, 4.2315F, 1.6263F)
-                        .texOffs(100, 30).addBox(-0.2500F, 4.2315F, -0.8132F, 0.5000F, 2.1000F, 1.6263F),
-                PartPose.offsetAndRotation(0.0000F, 0.0000F, 0.0000F, 0.0000F, 0.0000F, -0.1606F));
-        // Brazos y objetos del poncho: siguen al cuerpo, así salen limpios por su agujero.
-        body.addOrReplaceChild(P_ARM_R,
-                CubeListBuilder.create().texOffs(22, 16).addBox(-1.0F, 0.0F, -1.0F, 2.0F, 3.0F, 2.0F),
-                PartPose.offset(-4.0F, 0.5F + PONCHO_ARM_DROP_R, 0.0F));
-        body.addOrReplaceChild(P_ARM_L,
-                CubeListBuilder.create().texOffs(22, 16).mirror().addBox(-1.0F, 0.0F, -1.0F, 2.0F, 3.0F, 2.0F),
-                PartPose.offset(4.0F, 0.5F + PONCHO_ARM_DROP_L, 0.0F));
-        body.addOrReplaceChild(P_TORCH,
-                CubeListBuilder.create()
-                        .texOffs(56, 30).addBox(-0.5F, -6.0F, -0.5F, 1.0F, 6.0F, 1.0F)
-                        .texOffs(56, 38).addBox(-1.0F, -8.0F, -1.0F, 2.0F, 2.0F, 2.0F),
-                PartPose.ZERO);
-        PartDefinition pUmb = body.addOrReplaceChild(P_UMBRELLA, CubeListBuilder.create()
-                        .texOffs(110, 64).addBox(-0.5F, -25.0F, -0.5F, 1.0F, 26.0F, 1.0F)
-                        .texOffs(116, 64).addBox(-0.5F, 1.0F, -0.5F, 1.0F, 2.0F, 1.0F)
-                        .texOffs(116, 70).addBox(-0.5F, 2.0F, 0.5F, 1.0F, 1.0F, 2.0F),
-                PartPose.ZERO);
-        pUmb.addOrReplaceChild(P_CANOPY, CubeListBuilder.create()
-                        .texOffs(0, 64).addBox(-10.0F, -25.0F, -10.0F, 20.0F, 1.0F, 20.0F)
-                        .texOffs(0, 86).addBox(-7.5F, -27.0F, -7.5F, 15.0F, 2.0F, 15.0F)
-                        .texOffs(64, 86).addBox(-4.5F, -29.0F, -4.5F, 9.0F, 2.0F, 9.0F)
-                        .texOffs(82, 64).addBox(-2.0F, -30.0F, -2.0F, 4.0F, 1.0F, 4.0F)
-                        .texOffs(100, 64).addBox(-1.0F, -32.0F, -1.0F, 2.0F, 2.0F, 2.0F),
-                PartPose.ZERO);
+        // ===== Capa (variante): pequeña capa de espalda con el emblema del Nixil =====
+        NoxisCape.addTo(body);
         PartDefinition tail = body.addOrReplaceChild(TAIL,
                 CubeListBuilder.create().texOffs(0, 34).addBox(-0.5F, -0.5F, 0.0F, 1.0F, 1.0F, 4.0F),
                 PartPose.offsetAndRotation(0.0F, 3.5F, 2.5F, TAIL_BASE_ANGLE, 0.0F, 0.0F));
@@ -312,11 +186,6 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
                 PartPose.ZERO);
 
         return LayerDefinition.create(mesh, 128, 128);
-    }
-
-    /** Curva suave (acelera y frena) para gestos como abrir la capa. */
-    private static float smooth(float x) {
-        return x * x * (3.0F - 2.0F * x);
     }
 
     /** Curva con pequeño sobrepaso: hace que el "plop" al sentarse rebote un poquito. */
@@ -493,57 +362,13 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
             this.torch.zScale = scale;
         }
 
-        // ---- Variante de ropa: poncho de hojas (0) o poncho de tela (1) ----
-        boolean hasPoncho = state.variant == 1;
-        this.poncho.visible = !hasPoncho;
-        this.ponchoV.visible = hasPoncho;
-        float rT = smooth(torchAnim);
-        float rU = smooth(umb);
-        if (hasPoncho) {
-            // Con poncho los brazos viven ADENTRO: solo aparecen saliendo por su agujero al usar algo.
-            this.rightArm.visible = false;
-            this.leftArm.visible = false;
-            this.torch.visible = false;
-            this.umbrella.visible = false;
-            float sw = Mth.sin(age * 0.12F) * 0.05F + Mth.cos(pos * 1.2F) * 0.08F * amount;
-            // Brazo derecho + antorcha
-            this.pArmR.visible = rT > 0.02F;
-            this.pArmR.xRot = -0.6F + sw;
-            this.pArmR.zRot = 1.9F;
-            this.pArmR.yScale = Math.max(0.001F, rT);
-            float tS = Mth.clamp((rT - 0.85F) / 0.15F, 0.0F, 1.0F);   // aparece con la mano ya afuera
-            this.pTorch.visible = tS > 0.01F;
-            float ry = 3.0F * rT * Mth.cos(this.pArmR.xRot);
-            this.pTorch.x = this.pArmR.x - ry * Mth.sin(1.9F);
-            this.pTorch.y = this.pArmR.y + ry * Mth.cos(1.9F);
-            this.pTorch.z = 3.0F * rT * Mth.sin(this.pArmR.xRot);
-            this.pTorch.xRot = -0.27F + sw;
-            this.pTorch.zRot = -0.2F - roll * 0.5F;
-            this.pTorch.xScale = this.pTorch.yScale = this.pTorch.zScale = Math.max(0.001F, tS);
-            // Brazo izquierdo + paraguas
-            this.pArmL.visible = rU > 0.02F;
-            this.pArmL.xRot = -0.3F;
-            this.pArmL.zRot = -1.62F;
-            this.pArmL.yScale = Math.max(0.001F, rU);
-            float uS = Mth.clamp((rU - 0.85F) / 0.15F, 0.0F, 1.0F);
-            this.pUmbrella.visible = uS > 0.01F;
-            float ly = 3.0F * rU * Mth.cos(-0.3F);
-            this.pUmbrella.x = this.pArmL.x - ly * Mth.sin(-1.62F) + (0.6F + 0.8F * torchAnim) * uS;
-            this.pUmbrella.y = this.pArmL.y + ly * Mth.cos(-1.62F);
-            this.pUmbrella.z = 3.0F * rU * Mth.sin(-0.3F);
-            this.pUmbrella.xRot = -0.05F - 0.12F * torchAnim;
-            this.pUmbrella.zRot = -0.08F + 0.07F * torchAnim - roll;
-            this.pCanopy.yRot = Mth.sin(age * 0.04F) * 0.35F;
-            this.pUmbrella.xScale = this.pUmbrella.yScale = this.pUmbrella.zScale = Math.max(0.001F, uS);
-            // Sentado con poncho: la colita sale derecha por su agujero (no hacia el costado).
+        // ---- Variante de ropa: capa de espalda (componente reutilizable por todas las especies Noxis) ----
+        int capeStyle = state.variant - 1;          // 0 = sin capa; 1..3 = estilos de capa
+        boolean hasCape = capeStyle >= 0;
+        NoxisCape.animate(this.body, capeStyle, state.capeSwing, state.capeTurn, age, rest);
+        if (hasCape) {
+            // Sentado con capa: la colita sale derecha por su ojal (no hacia el costado).
             this.tail.yRot = Mth.lerp(rest, this.tail.yRot, 0.0F);
-        } else {
-            this.rightArm.visible = true;
-            this.leftArm.visible = true;
-            this.pArmR.visible = false;
-            this.pArmL.visible = false;
-            this.pTorch.visible = false;
-            this.pUmbrella.visible = false;
         }
     }
 }
