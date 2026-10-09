@@ -30,5 +30,6 @@
   "subtitles.noxis_culture.noxis.celebrate": "Noxis festeja",
   "subtitles.noxis_culture.noxis.sniff": "Noxis olfatea una flor",
   "block.noxis_culture.noxis_bowl": "Pecera Noxis",
-  "block.noxis_culture.noxis_hat": "Sombrero de Noxis"
+  "block.noxis_culture.noxis_hat": "Sombrero de Noxis",
+  "block.noxis_culture.noxis_bowl.occupied": "Pecera Noxis (con un Noxis durmiendo)"
 }
