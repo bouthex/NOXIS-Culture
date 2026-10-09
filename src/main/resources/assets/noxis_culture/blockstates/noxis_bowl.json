@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "occupied=false": {
+      "model": "noxis_culture:block/noxis_bowl"
+    },
+    "occupied=true": {
+      "model": "noxis_culture:block/noxis_bowl"
+    }
+  }
+}
