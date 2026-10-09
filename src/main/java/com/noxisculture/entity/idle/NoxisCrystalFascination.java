@@ -67,7 +67,7 @@ public final class NoxisCrystalFascination {
             this.t++;
             this.amount = Math.min(1.0F, this.amount + 1.0F / RISE);
             float in = smooth(Math.min(1.0F, this.t / (float) GLOW_IN));
-            float pulse = 0.78F + 0.22F * Mth.sin(this.t * 0.22F);   // late suave (~1,4 s)
+            float pulse = 0.7F + 0.3F * Mth.sin(this.t * 0.2F);      // late suave y se nota (~1,6 s)
             this.glow = Math.max(this.glow * 0.9F, in * (this.t < GLOW_IN ? 1.0F : pulse));
             this.cheer = cheerCurve(this.t);
             this.hop = hopCurve(this.t, HOP1) + (this.twoHops ? hopCurve(this.t, HOP2) : 0.0F);

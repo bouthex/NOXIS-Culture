@@ -48,9 +48,10 @@ public final class NoxisMoodAnimator {
      * un poquito el mentón ("¡qué lindo!"), las orejitas se paran hacia adelante y dan golpecitos.
      */
     public static void applyFascination(ModelPart head, ModelPart rightEar, ModelPart leftEar,
-                                        float amount, float side, float twitch, float hop) {
+                                        float amount, float side, float twitch, float hop, float age) {
         if (amount <= 0.0F) return;
-        head.zRot += 0.28F * amount * side;
+        // Cabecita ladeada con ternura, con un vaivén suave de felicidad (nunca rígida).
+        head.zRot += (0.34F + 0.05F * Mth.sin(age * 0.18F)) * amount * side;
         head.xRot -= 0.1F * amount;
         // Rebote cartoon de la cabecita: se hunde al agacharse/aterrizar y se estira en el aire.
         head.xRot += 0.18F * Math.min(0.0F, hop) * -1.0F;
@@ -62,6 +63,9 @@ public final class NoxisMoodAnimator {
         // Golpecito alternado (+ derecha, - izquierda).
         if (twitch > 0.0F) rightEar.zRot -= 0.35F * twitch;
         if (twitch < 0.0F) leftEar.zRot -= 0.35F * twitch;
+        // Orejitas expresivas: se mueven suave, cada una a su ritmo, mientras dura la fascinación.
+        rightEar.zRot += Mth.sin(age * 0.5F) * 0.1F * amount;
+        leftEar.zRot += Mth.sin(age * 0.5F + 2.1F) * 0.1F * amount;
     }
 
     /**

@@ -26,7 +26,7 @@ public class NoxisCrystalGlowLayer extends RenderLayer<NoxisVillagerRenderState,
     /** Luz máxima (cielo 15, bloque 15): el brillo no depende de la oscuridad. */
     private static final int FULL_BRIGHT = 0xF000F0;
     /** Dorado cálido e intenso (1 = duplica la luz de los ojos). */
-    private static final float[] COLOR = {1.0F, 0.75F, 0.5F};
+    private static final float[] COLOR = {1.0F, 0.9F, 0.6F};
 
     private final NoxisVillagerModel eyesModel;
 

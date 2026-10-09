@@ -318,7 +318,7 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
                 state.curious, state.curiousSide, state.curiousFlick);
         // Fascinación por un cristal: ladea la cabeza y para las orejitas (mirarlo lo hace el servidor).
         NoxisMoodAnimator.applyFascination(this.head, this.rightEar, this.leftEar,
-                state.crystalAmount, state.crystalSide, state.crystalTwitch, state.crystalHop);
+                state.crystalAmount, state.crystalSide, state.crystalTwitch, state.crystalHop, age);
         // Naturaleza: mirar flores, agacharse, contemplar y olfatear (mirarlas lo hace el servidor).
         NoxisMoodAnimator.applyNature(this.head, this.body, this.rightEar, this.leftEar, age,
                 state.natureSurvey, state.natureLean, state.natureHold, state.natureRaise, state.natureSniff,
@@ -333,13 +333,16 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         boolean sleepy = torchAnim > 0.5F || rest > 0.5F;
         boolean slowBlink = sleepy && (t % 110) < 8;
         boolean normalBlink = (t % 83) < 3;
+        // Fascinado con un cristal no parpadea: lo mira con los ojos bien abiertos.
+        if (state.crystalAmount > 0.5F) normalBlink = false;
         boolean closed = slowBlink || (rest > 0.5F && dozing) || (!sleepy && normalBlink)
                 || state.natureEyesClosed > 0.5F;                    // disfrutando el aroma
         this.eyesClosed.visible = closed;
         this.eyesTired.visible = sleepy && !closed;
         boolean open = !closed && !sleepy;
         // Pupilas agrandadas, fascinado con la flor: los ojos grandes reemplazan a los normales.
-        boolean bigPupils = open && state.naturePupils > 0.5F;
+        // También al fascinarse con un cristal (mismas pupilas grandes, mismo plano que el ojo).
+        boolean bigPupils = open && (state.naturePupils > 0.5F || state.crystalAmount > 0.35F);
         this.eyesOpen.visible = open && !bigPupils;
         this.eyesBig.visible = bigPupils;
         // Con el parpadeo lento, la cabecita se le cae un poquito (cabeceo de sueño).
