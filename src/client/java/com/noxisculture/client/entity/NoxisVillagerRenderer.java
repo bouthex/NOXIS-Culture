@@ -16,6 +16,9 @@ public class NoxisVillagerRenderer extends MobRenderer<NoxisVillager, NoxisVilla
         super(context, new NoxisVillagerModel(context.bakeLayer(ModModelLayers.NOXIS_VILLAGER)), 0.45F);
         this.addLayer(new NoxisVillagerEyesLayer(this));
         // Brillo extra de los ojos al fascinarse con un cristal (copia del modelo que solo dibuja los ojitos).
+        // Globito de sueño mientras duerme (copia del modelo que solo dibuja el globito).
+        this.addLayer(new NoxisSleepBubbleLayer(this,
+                new NoxisVillagerModel(context.bakeLayer(ModModelLayers.NOXIS_VILLAGER), NoxisVillagerModel.PASS_SLEEP_BUBBLE)));
         // La flor en la mano (interacciones con la naturaleza).
         this.addLayer(new NoxisHeldFlowerLayer(this));
         this.addLayer(new NoxisCrystalGlowLayer(this,

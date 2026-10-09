@@ -558,6 +558,15 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
         if (this.restCooldown > 0) {
             this.restCooldown--;
         }
+        // Enlace social suelto (el compañero desapareció o ya no está enlazado): se libera.
+        if (this.tickCount % 20 == 0 && this.socialLink.isBusy()) {
+            net.minecraft.world.entity.PathfinderMob p = this.socialLink.getPartner();
+            if (p == null || !p.isAlive() || p.isRemoved()
+                    || !(p instanceof NoxisSocial s && s.getSocialLink().isLinkedWith(this))) {
+                this.socialLink.clear();
+                this.setSocialAnim(NoxisSocialAction.NONE);
+            }
+        }
         // Si se guardó el mundo con una flor en la mano, la devuelve a su lugar (o la suelta).
         if (this.flowerCarry.isOrphan() && this.tickCount > 20) {
             this.flowerCarry.returnOrDrop(this.level(), this);
@@ -646,7 +655,15 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
         this.umbrellaAnim = approach(this.umbrellaAnim, this.isHoldingUmbrella() ? 1.0F : 0.0F);
         // Sentarse es más lento y pesado que el resto de las transiciones.
         float restTarget = this.isResting() ? 1.0F : 0.0F;
+        float restBefore = this.restAnim;
         this.restAnim += Mth.clamp(restTarget - this.restAnim, -0.06F, 0.06F);
+        // Al despertarse, el globito de sueño hace ¡plop! (mismo momento en que desaparece del modelo).
+        if (!this.isResting() && restBefore >= 0.72F && this.restAnim < 0.72F) {
+            double yaw = this.yHeadRot * Mth.DEG_TO_RAD;
+            this.level().addParticle(ParticleTypes.BUBBLE_POP,
+                    this.getX() - Math.sin(yaw) * 0.45D, this.getY() + 0.55D, this.getZ() + Math.cos(yaw) * 0.45D,
+                    0.0D, 0.02D, 0.0D);
+        }
 
         // Llamita en la punta de la antorcha.
         if (this.torchAnim > 0.9F && this.random.nextInt(5) == 0) {

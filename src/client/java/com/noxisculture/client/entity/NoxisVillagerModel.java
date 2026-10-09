@@ -43,6 +43,10 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
     /** Qué dibuja esta copia del modelo: el Noxis normal o solo los ojitos (brillo de la fascinación). */
     public static final int PASS_NORMAL = 0;
     public static final int PASS_GLOW_EYES = 1;
+    /** Copia que solo dibuja el globito de sueño (con su propia textura). */
+    public static final int PASS_SLEEP_BUBBLE = 2;
+    /** Globito de sueño (solo lo dibuja la copia {@link #PASS_SLEEP_BUBBLE}). */
+    private static final String SLEEP_BUBBLE = "sleep_bubble";
     private static final String UMBRELLA = "umbrella";
     private static final String UMBRELLA_CANOPY = "umbrella_canopy";
     private static final float HAT_Y = -8.0F;
@@ -72,6 +76,7 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
 
     private final int pass;
     private final ModelPart eyesBig;
+    private final ModelPart sleepBubble;
     private final ModelPart flowerAnchor;
 
     public NoxisVillagerModel(ModelPart root) {
@@ -90,6 +95,7 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         this.eyesClosed = this.head.getChild(EYES_CLOSED);
         this.eyesOpen = this.head.getChild(EYES_OPEN);
         this.eyesBig = this.head.getChild(EYES_BIG);
+        this.sleepBubble = this.head.getChild(SLEEP_BUBBLE);
         this.flowerAnchor = root.getChild(FLOWER_ANCHOR);
         this.umbrella = root.getChild(UMBRELLA);
         this.umbrellaCanopy = this.umbrella.getChild(UMBRELLA_CANOPY);
@@ -134,6 +140,12 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         // (pupila, párpado, brillito y amarillo del propio ojo) y su cara de atrás cae en un píxel
         // transparente. La pupila de siempre queda en su lugar (mirada bizca) y suma un píxel.
         head.addOrReplaceChild(EYES_BIG, bigEyes(), PartPose.ZERO);
+        // Globito de sueño: un cubito de 4 px que sale de la naricita, a un costado de la carita.
+        // Usa su propia textura (noxis_sleep_bubble.png, en u=64 v=64): cada cara es un círculo
+        // celeste con brillito, así desde cualquier ángulo se ve redondito.
+        head.addOrReplaceChild(SLEEP_BUBBLE,
+                CubeListBuilder.create().texOffs(64, 64).addBox(-2.0F, -2.0F, -4.0F, 4.0F, 4.0F, 4.0F),
+                PartPose.offset(1.2F, -2.2F, -4.1F));
         head.addOrReplaceChild(PartNames.LEFT_EAR,
                 CubeListBuilder.create().texOffs(0, 28).mirror().addBox(-1.5F, -3.0F, -0.5F, 3.0F, 3.0F, 1.0F),
                 PartPose.offsetAndRotation(4.5F, -9.0F, 0.0F, 0.0F, 0.0F, EAR_BASE_ANGLE));
@@ -243,6 +255,21 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
             }
         }
         return builder;
+    }
+
+    /**
+     * Tamaño del globito de sueño. Dormido: respira lento (se infla y desinfla). Al despertarse
+     * (levantándose): se infla un poquito de golpe y ¡plop!, desaparece. Despierto: nada.
+     */
+    public static float sleepBubbleScale(float rest, boolean rising, float age) {
+        if (rest < 0.6F) return 0.0F;
+        if (rising) {
+            float p = (1.0F - rest) / 0.4F;                  // 0 recién despierto .. 1 desaparece
+            return p < 0.7F ? 0.75F + 0.3F * p / 0.7F : 0.0F;
+        }
+        float settle = Mth.clamp((rest - 0.6F) / 0.4F, 0.0F, 1.0F);
+        float breath = 0.5F + 0.5F * Mth.sin(age * 0.11F);
+        return settle * (0.3F + 0.45F * breath);
     }
 
     /** Curva con pequeño sobrepaso: hace que el "plop" al sentarse rebote un poquito. */
@@ -498,6 +525,20 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         if (hasCape) {
             // Sentado con capa: la colita sale derecha por su ojal (no hacia el costado).
             this.tail.yRot = Mth.lerp(sit, this.tail.yRot, 0.0F);
+        }
+
+        // ---- Globito de sueño: se infla y desinfla con la respiración mientras duerme ----
+        float bubble = sleepBubbleScale(rest, this.restRising, age);
+        this.sleepBubble.visible = this.pass == PASS_SLEEP_BUBBLE && bubble > 0.02F;
+        this.sleepBubble.xScale = bubble;
+        this.sleepBubble.yScale = bubble;
+        this.sleepBubble.zScale = bubble;
+        if (this.pass == PASS_SLEEP_BUBBLE) {
+            // Solo el globito: los ojitos tampoco se dibujan en esta pasada.
+            this.eyesOpen.visible = false;
+            this.eyesTired.visible = false;
+            this.eyesClosed.visible = false;
+            this.eyesBig.visible = false;
         }
 
         if (this.pass != PASS_NORMAL) {

@@ -10,5 +10,8 @@ public interface NoxisRestful {
 
     void setResting(boolean resting);
 
+    /** ¿Está descansando ahora? */
+    boolean isResting();
+
     void onRestFinished();
 }
