@@ -28,6 +28,12 @@ public interface NoxisBowlSleeper {
     /** Animación de sacarse/ponerse el sombrero ({@code NoxisHatAnimation.NONE/OFF/ON}). */
     void setHatAnim(byte anim);
 
+    /**
+     * Saltito para entrar o salir de la pecera: mientras dura, la entidad no se mueve sola
+     * (ni gravedad ni choques); la lleva el objetivo de dormir, tick a tick. No se guarda.
+     */
+    void setBowlHop(boolean hop);
+
     /** ¿Ya le dio sueño esta noche? (cada Noxis tiene su propio horario). */
     boolean isBedtime();
 

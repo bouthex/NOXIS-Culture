@@ -6,6 +6,11 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import org.jspecify.annotations.Nullable;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
@@ -14,7 +19,6 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraft.world.phys.shapes.EntityCollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
@@ -36,13 +40,27 @@ public class NoxisBowlBlock extends Block {
             Block.box(0, 0, 0, 16, 18, 16),
             Block.box(3, 18, 3, 13, 19.5, 13),
             Block.box(0.5, 19.5, 0.5, 15.5, 21, 15.5));
-    /** Choque para todos: base + paredes de vidrio (no se puede caminar adentro). */
+    /**
+     * Choque, igual para todos (jugadores, Noxis y demás): base de madera + el vidrio completo
+     * (paredes, hombro, cuellito y borde de arriba). Adentro queda el hueco donde duerme el Noxis,
+     * y arriba una abertura chica: nadie atraviesa el vidrio. Entrar y salir lo hace el Noxis con
+     * un saltito por encima del borde (ver NoxisBowlSleepGoal).
+     */
     private static final VoxelShape WALLS = Shapes.or(
             Block.box(0, 0, 0, 16, 2, 16),
-            Block.box(0, 2, 0, 16, 16, 1), Block.box(0, 2, 15, 16, 16, 16),
-            Block.box(0, 2, 0, 1, 16, 16), Block.box(15, 2, 0, 16, 16, 16));
-    /** Choque para el Noxis que duerme adentro: solo el piso de madera. */
-    private static final VoxelShape FLOOR = Block.box(0, 0, 0, 16, 2, 16);
+            ring(2, 18, 0, 16, 1.25),          // paredes
+            ring(18, 18.5, 0, 16, 3),          // hombro
+            ring(18.5, 19.5, 3, 13, 1),        // cuellito
+            ring(19.5, 21, 0.5, 15.5, 2.5));   // borde de arriba
+
+    /** Marco cuadrado de vidrio: cuatro paredes de espesor {@code t} entre {@code o0} y {@code o1}. */
+    private static VoxelShape ring(double y0, double y1, double o0, double o1, double t) {
+        return Shapes.or(
+                Block.box(o0, y0, o0, o1, y1, o0 + t),
+                Block.box(o0, y0, o1 - t, o1, y1, o1),
+                Block.box(o0, y0, o0 + t, o0 + t, y1, o1 - t),
+                Block.box(o1 - t, y0, o0 + t, o1, y1, o1 - t));
+    }
 
     public NoxisBowlBlock(Properties properties) {
         super(properties);
@@ -66,10 +84,37 @@ public class NoxisBowlBlock extends Block {
 
     @Override
     protected VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        if (context instanceof EntityCollisionContext ecc && ecc.getEntity() instanceof NoxisBowlSleeper) {
-            return FLOOR;
-        }
         return WALLS;
+    }
+
+    // ------------------------------------------------------------------ llevarse la pecera con el Noxis
+
+    /**
+     * Romper una pecera ocupada (como una colmena con abejas): el Noxis que duerme adentro se
+     * guarda en el ítem de la pecera, con todos sus datos, y desaparece del mundo (no se duplica).
+     * En creativo también sale el ítem con el Noxis, para no perderlo. Si estaba solo reservada
+     * (el Noxis venía en camino), sale la pecera vacía normal.
+     */
+    @Override
+    public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+        if (level instanceof ServerLevel server && state.getValue(OCCUPIED)) {
+            ItemStack withNoxis = NoxisBowlStorage.capture(server, pos);
+            if (withNoxis != null) {
+                popResource(level, pos, withNoxis);
+            } else if (!player.isCreative()) {
+                popResource(level, pos, new ItemStack(this));
+            }
+        }
+        return super.playerWillDestroy(level, pos, state, player);
+    }
+
+    /** Al colocar una pecera que trae un Noxis guardado, el Noxis aparece adentro, durmiendo. */
+    @Override
+    public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
+        super.setPlacedBy(level, pos, state, placer, stack);
+        if (level instanceof ServerLevel server) {
+            NoxisBowlStorage.release(server, pos, stack);
+        }
     }
 
     @Override

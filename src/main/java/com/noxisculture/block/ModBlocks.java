@@ -84,7 +84,8 @@ public final class ModBlocks {
                     .noOcclusion()
                     .isRedstoneConductor((state, level, pos) -> false)
                     .isSuffocating((state, level, pos) -> false)
-                    .isViewBlocking((state, level, pos) -> false));
+                    .isViewBlocking((state, level, pos) -> false)
+                    .pushReaction(PushReaction.BLOCK));      // los pistones no la mueven (podría tener un Noxis adentro)
 
     /** Sombrero de Noxis apoyado en el suelo (mientras su dueño duerme). */
     public static final Block NOXIS_HAT = register(

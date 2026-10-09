@@ -41,6 +41,9 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityDimensions;
+import net.minecraft.world.entity.Pose;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
@@ -167,6 +170,8 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
     // Pecera y sombrero (servidor; se guardan con el Noxis).
     private @Nullable BlockPos bowlPos;
     private @Nullable BlockPos hatPos;
+    /** Saltando para entrar o salir de la pecera (servidor, no se guarda). */
+    private boolean bowlHop;
     private long bedtime = -1L;
     private long wakeTime = -1L;
     private final NoxisSocialAnimation socialAnimation = new NoxisSocialAnimation();
@@ -334,6 +339,52 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
     @Override
     public void setHasHat(boolean hat) {
         this.entityData.set(HAS_HAT, hat);
+    }
+
+    @Override
+    public void setBowlHop(boolean hop) {
+        this.bowlHop = hop;
+    }
+
+    /** Durante el saltito de la pecera lo mueve el objetivo de dormir: acá no se mueve solo. */
+    @Override
+    public void travel(Vec3 input) {
+        if (this.bowlHop) {
+            this.setDeltaMovement(Vec3.ZERO);
+            return;
+        }
+        super.travel(input);
+    }
+
+    /**
+     * Tamaño real del Noxis (la caja con la que choca y donde se lo golpea):
+     * con sombrero, la altura completa; sin sombrero, solo hasta las orejitas;
+     * durmiendo en la pecera, acurrucado y bien adentro del vidrio.
+     */
+    @Override
+    protected EntityDimensions getDefaultDimensions(Pose pose) {
+        EntityDimensions base = super.getDefaultDimensions(pose);
+        if (this.isInBowl()) {
+            return base.scale(1.07F, 0.56F).withEyeHeight(base.eyeHeight() * 0.8F);
+        }
+        if (!this.hasHat()) {
+            return base.scale(1.0F, 0.68F).withEyeHeight(base.eyeHeight());
+        }
+        return base;
+    }
+
+    /** Durmiendo en la pecera (o saltando para entrar/salir) nadie lo empuja. */
+    @Override
+    public boolean isPushable() {
+        return !this.isInBowl() && !this.bowlHop && super.isPushable();
+    }
+
+    @Override
+    public void onSyncedDataUpdated(EntityDataAccessor<?> key) {
+        super.onSyncedDataUpdated(key);
+        if (IN_BOWL.equals(key) || HAS_HAT.equals(key)) {
+            this.refreshDimensions();
+        }
     }
 
     @Override
