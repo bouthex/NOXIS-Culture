@@ -6,7 +6,6 @@ import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 
 /**
@@ -18,17 +17,20 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
  * Despierto no dibuja nada.</p>
  */
 public class NoxisSleepBubbleLayer extends RenderLayer<NoxisVillagerRenderState, NoxisVillagerModel> {
-    private static final RenderType BUBBLE = RenderTypes.entityCutoutNoCull(
-            NoxisCulture.id("textures/entity/noxis_sleep_bubble.png"));
+    private static final net.minecraft.resources.Identifier TEXTURE =
+            NoxisCulture.id("textures/entity/noxis_sleep_bubble.png");
     /** Un poquito de luz propia (brillo sutil): nunca se ve más oscuro que esto. */
     private static final int MIN_BLOCK_LIGHT = 9;
 
     private final NoxisVillagerModel bubbleModel;
+    /** El mismo tipo de dibujo que usa el modelo del Noxis, con la texturita del globito. */
+    private final RenderType bubble;
 
     public NoxisSleepBubbleLayer(RenderLayerParent<NoxisVillagerRenderState, NoxisVillagerModel> parent,
                                  NoxisVillagerModel bubbleModel) {
         super(parent);
         this.bubbleModel = bubbleModel;
+        this.bubble = bubbleModel.renderType(TEXTURE);
     }
 
     @Override
@@ -38,7 +40,7 @@ public class NoxisSleepBubbleLayer extends RenderLayer<NoxisVillagerRenderState,
         int block = Math.max((light & 0xFFFF) >> 4, MIN_BLOCK_LIGHT);
         int sky = (light >> 20) & 0xF;
         int glowLight = (sky << 20) | (block << 4);
-        collector.order(1).submitModel(this.bubbleModel, state, poseStack, BUBBLE,
+        collector.order(1).submitModel(this.bubbleModel, state, poseStack, this.bubble,
                 glowLight, OverlayTexture.NO_OVERLAY, -1, null, 0, null);
     }
 }
