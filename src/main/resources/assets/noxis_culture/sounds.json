@@ -63,5 +63,18 @@
     "sounds": [
       "noxis_culture:noxis/celebrate"
     ]
+  },
+  "entity.noxis.sniff": {
+    "subtitle": "subtitles.noxis_culture.noxis.sniff",
+    "sounds": [
+      {
+        "name": "noxis_culture:noxis/sniff1",
+        "volume": 0.8
+      },
+      {
+        "name": "noxis_culture:noxis/sniff2",
+        "volume": 0.8
+      }
+    ]
   }
 }
