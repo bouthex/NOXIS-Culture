@@ -20,7 +20,9 @@ public final class NoxisFlowers {
             Blocks.ALLIUM, Blocks.LILAC);            // violetas
     /** Plantas (no flores) que hacen "lindo" un lugar para sentarse a mirar. */
     private static final Set<Block> PLANTS = Set.of(
-            Blocks.SHORT_GRASS, Blocks.TALL_GRASS, Blocks.FERN, Blocks.LARGE_FERN);
+            Blocks.SHORT_GRASS, Blocks.TALL_GRASS, Blocks.FERN, Blocks.LARGE_FERN,
+            Blocks.OAK_SAPLING, Blocks.SPRUCE_SAPLING, Blocks.BIRCH_SAPLING, Blocks.JUNGLE_SAPLING,
+            Blocks.ACACIA_SAPLING, Blocks.DARK_OAK_SAPLING, Blocks.CHERRY_SAPLING);
 
     /** Cualquier flor vanilla plantada (para mirar u olfatear). */
     public static boolean isFlower(BlockState state) {
@@ -42,6 +44,6 @@ public final class NoxisFlowers {
 
     /** Flores, retoños o pastito: lo que hace que un lugar sea lindo para contemplar. */
     public static boolean isNature(BlockState state) {
-        return isFlower(state) || state.is(BlockTags.SAPLINGS) || PLANTS.contains(state.getBlock());
+        return isFlower(state) || PLANTS.contains(state.getBlock());
     }
 }
