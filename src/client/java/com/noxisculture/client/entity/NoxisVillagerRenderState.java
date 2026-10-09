@@ -45,6 +45,16 @@ public class NoxisVillagerRenderState extends LivingEntityRenderState {
     /** Regalo: bracito estirado ofreciendo la flor. */
     public float natureOffer;
     public float natureSide = 1.0F;
+    /** Saludo y descanso en compañía: ladeo, orejas, patita, asentir, saltito, cabeceo, bostezo, apoyo. */
+    public float socialTilt;
+    public float socialSide = 1.0F;
+    public float socialEars;
+    public float socialWave;
+    public float socialNod;
+    public float socialHop;
+    public float socialDoze;
+    public float socialYawn;
+    public float socialLean;
     /** La flor que tiene en la mano (vacía si no tiene nada). */
     public final ItemStackRenderState heldFlower = new ItemStackRenderState();
     /** true mientras se está levantando (para no repetir el rebote del "plop" al revés). */

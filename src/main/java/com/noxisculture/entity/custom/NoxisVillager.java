@@ -8,6 +8,13 @@ import com.noxisculture.entity.ai.NoxisFascinatable;
 import com.noxisculture.entity.ai.NoxisNatureGoal;
 import com.noxisculture.entity.ai.NoxisNatureLover;
 import com.noxisculture.entity.ai.NoxisReceiveGiftGoal;
+import com.noxisculture.entity.ai.NoxisCompanionRestGoal;
+import com.noxisculture.entity.ai.NoxisGreetGoal;
+import com.noxisculture.entity.ai.NoxisSocial;
+import com.noxisculture.entity.ai.NoxisSocialFollowGoal;
+import com.noxisculture.entity.idle.NoxisSocialAnimation;
+import com.noxisculture.entity.social.NoxisSocialAction;
+import com.noxisculture.entity.social.NoxisSocialLink;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.level.block.Block;
@@ -70,7 +77,7 @@ import org.jspecify.annotations.Nullable;
  * nos da gratis el menú de comercio vanilla, el guardado de ofertas y la
  * integración con TradeWithPlayerGoal, sin el sistema de profesiones/cerebro.
  */
-public class NoxisVillager extends AbstractVillager implements NoxisLightSource, NoxisRestful, NoxisWorker, NoxisFascinatable, NoxisNatureLover {
+public class NoxisVillager extends AbstractVillager implements NoxisLightSource, NoxisRestful, NoxisWorker, NoxisFascinatable, NoxisNatureLover, NoxisSocial {
     /** Puede reponer en su mesa como mucho cada medio día (~2 veces por día, como vanilla). */
     private static final long RESTOCK_INTERVAL_TICKS = 12_000L;
     /** Espera tras cerrar el menú antes de subir de nivel (vanilla: 40 ticks = 2 s). */
@@ -103,6 +110,9 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
             SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BYTE);
     private static final EntityDataAccessor<ItemStack> HELD_FLOWER =
             SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.ITEM_STACK);
+    /** Gesto social en curso (saludo, descanso en compañía): lo decide el servidor, el cliente lo anima. */
+    private static final EntityDataAccessor<Byte> SOCIAL_ANIM =
+            SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BYTE);
     private static final int HAPPY_AFTER_TRADE_TICKS = 60;
     /** ~1 vez por día de Minecraft (24000 ticks), con algo de azar. */
     private static final int REST_COOLDOWN_TICKS = 20_000;
@@ -139,6 +149,8 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
     private final NoxisNatureAnimation natureAnimation = new NoxisNatureAnimation();
     private final NoxisFlowerCarry flowerCarry = new NoxisFlowerCarry();
     /** Flor de regalo que otro Noxis le lanzó y todavía viene en camino (servidor, no se guarda). */
+    private final NoxisSocialLink socialLink = new NoxisSocialLink();
+    private final NoxisSocialAnimation socialAnimation = new NoxisSocialAnimation();
     private @Nullable ItemEntity incomingGift;
     private @Nullable LivingEntity giftGiver;
     /** El primer descanso llega pronto (1-5 min) para poder verlo; después, ~1 por día. */
@@ -159,6 +171,7 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
         builder.define(FASCINATED, false);
         builder.define(NATURE_ACTION, NoxisNatureAction.NONE);
         builder.define(HELD_FLOWER, ItemStack.EMPTY);
+        builder.define(SOCIAL_ANIM, NoxisSocialAction.NONE);
     }
 
     public NoxisMood getMood() {
@@ -209,7 +222,8 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
     public boolean canBeFascinated() {
         return this.getMood() == NoxisMood.NEUTRAL && !this.isTrading() && !this.isResting()
                 && !this.isHoldingTorch() && !this.isHoldingUmbrella()
-                && this.getNatureAction() == NoxisNatureAction.NONE && !this.flowerCarry.isHolding();
+                && this.getNatureAction() == NoxisNatureAction.NONE && !this.flowerCarry.isHolding()
+                && !this.socialLink.isBusy();
     }
 
     // ---------------- Naturaleza (NoxisNatureLover) ----------------
@@ -218,7 +232,57 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
     public boolean canEnjoyNature() {
         return this.getMood() == NoxisMood.NEUTRAL && !this.isTrading() && !this.isResting()
                 && !this.isHoldingTorch() && !this.isHoldingUmbrella() && !this.isFascinated()
-                && this.incomingGift == null && this.getNatureAction() != NoxisNatureAction.RECEIVE;
+                && this.incomingGift == null && this.getNatureAction() != NoxisNatureAction.RECEIVE
+                && !this.socialLink.isBusy();
+    }
+
+    // ---------------- Interacciones entre compañeros (NoxisSocial) ----------------
+
+    @Override
+    public NoxisSocialLink getSocialLink() {
+        return this.socialLink;
+    }
+
+    @Override
+    public boolean canSocialize() {
+        return this.isSafeForSocial() && !this.isResting() && !this.socialLink.isBusy()
+                && this.getNatureAction() == NoxisNatureAction.NONE && !this.flowerCarry.isHolding()
+                && this.incomingGift == null && this.onGround() && !this.isInWater();
+    }
+
+    @Override
+    public boolean isSafeForSocial() {
+        return this.getMood() == NoxisMood.NEUTRAL && !this.isTrading() && !this.isHoldingTorch()
+                && !this.isHoldingUmbrella() && !this.isFascinated() && this.hurtTime == 0;
+    }
+
+    @Override
+    public void setSocialAnim(byte anim) {
+        this.entityData.set(SOCIAL_ANIM, anim);
+    }
+
+    public byte getSocialAnim() {
+        return this.entityData.get(SOCIAL_ANIM);
+    }
+
+    @Override
+    public void playYawn() {
+        this.playSound(ModSounds.NOXIS_YAWN, 0.6F, 0.95F + this.random.nextFloat() * 0.15F);
+        this.level().broadcastEntityEvent(this, NoxisSocialAction.YAWN_EVENT);
+    }
+
+    @Override
+    public void handleEntityEvent(byte id) {
+        if (id == NoxisSocialAction.YAWN_EVENT) {
+            this.socialAnimation.startYawn();
+        } else {
+            super.handleEntityEvent(id);
+        }
+    }
+
+    /** Animación de saludos y descansos en compañía (solo visual, cliente). */
+    public NoxisSocialAnimation getSocialAnimation() {
+        return this.socialAnimation;
     }
 
     // ---- Recibir flores de regalo ----
@@ -361,11 +425,15 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
         this.goalSelector.addGoal(1, new AvoidEntityGoal<>(this, Monster.class, 8.0F, 0.5D, 0.6D));
         this.goalSelector.addGoal(1, new PanicGoal(this, 0.6D));
         this.goalSelector.addGoal(2, new LookAtTradingPlayerGoal(this));
+        // Descanso en compañía: va antes que el individual (a veces, si hay compañero, descansan juntos).
+        this.goalSelector.addGoal(3, new NoxisCompanionRestGoal<>(this));
+        this.goalSelector.addGoal(3, new NoxisSocialFollowGoal<>(this));
         this.goalSelector.addGoal(3, new NoxisRestGoal<>(this));
         this.goalSelector.addGoal(3, new NoxisReceiveGiftGoal<>(this));
         this.goalSelector.addGoal(4, new NoxisWorkAtTableGoal<>(this, 0.45D));
         this.goalSelector.addGoal(4, new NoxisCrystalFascinationGoal<>(this));
         this.goalSelector.addGoal(4, new NoxisNatureGoal<>(this));
+        this.goalSelector.addGoal(4, new NoxisGreetGoal<>(this));
         this.goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 0.35D));
         this.goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 6.0F));
         this.goalSelector.addGoal(9, new RandomLookAroundGoal(this));
@@ -551,7 +619,10 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
         // Naturaleza: la acción llega del servidor; acá solo se anima.
         this.natureAnimation.tick(this.getNatureAction(), !this.getHeldFlower().isEmpty(), this.random);
         boolean withNature = this.natureAnimation.isBusy();
-        this.curiosity.tick(calm && !fascinated && !withNature, this.random);
+        // Saludos y descanso en compañía: la señal llega del servidor; acá solo se anima.
+        this.socialAnimation.tick(this.getSocialAnim(), this.random);
+        boolean withSocial = this.socialAnimation.isBusy();
+        this.curiosity.tick(calm && !fascinated && !withNature && !withSocial, this.random);
         // Fascinación: la señal llega del servidor; acá solo se corta si se ve algo prioritario.
         boolean free = this.getMood() == NoxisMood.NEUTRAL && this.scaredAnim < 0.02F
                 && !this.isTrading() && !this.isResting() && !this.isHoldingTorch() && !this.isHoldingUmbrella();

@@ -319,6 +319,10 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         // Fascinación por un cristal: ladea la cabeza y para las orejitas (mirarlo lo hace el servidor).
         NoxisMoodAnimator.applyFascination(this.head, this.rightEar, this.leftEar,
                 state.crystalAmount, state.crystalSide, state.crystalTwitch, state.crystalHop, age);
+        // Saludo y descanso en compañía (a quién mira lo decide el servidor).
+        NoxisMoodAnimator.applySocialHead(this.head, this.body, this.rightEar, this.leftEar, age,
+                state.socialTilt, state.socialSide, state.socialEars, state.socialNod, state.socialDoze,
+                state.socialYawn, state.socialLean, sit);
         // Naturaleza: mirar flores, agacharse, contemplar y olfatear (mirarlas lo hace el servidor).
         NoxisMoodAnimator.applyNature(this.head, this.body, this.rightEar, this.leftEar, age,
                 state.natureSurvey, state.natureLean, state.natureHold, state.natureRaise, state.natureSniff,
@@ -336,7 +340,9 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         // Fascinado con un cristal no parpadea: lo mira con los ojos bien abiertos.
         if (state.crystalAmount > 0.5F) normalBlink = false;
         boolean closed = slowBlink || (rest > 0.5F && dozing) || (!sleepy && normalBlink)
-                || state.natureEyesClosed > 0.5F;                    // disfrutando el aroma
+                || state.natureEyesClosed > 0.5F
+                || state.socialYawn > 0.5F || Math.abs(state.socialLean) > 0.5F     // bostezo / dormidos juntos
+                || (state.socialDoze > 0.6F && (t % 30) < 12);                     // cabeceo de sueño                    // disfrutando el aroma
         this.eyesClosed.visible = closed;
         this.eyesTired.visible = sleepy && !closed;
         boolean open = !closed && !sleepy;
@@ -463,7 +469,8 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
             this.flowerAnchor.zRot = -0.25F * (1.0F - raise);
             this.flowerAnchor.xRot = 0.12F * raise;
         }
-        float hopState = state.crystalHop;
+        NoxisMoodAnimator.applySocialArms(this.rightArm, this.leftArm, age, state.socialWave, state.socialYawn, sit);
+        float hopState = state.crystalHop + state.socialHop;
         if (hopState > 0.0F) {
             // En el aire: todo el Noxis sube (las patitas también, un poquito recogidas).
             float jump = 2.6F * hopState;

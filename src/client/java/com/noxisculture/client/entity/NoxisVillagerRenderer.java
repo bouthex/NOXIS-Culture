@@ -59,6 +59,15 @@ public class NoxisVillagerRenderer extends MobRenderer<NoxisVillager, NoxisVilla
         state.natureSit = entity.getNatureAnimation().getSit(partialTick);
         state.natureOffer = entity.getNatureAnimation().getOffer(partialTick);
         state.natureSide = entity.getNatureAnimation().getSide();
+        state.socialTilt = entity.getSocialAnimation().getTilt(partialTick);
+        state.socialSide = entity.getSocialAnimation().getSide();
+        state.socialEars = entity.getSocialAnimation().getEars(partialTick);
+        state.socialWave = entity.getSocialAnimation().getWave(partialTick);
+        state.socialNod = entity.getSocialAnimation().getNod(partialTick);
+        state.socialHop = entity.getSocialAnimation().getHop(partialTick);
+        state.socialDoze = entity.getSocialAnimation().getDoze(partialTick);
+        state.socialYawn = entity.getSocialAnimation().getYawn(partialTick);
+        state.socialLean = entity.getSocialAnimation().getLean(partialTick);
         ItemStack flower = entity.getHeldFlower();
         if (flower.isEmpty()) {
             state.heldFlower.clear();

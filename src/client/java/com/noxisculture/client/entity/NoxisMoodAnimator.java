@@ -134,6 +134,40 @@ public final class NoxisMoodAnimator {
         rightArm.zRot = Mth.lerp(offer, rightArm.zRot, -0.1F);
     }
 
+    /**
+     * Saludo y descanso en compañía, cabeza y cuerpo (gesto aditivo, compartido por todas las
+     * especies). Ladeo de cabecita, orejas que se paran y se mueven, asentir, cabeceo de sueño,
+     * bostezo y apoyarse en el compañero sentado al lado ({@code lean} + = está a su derecha).
+     */
+    public static void applySocialHead(ModelPart head, ModelPart body, ModelPart rightEar, ModelPart leftEar,
+                                       float age, float tilt, float side, float ears, float nod,
+                                       float doze, float yawn, float lean, float sit) {
+        head.zRot += 0.34F * tilt * side;
+        head.xRot -= 0.06F * tilt;
+        rightEar.xRot -= 0.25F * ears;
+        leftEar.xRot -= 0.25F * ears;
+        rightEar.zRot += Mth.sin(age * 0.6F) * 0.12F * ears;
+        leftEar.zRot += Mth.sin(age * 0.6F + 2.0F) * 0.12F * ears;
+        head.xRot += Mth.sin(age * 0.9F) * 0.16F * nod;
+        head.xRot += doze * (0.12F + 0.08F * Mth.sin(age * 0.25F));
+        head.xRot -= 0.38F * yawn * (1.0F - 0.5F * sit);
+        body.zRot -= 0.2F * lean;
+        head.zRot -= 0.24F * lean;
+        head.x += 1.2F * lean;
+    }
+
+    /** Saludo con la patita (la izquierda) y bracitos que se estiran al bostezar de pie. */
+    public static void applySocialArms(ModelPart rightArm, ModelPart leftArm, float age, float wave,
+                                       float yawn, float sit) {
+        leftArm.zRot = Mth.lerp(wave, leftArm.zRot, -(1.75F + 0.3F * Mth.sin(age * 0.9F)));
+        leftArm.xRot = Mth.lerp(wave, leftArm.xRot, -0.4F);
+        float stretch = yawn * (1.0F - sit);
+        rightArm.zRot += 0.7F * stretch;
+        leftArm.zRot -= 0.7F * stretch;
+        rightArm.xRot -= 0.5F * stretch;
+        leftArm.xRot -= 0.5F * stretch;
+    }
+
     public static void applyCuriosity(ModelPart head, ModelPart rightEar, ModelPart leftEar,
                                       float curious, float side, float flick) {
         if (curious <= 0.0F) {
