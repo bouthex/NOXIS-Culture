@@ -2,10 +2,13 @@ package com.noxisculture.entity.ai;
 
 import com.noxisculture.block.ModBlocks;
 import com.noxisculture.block.custom.NoxisBowlBlock;
+import com.noxisculture.entity.idle.NoxisHatAnimation;
 import com.noxisculture.sound.ModSounds;
 import java.util.EnumSet;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.level.Level;
@@ -34,12 +37,14 @@ public class NoxisBowlSleepGoal<T extends PathfinderMob & NoxisBowlSleeper & Nox
     private static final double REACH = 1.7D;
     private static final double FLOOR = 2.0D / 16.0D;    // el piso de madera de la pecera
 
-    private enum Phase { WALK, SLEEP, DONE }
+    private enum Phase { WALK, HAT_OFF, SLEEP, HAT_ON, DONE }
 
     private final T mob;
     private Phase phase = Phase.DONE;
     private int ticks;
     private int nextSearchTick;
+    /** Dónde va a dejar el sombrero (mientras se lo saca). */
+    private @Nullable BlockPos hatSpot;
 
     public NoxisBowlSleepGoal(T mob) {
         this.mob = mob;
@@ -67,6 +72,7 @@ public class NoxisBowlSleepGoal<T extends PathfinderMob & NoxisBowlSleeper & Nox
     @Override
     public void start() {
         this.ticks = 0;
+        this.hatSpot = null;
         if (this.mob.isInBowl()) {
             this.phase = Phase.SLEEP;
             this.mob.setResting(true);
@@ -90,11 +96,15 @@ public class NoxisBowlSleepGoal<T extends PathfinderMob & NoxisBowlSleeper & Nox
     @Override
     public void tick() {
         this.ticks++;
-        BlockPos bowl = this.mob.getBowlPos();
         Level level = this.mob.level();
+        if (this.phase == Phase.HAT_ON) {
+            this.tickHatOn();
+            return;
+        }
+        BlockPos bowl = this.mob.getBowlPos();
         if (bowl == null || !level.getBlockState(bowl).is(ModBlocks.NOXIS_BOWL)) {
             // La pecera ya no está (la rompieron): se despierta / deja de ir.
-            this.phase = Phase.DONE;
+            this.wakeAndMaybeFetchHat();
             return;
         }
         switch (this.phase) {
@@ -105,11 +115,18 @@ public class NoxisBowlSleepGoal<T extends PathfinderMob & NoxisBowlSleeper & Nox
                 double dx = center.x - this.mob.getX();
                 double dz = center.z - this.mob.getZ();
                 if (dx * dx + dz * dz < REACH * REACH && Math.abs(bowl.getY() - this.mob.getY()) < 1.5D) {
-                    if (this.climbIn(bowl)) {
+                    this.mob.getNavigation().stop();
+                    if (this.mob.hasHat()) {
+                        // Primero se saca el sombrero (con su animación) y lo deja al costado.
+                        this.hatSpot = this.findFreeSpotNear(bowl, null);
+                        if (this.hatSpot == null) { this.phase = Phase.DONE; return; }   // no hay dónde dejarlo
+                        this.ticks = 0;
+                        this.phase = Phase.HAT_OFF;
+                        this.mob.setHatAnim(NoxisHatAnimation.OFF);
+                    } else {
+                        this.climbIn(bowl);
                         this.ticks = 0;
                         this.phase = Phase.SLEEP;
-                    } else {
-                        this.phase = Phase.DONE;                 // no había dónde dejar el sombrero
                     }
                 } else if (this.ticks >= WALK_TIMEOUT) {
                     this.phase = Phase.DONE;                     // no pudo llegar
@@ -117,35 +134,48 @@ public class NoxisBowlSleepGoal<T extends PathfinderMob & NoxisBowlSleeper & Nox
                     this.mob.getNavigation().moveTo(center.x, bowl.getY(), center.z, 0.45D);
                 }
             }
+            case HAT_OFF -> {
+                this.mob.getNavigation().stop();
+                BlockPos spot = this.hatSpot;
+                if (spot != null) this.mob.getLookControl().setLookAt(spot.getX() + 0.5D, spot.getY() + 0.2D, spot.getZ() + 0.5D);
+                if (this.ticks == NoxisHatAnimation.OFF_PLACE_TICK) {
+                    // Lo apoya en el piso: aparece el bloque y deja de tenerlo puesto.
+                    if (spot == null || !this.isStandable(spot)) spot = this.findFreeSpotNear(bowl, null);
+                    if (spot == null) {
+                        this.mob.setHatAnim(NoxisHatAnimation.NONE);   // no hay dónde: se lo deja puesto
+                        this.phase = Phase.DONE;
+                        return;
+                    }
+                    level.setBlock(spot, ModBlocks.NOXIS_HAT.defaultBlockState(), Block.UPDATE_ALL);
+                    level.playSound(null, spot, ModBlocks.NOXIS_HAT.defaultBlockState().getSoundType().getPlaceSound(),
+                            SoundSource.NEUTRAL, 0.6F, 1.1F);
+                    this.mob.setHasHat(false);
+                    this.mob.setHatPos(spot);
+                } else if (this.ticks >= NoxisHatAnimation.OFF_LENGTH) {
+                    this.mob.setHatAnim(NoxisHatAnimation.NONE);
+                    this.climbIn(bowl);
+                    this.ticks = 0;
+                    this.phase = Phase.SLEEP;
+                }
+            }
             case SLEEP -> {
                 this.mob.getNavigation().stop();
                 this.holdInside(bowl);
                 if (this.mob.isWakeTime() || this.mob.hurtTime > 0) {
-                    this.phase = Phase.DONE;                     // stop() lo despierta y lo saca
+                    this.wakeAndMaybeFetchHat();
                 }
             }
-            case DONE -> { }
+            default -> { }
         }
     }
 
-    /** Se saca el sombrero, lo deja al lado y se mete en la pecera. */
-    private boolean climbIn(BlockPos bowl) {
-        Level level = this.mob.level();
-        if (this.mob.hasHat()) {
-            BlockPos spot = this.findFreeSpotNear(bowl);
-            if (spot == null) return false;
-            level.setBlock(spot, ModBlocks.NOXIS_HAT.defaultBlockState(), Block.UPDATE_ALL);
-            level.playSound(null, spot, ModBlocks.NOXIS_HAT.defaultBlockState().getSoundType().getPlaceSound(),
-                    net.minecraft.sounds.SoundSource.NEUTRAL, 0.6F, 1.1F);
-            this.mob.setHasHat(false);
-            this.mob.setHatPos(spot);
-        }
+    /** Se mete en la pecera (el sombrero ya quedó afuera, si tenía). */
+    private void climbIn(BlockPos bowl) {
         this.mob.getNavigation().stop();
         this.mob.teleportTo(bowl.getX() + 0.5D, bowl.getY() + FLOOR, bowl.getZ() + 0.5D);
         this.mob.setInBowl(true);
         this.mob.setResting(true);
         this.mob.playSound(ModSounds.NOXIS_YAWN, 0.6F, 1.0F);
-        return true;
     }
 
     /** Quieto en el centro de la pecera mientras duerme. */
@@ -159,26 +189,60 @@ public class NoxisBowlSleepGoal<T extends PathfinderMob & NoxisBowlSleeper & Nox
         this.mob.setDeltaMovement(Vec3.ZERO);
     }
 
-    /** Sale de la pecera, recupera el sombrero si sigue ahí y libera la pecera. */
-    private void wakeUp() {
+    /** Se despierta y sale; si su sombrero sigue al lado, va a ponérselo con su animación. */
+    private void wakeAndMaybeFetchHat() {
+        this.leaveBowl();
+        BlockPos hat = this.mob.getHatPos();
+        if (!this.mob.hasHat() && hat != null && this.mob.level().getBlockState(hat).is(ModBlocks.NOXIS_HAT)) {
+            this.ticks = 0;
+            this.phase = Phase.HAT_ON;
+            this.mob.setHatAnim(NoxisHatAnimation.ON);
+        } else {
+            // Alguien se lo llevó: se queda sin sombrero (después lo puede buscar por ahí).
+            this.mob.setHatPos(null);
+            this.phase = Phase.DONE;
+        }
+    }
+
+    /** Ponerse el sombrero que dejó al lado de la pecera. */
+    private void tickHatOn() {
+        this.mob.getNavigation().stop();
+        Level level = this.mob.level();
+        BlockPos hat = this.mob.getHatPos();
+        if (hat != null) this.mob.getLookControl().setLookAt(hat.getX() + 0.5D, hat.getY() + 0.2D, hat.getZ() + 0.5D);
+        if (this.ticks == NoxisHatAnimation.ON_TAKE_TICK) {
+            if (hat != null && level.getBlockState(hat).is(ModBlocks.NOXIS_HAT)) {
+                // Lo levanta: el bloque desaparece y lo tiene en las manitos (nunca hay dos).
+                level.removeBlock(hat, false);
+                level.playSound(null, hat, ModBlocks.NOXIS_HAT.defaultBlockState().getSoundType().getBreakSound(),
+                        SoundSource.NEUTRAL, 0.5F, 1.2F);
+                this.mob.setHasHat(true);
+            } else {
+                this.mob.setHatAnim(NoxisHatAnimation.NONE);  // justo se lo llevaron
+                this.mob.setHatPos(null);
+                this.phase = Phase.DONE;
+                return;
+            }
+        }
+        if (this.ticks >= NoxisHatAnimation.ON_LENGTH) {
+            this.mob.setHatAnim(NoxisHatAnimation.NONE);
+            this.mob.setHatPos(null);
+            this.phase = Phase.DONE;
+        }
+    }
+
+    /** Sale de la pecera (al lado de donde dejó el sombrero) y la libera. */
+    private void leaveBowl() {
         Level level = this.mob.level();
         BlockPos bowl = this.mob.getBowlPos();
         if (this.mob.isInBowl() && bowl != null) {
-            BlockPos hat = this.mob.getHatPos();
-            BlockPos out = hat != null && this.isStandable(hat) ? hat : this.findFreeSpotNear(bowl);
+            BlockPos out = this.findFreeSpotNear(bowl, this.mob.getHatPos());
             if (out != null) {
                 this.mob.teleportTo(out.getX() + 0.5D, out.getY(), out.getZ() + 0.5D);
             } else {
                 this.mob.teleportTo(bowl.getX() + 0.5D, bowl.getY() + 1.4D, bowl.getZ() + 0.5D);   // sale por arriba
             }
         }
-        // ¿Sigue su sombrero donde lo dejó? Se lo pone (el bloque desaparece: nunca hay dos).
-        BlockPos hat = this.mob.getHatPos();
-        if (hat != null && !this.mob.hasHat() && level.getBlockState(hat).is(ModBlocks.NOXIS_HAT)) {
-            level.removeBlock(hat, false);
-            this.mob.setHasHat(true);
-        }
-        if (this.mob.isInBowl() || hat != null) this.mob.setHatPos(null);
         if (bowl != null) {
             BlockState state = level.getBlockState(bowl);
             if (state.is(ModBlocks.NOXIS_BOWL)) {
@@ -215,15 +279,20 @@ public class NoxisBowlSleepGoal<T extends PathfinderMob & NoxisBowlSleeper & Nox
         return best;
     }
 
-    /** Un lugar libre al lado de la pecera, con piso firme (para el sombrero o para salir). */
-    private @Nullable BlockPos findFreeSpotNear(BlockPos bowl) {
+    /**
+     * Un lugar libre al lado de la pecera, con piso firme (para el sombrero o para salir).
+     * Elige el más cercano a {@code prefer} (o al Noxis, si es null).
+     */
+    private @Nullable BlockPos findFreeSpotNear(BlockPos bowl, @Nullable BlockPos prefer) {
         BlockPos best = null;
         double bestDist = Double.MAX_VALUE;
         for (Direction dir : Direction.Plane.HORIZONTAL) {
             for (int dy = 0; dy >= -1; dy--) {
                 BlockPos p = bowl.relative(dir).above(dy);
                 if (!this.isStandable(p)) continue;
-                double d = p.distToCenterSqr(this.mob.position());
+                // Sin nadie parado ahí (ni él mismo, ni un jugador): el sombrero va a un lugar libre.
+                if (!this.mob.level().getEntities((Entity) null, new AABB(p)).isEmpty()) break;
+                double d = prefer != null ? p.distSqr(prefer) : p.distToCenterSqr(this.mob.position());
                 if (d < bestDist) { best = p.immutable(); bestDist = d; }
                 break;
             }
@@ -239,8 +308,20 @@ public class NoxisBowlSleepGoal<T extends PathfinderMob & NoxisBowlSleeper & Nox
 
     @Override
     public void stop() {
-        // Termina (se hizo de día, lo despertaron o no pudo llegar): sale y libera todo.
-        this.wakeUp();
+        // Termina o lo interrumpen: sale y libera todo, sin dejar nada a medias.
+        if (this.mob.isInBowl() || this.mob.getBowlPos() != null) this.leaveBowl();
+        Level level = this.mob.level();
+        BlockPos hat = this.mob.getHatPos();
+        if (!this.mob.hasHat() && hat != null && !this.mob.isInBowl()) {
+            // Cortado mientras iba a ponérselo: si sigue ahí, se lo pone igual (nunca se duplica).
+            if (level.getBlockState(hat).is(ModBlocks.NOXIS_HAT)) {
+                level.removeBlock(hat, false);
+                this.mob.setHasHat(true);
+            }
+            this.mob.setHatPos(null);
+        }
+        this.mob.setHatAnim(NoxisHatAnimation.NONE);
+        this.hatSpot = null;
         this.phase = Phase.DONE;
     }
 }

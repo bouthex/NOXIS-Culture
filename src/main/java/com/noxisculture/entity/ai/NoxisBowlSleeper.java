@@ -25,6 +25,9 @@ public interface NoxisBowlSleeper {
 
     void setHatPos(@Nullable BlockPos pos);
 
+    /** Animación de sacarse/ponerse el sombrero ({@code NoxisHatAnimation.NONE/OFF/ON}). */
+    void setHatAnim(byte anim);
+
     /** ¿Ya le dio sueño esta noche? (cada Noxis tiene su propio horario). */
     boolean isBedtime();
 

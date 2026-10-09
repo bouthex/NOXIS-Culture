@@ -20,7 +20,8 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
  * Pecera Noxis: donde duermen los Noxis (para ellos reemplaza a las camas; las camas de los
- * aldeanos vanilla no cambian). Base de madera y vidrio con forma de pecera.
+ * aldeanos vanilla no cambian). Base de madera y vidrio cuadrado (casi un bloque entero) con
+ * cuellito y un borde ancho arriba, como una pecera.
  *
  * <p>{@link #OCCUPIED} guarda si está ocupada (o reservada por un Noxis que va en camino): una
  * pecera admite UN solo Noxis. Se guarda con el mundo. Si quedara marcada como ocupada sin
@@ -32,9 +33,9 @@ public class NoxisBowlBlock extends Block {
 
     /** Contorno: la pecera entera (para apuntarla y romperla). */
     private static final VoxelShape OUTLINE = Shapes.or(
-            Block.box(0, 0, 0, 16, 2, 16),
-            Block.box(1, 2, 1, 15, 18, 15),
-            Block.box(2, 18, 2, 14, 22, 14));
+            Block.box(0, 0, 0, 16, 18, 16),
+            Block.box(3, 18, 3, 13, 19.5, 13),
+            Block.box(0.5, 19.5, 0.5, 15.5, 21, 15.5));
     /** Choque para todos: base + paredes de vidrio (no se puede caminar adentro). */
     private static final VoxelShape WALLS = Shapes.or(
             Block.box(0, 0, 0, 16, 2, 16),

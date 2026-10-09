@@ -120,6 +120,9 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
             SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> HAS_HAT =
             SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BOOLEAN);
+    /** Animación de sacarse/ponerse el sombrero (la decide el servidor; no se guarda). */
+    private static final EntityDataAccessor<Byte> HAT_ANIM =
+            SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BYTE);
     /** Cada Noxis se duerme a su hora: entre 0 y 2 minutos después de que oscurece. */
     private static final int BEDTIME_RANDOM = 2400;
     /** ...y se despierta a su ritmo: entre 0 y 40 s después del amanecer. */
@@ -167,6 +170,8 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
     private long bedtime = -1L;
     private long wakeTime = -1L;
     private final NoxisSocialAnimation socialAnimation = new NoxisSocialAnimation();
+    private final com.noxisculture.entity.idle.NoxisHatAnimation hatAnimation =
+            new com.noxisculture.entity.idle.NoxisHatAnimation();
     private @Nullable ItemEntity incomingGift;
     private @Nullable LivingEntity giftGiver;
     /** El primer descanso llega pronto (1-5 min) para poder verlo; después, ~1 por día. */
@@ -190,6 +195,7 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
         builder.define(SOCIAL_ANIM, NoxisSocialAction.NONE);
         builder.define(IN_BOWL, false);
         builder.define(HAS_HAT, true);
+        builder.define(HAT_ANIM, com.noxisculture.entity.idle.NoxisHatAnimation.NONE);
     }
 
     public NoxisMood getMood() {
@@ -328,6 +334,18 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
     @Override
     public void setHasHat(boolean hat) {
         this.entityData.set(HAS_HAT, hat);
+    }
+
+    @Override
+    public void setHatAnim(byte anim) {
+        this.entityData.set(HAT_ANIM, anim);
+        // Necesita los dos bracitos: guarda la antorcha enseguida (vuelve sola cuando termina).
+        if (anim != com.noxisculture.entity.idle.NoxisHatAnimation.NONE) this.entityData.set(TORCH, false);
+    }
+
+    /** Animación de sacarse/ponerse el sombrero (solo visual, cliente). */
+    public com.noxisculture.entity.idle.NoxisHatAnimation getHatAnimation() {
+        return this.hatAnimation;
     }
 
     @Override
@@ -533,6 +551,8 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
         this.goalSelector.addGoal(3, new NoxisSocialFollowGoal<>(this));
         this.goalSelector.addGoal(3, new NoxisRestGoal<>(this));
         this.goalSelector.addGoal(3, new NoxisReceiveGiftGoal<>(this));
+        // Sin sombrero: busca uno cerca (el suyo u otro, bloque o ítem) y se lo pone.
+        this.goalSelector.addGoal(3, new com.noxisculture.entity.ai.NoxisFindHatGoal<>(this));
         this.goalSelector.addGoal(4, new NoxisWorkAtTableGoal<>(this, 0.45D));
         this.goalSelector.addGoal(4, new NoxisCrystalFascinationGoal<>(this));
         this.goalSelector.addGoal(4, new NoxisNatureGoal<>(this));
@@ -693,8 +713,9 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
         if (this.tickCount % 20 == 0) {
             boolean dark = this.level().isDarkOutside()
                     || this.level().getBrightness(LightLayer.SKY, this.blockPosition()) < CAVE_SKY_LIGHT;
-            // Durmiendo en la pecera no sostiene la antorcha.
-            boolean torch = dark && !this.isInBowl();
+            // Sin antorcha dentro de la pecera ni mientras se saca o se pone el sombrero (usa los bracitos).
+            boolean torch = dark && !this.isInBowl()
+                    && this.entityData.get(HAT_ANIM) == com.noxisculture.entity.idle.NoxisHatAnimation.NONE;
             if (torch != this.isHoldingTorch()) {
                 this.entityData.set(TORCH, torch);
             }
@@ -739,6 +760,7 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
                 && !this.isTrading() && !this.isResting() && this.restAnim < 0.01F
                 && !this.isHoldingTorch() && this.torchAnim < 0.01F
                 && !this.isHoldingUmbrella() && this.umbrellaAnim < 0.01F
+                && this.hatAnimation.getAnim() == com.noxisculture.entity.idle.NoxisHatAnimation.NONE
                 && dx * dx + dz * dz < 1.0E-4D;
         // Los dos gestos tranquilos nunca se pisan: el que empezó primero termina antes que el otro.
         boolean fascinated = this.isFascinated() || this.crystalFascination.isActive()
@@ -748,6 +770,7 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
         boolean withNature = this.natureAnimation.isBusy();
         // Saludos y descanso en compañía: la señal llega del servidor; acá solo se anima.
         this.socialAnimation.tick(this.getSocialAnim(), this.random);
+        this.hatAnimation.tick(this.entityData.get(HAT_ANIM));
         boolean withSocial = this.socialAnimation.isBusy();
         this.curiosity.tick(calm && !fascinated && !withNature && !withSocial, this.random);
         // Fascinación: la señal llega del servidor; acá solo se corta si se ve algo prioritario.

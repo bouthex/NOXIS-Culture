@@ -1,5 +1,6 @@
 package com.noxisculture.client.entity;
 
+import com.noxisculture.entity.idle.NoxisHatAnimation;
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartNames;
@@ -551,6 +552,10 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
             this.head.x = 0.0F;
             this.head.z = 0.0F;
         }
+        // ---- Sacarse / ponerse el sombrero (gesto compartido por todas las especies) ----
+        if (state.hatAnim != NoxisHatAnimation.NONE) {
+            this.applyHatAnimation(state.hatAnim, state.hatAnimTime);
+        }
         // ---- Sombrero o mechoncito ----
         this.hat.visible = state.hasHat;
         this.hairTuft.visible = !state.hasHat;
@@ -592,5 +597,35 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
             this.rightEar.visible = false;
             this.leftEar.visible = false;
         }
+    }
+
+    /**
+     * Sacarse o ponerse el sombrero: los bracitos suben a buscarlo, el sombrero sube de la
+     * cabeza con un bamboleo y se va hacia adelante y abajo hasta el piso (o al revés, desde el
+     * piso hasta acomodarse en la cabeza). Se suma encima de la pose que ya tenga.
+     */
+    private void applyHatAnimation(byte type, float t) {
+        float[] c = NoxisHatAnimation.curves(type, t);
+        float lift = c[0];
+        float carry = c[1];
+        float relax = c[2];
+        float wob = c[3];
+        float forward = NoxisHatAnimation.smooth(carry * 1.8F);              // primero hacia adelante
+        float down = NoxisHatAnimation.smooth((carry - 0.35F) / 0.65F);       // ...después hacia el piso
+        this.hat.y += -4.0F * lift * (1.0F - down) + 15.0F * down;
+        this.hat.z += -11.0F * forward;
+        this.hat.xRot += 0.25F * forward;
+        this.hat.zRot += wob;
+        float k = 1.0F - relax;
+        this.head.xRot += 0.35F * carry * k;                                  // agachadito para dejarlo/levantarlo
+        float up = lift * (1.0F - carry);
+        float rx = this.rightArm.xRot;
+        float rz = this.rightArm.zRot;
+        float lx = this.leftArm.xRot;
+        float lz = this.leftArm.zRot;
+        this.rightArm.xRot = Mth.lerp(k, rx, Mth.lerp(carry, Mth.lerp(lift, rx, -2.4F), -1.2F));
+        this.leftArm.xRot = Mth.lerp(k, lx, Mth.lerp(carry, Mth.lerp(lift, lx, -2.4F), -1.2F));
+        this.rightArm.zRot = Mth.lerp(k, rz, rz + 0.9F * up - 0.2F * carry);
+        this.leftArm.zRot = Mth.lerp(k, lz, lz - 0.9F * up + 0.2F * carry);
     }
 }
