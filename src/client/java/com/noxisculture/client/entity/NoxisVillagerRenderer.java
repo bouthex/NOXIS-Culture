@@ -12,9 +12,9 @@ public class NoxisVillagerRenderer extends MobRenderer<NoxisVillager, NoxisVilla
     public NoxisVillagerRenderer(EntityRendererProvider.Context context) {
         super(context, new NoxisVillagerModel(context.bakeLayer(ModModelLayers.NOXIS_VILLAGER)), 0.45F);
         this.addLayer(new NoxisVillagerEyesLayer(this));
-        // Brillo extra de los ojos al fascinarse con un cristal (usa una copia "solo ojos" del modelo).
+        // Brillo extra de los ojos al fascinarse con un cristal (copia del modelo que solo dibuja los ojitos).
         this.addLayer(new NoxisCrystalGlowLayer(this,
-                new NoxisVillagerModel(context.bakeLayer(ModModelLayers.NOXIS_VILLAGER), true)));
+                new NoxisVillagerModel(context.bakeLayer(ModModelLayers.NOXIS_VILLAGER), NoxisVillagerModel.PASS_GLOW_EYES)));
     }
 
     @Override
@@ -38,11 +38,10 @@ public class NoxisVillagerRenderer extends MobRenderer<NoxisVillager, NoxisVilla
         state.curiousFlick = entity.getCuriosity().getFlick(partialTick);
         state.crystalAmount = entity.getCrystalFascination().getAmount(partialTick);
         state.crystalGlow = entity.getCrystalFascination().getGlow(partialTick);
+        state.crystalCheer = entity.getCrystalFascination().getCheer(partialTick);
         state.crystalHop = entity.getCrystalFascination().getHop(partialTick);
         state.crystalTwitch = entity.getCrystalFascination().getTwitch(partialTick);
         state.crystalSide = entity.getCrystalFascination().getSide();
-        state.crystalYaw = entity.getCrystalFascination().getLookYaw();
-        state.crystalPitch = entity.getCrystalFascination().getLookPitch();
         state.restRising = !entity.isResting();
     }
 

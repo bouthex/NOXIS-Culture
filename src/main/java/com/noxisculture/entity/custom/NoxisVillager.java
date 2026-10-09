@@ -3,6 +3,8 @@ package com.noxisculture.entity.custom;
 import com.noxisculture.entity.idle.NoxisCrystalFascination;
 import com.noxisculture.entity.idle.NoxisCuriosity;
 import com.noxisculture.entity.cape.NoxisCapePhysics;
+import com.noxisculture.entity.ai.NoxisCrystalFascinationGoal;
+import com.noxisculture.entity.ai.NoxisFascinatable;
 import com.noxisculture.entity.ai.NoxisRestGoal;
 import com.noxisculture.entity.ai.NoxisRestful;
 import com.noxisculture.entity.ai.NoxisWorkAtTableGoal;
@@ -58,7 +60,7 @@ import org.jspecify.annotations.Nullable;
  * nos da gratis el menú de comercio vanilla, el guardado de ofertas y la
  * integración con TradeWithPlayerGoal, sin el sistema de profesiones/cerebro.
  */
-public class NoxisVillager extends AbstractVillager implements NoxisLightSource, NoxisRestful, NoxisWorker {
+public class NoxisVillager extends AbstractVillager implements NoxisLightSource, NoxisRestful, NoxisWorker, NoxisFascinatable {
     /** Puede reponer en su mesa como mucho cada medio día (~2 veces por día, como vanilla). */
     private static final long RESTOCK_INTERVAL_TICKS = 12_000L;
     /** Espera tras cerrar el menú antes de subir de nivel (vanilla: 40 ticks = 2 s). */
@@ -82,6 +84,9 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
     private static final float CAPE_CHANCE = 0.3F;
     private static final int CAPE_STYLES = 3;
     private static final EntityDataAccessor<Boolean> RESTING =
+            SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BOOLEAN);
+    /** true mientras mira fascinado un cristal (lo decide el servidor; el cliente anima). */
+    private static final EntityDataAccessor<Boolean> FASCINATED =
             SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BOOLEAN);
     private static final int HAPPY_AFTER_TRADE_TICKS = 60;
     /** ~1 vez por día de Minecraft (24000 ticks), con algo de azar. */
@@ -131,6 +136,7 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
         builder.define(RESTING, false);
         builder.define(UMBRELLA, false);
         builder.define(VARIANT, VARIANT_PLAIN);
+        builder.define(FASCINATED, false);
     }
 
     public NoxisMood getMood() {
@@ -166,9 +172,26 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
         return this.curiosity;
     }
 
-    /** Fascinación por los cristales (solo visual, cliente). */
+    /** Animación de la fascinación por los cristales (solo visual, cliente). */
     public NoxisCrystalFascination getCrystalFascination() {
         return this.crystalFascination;
+    }
+
+    // ---------------- Fascinación por los cristales (NoxisFascinatable) ----------------
+
+    public boolean isFascinated() {
+        return this.entityData.get(FASCINATED);
+    }
+
+    @Override
+    public boolean canBeFascinated() {
+        return this.getMood() == NoxisMood.NEUTRAL && !this.isTrading() && !this.isResting()
+                && !this.isHoldingTorch() && !this.isHoldingUmbrella();
+    }
+
+    @Override
+    public void setFascinated(boolean fascinated) {
+        this.entityData.set(FASCINATED, fascinated);
     }
 
     /** Física visual de la capa (solo se usa en el cliente). */
@@ -231,6 +254,7 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
         this.goalSelector.addGoal(2, new LookAtTradingPlayerGoal(this));
         this.goalSelector.addGoal(3, new NoxisRestGoal<>(this));
         this.goalSelector.addGoal(4, new NoxisWorkAtTableGoal<>(this, 0.45D));
+        this.goalSelector.addGoal(4, new NoxisCrystalFascinationGoal<>(this));
         this.goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 0.35D));
         this.goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 6.0F));
         this.goalSelector.addGoal(9, new RandomLookAroundGoal(this));
@@ -405,10 +429,25 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
                 && !this.isHoldingUmbrella() && this.umbrellaAnim < 0.01F
                 && dx * dx + dz * dz < 1.0E-4D;
         // Los dos gestos tranquilos nunca se pisan: el que empezó primero termina antes que el otro.
-        boolean fascinated = this.crystalFascination.isActive() || this.crystalFascination.getAmount(1.0F) > 0.01F;
+        boolean fascinated = this.isFascinated() || this.crystalFascination.isActive()
+                || this.crystalFascination.getAmount(1.0F) > 0.01F;
         this.curiosity.tick(calm && !fascinated, this.random);
-        boolean curious = this.curiosity.getAmount(1.0F) > 0.01F;
-        this.crystalFascination.tick(this, calm && (!curious || this.crystalFascination.isActive()), this.random);
+        // Fascinación: la señal llega del servidor; acá solo se corta si se ve algo prioritario.
+        boolean free = this.getMood() == NoxisMood.NEUTRAL && this.scaredAnim < 0.02F
+                && !this.isTrading() && !this.isResting() && !this.isHoldingTorch() && !this.isHoldingUmbrella();
+        this.crystalFascination.tick(this.isFascinated(), free, this.random);
+        // Chispitas doradas delante de la carita mientras le brillan los ojos (se ven de lejos).
+        if (this.crystalFascination.isActive() && this.crystalFascination.getGlow(1.0F) > 0.5F
+                && this.random.nextInt(5) == 0) {
+            double yaw = this.yHeadRot * Mth.DEG_TO_RAD;
+            double fx = -Math.sin(yaw) * 0.4D;
+            double fz = Math.cos(yaw) * 0.4D;
+            this.level().addParticle(ParticleTypes.WAX_ON,
+                    this.getX() + fx + (this.random.nextDouble() - 0.5D) * 0.7D,
+                    this.getY() + 0.55D + this.random.nextDouble() * 0.6D,
+                    this.getZ() + fz + (this.random.nextDouble() - 0.5D) * 0.7D,
+                    0.0D, 0.03D, 0.0D);
+        }
         NoxisMood mood = this.getMood();
         this.happyAnim = approach(this.happyAnim, mood == NoxisMood.HAPPY ? 1.0F : 0.0F);
         this.scaredAnim = approach(this.scaredAnim, mood == NoxisMood.SCARED ? 1.0F : 0.0F);

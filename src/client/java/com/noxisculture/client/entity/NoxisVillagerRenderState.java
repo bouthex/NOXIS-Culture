@@ -23,15 +23,13 @@ public class NoxisVillagerRenderState extends LivingEntityRenderState {
     public float curious;
     public float curiousSide = 1.0F;
     public float curiousFlick;
-    /** Fascinación por los cristales: cuánto mira (0..1), brillo extra de ojos, saltito, orejas. */
+    /** Fascinación por los cristales: pose (0..1), brillo extra de ojos, bracitos, saltito, orejas y lado. */
     public float crystalAmount;
     public float crystalGlow;
+    public float crystalCheer;
     public float crystalHop;
     public float crystalTwitch;
     public float crystalSide = 1.0F;
-    /** Hacia dónde está el cristal, relativo al cuerpo (radianes). */
-    public float crystalYaw;
-    public float crystalPitch;
     /** true mientras se está levantando (para no repetir el rebote del "plop" al revés). */
     public boolean restRising;
 }

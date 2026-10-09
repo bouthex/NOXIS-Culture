@@ -10,14 +10,14 @@ import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 
 /**
- * Brillo extra de los ojos durante la "fascinación por los cristales".
+ * Brillo mágico de los ojos durante la "fascinación por los cristales".
  *
  * <p>Reutiliza la MISMA textura emisiva de los ojos ({@code noxis_villager_eyes.png}, sin
- * cambios) y la dibuja otra vez encima, en modo aditivo (suma luz, como el brillo del creeper
- * cargado, pero quieto) y con una intensidad que sube, late suave y baja. Usa una copia del
- * modelo que solo muestra los ojitos, así no se ilumina nada más (ni la gema ni la capa).</p>
- *
- * <p>No toca {@link NoxisVillagerEyesLayer}: con brillo 0 esta capa no dibuja nada.</p>
+ * cambios) y la vuelve a dibujar encima en modo aditivo (suma luz, como el brillo del creeper
+ * cargado, pero quieto), con una intensidad que sube, late suave y baja:</p>
+ * <p>Los ojitos conservan su forma y su pupila. Usa una copia del modelo que solo muestra los
+ * ojos, así no se ilumina nada más (ni la gema ni la capa). Las chispitas doradas que lo
+ * acompañan las larga la entidad. No toca {@link NoxisVillagerEyesLayer}; con brillo 0 no dibuja nada.</p>
  */
 public class NoxisCrystalGlowLayer extends RenderLayer<NoxisVillagerRenderState, NoxisVillagerModel> {
     /** energySwirl con desplazamiento 0 = textura quieta, emisiva y aditiva. */
@@ -25,12 +25,8 @@ public class NoxisCrystalGlowLayer extends RenderLayer<NoxisVillagerRenderState,
             NoxisCulture.id("textures/entity/noxis_villager_eyes.png"), 0.0F, 0.0F);
     /** Luz máxima (cielo 15, bloque 15): el brillo no depende de la oscuridad. */
     private static final int FULL_BRIGHT = 0xF000F0;
-    /** Tono del brillo: dorado cálido. */
-    private static final float R = 1.0F;
-    private static final float G = 0.6F;
-    private static final float B = 0.4F;
-    /** Cuánta luz suma como máximo (1 = duplica): notable, sin exagerar. */
-    private static final float STRENGTH = 0.75F;
+    /** Dorado cálido e intenso (1 = duplica la luz de los ojos). */
+    private static final float[] COLOR = {1.0F, 0.75F, 0.5F};
 
     private final NoxisVillagerModel eyesModel;
 
@@ -43,14 +39,17 @@ public class NoxisCrystalGlowLayer extends RenderLayer<NoxisVillagerRenderState,
     @Override
     public void submit(PoseStack poseStack, SubmitNodeCollector collector, int light,
                        NoxisVillagerRenderState state, float yRot, float xRot) {
-        float glow = state.crystalGlow * STRENGTH;
+        float glow = state.crystalGlow;
         if (glow <= 0.01F) return;
-        int tint = 0xFF000000
-                | (channel(R * glow) << 16)
-                | (channel(G * glow) << 8)
-                | channel(B * glow);
         collector.order(2).submitModel(this.eyesModel, state, poseStack, GLOW,
-                FULL_BRIGHT, OverlayTexture.NO_OVERLAY, tint, null, 0, null);
+                FULL_BRIGHT, OverlayTexture.NO_OVERLAY, tint(COLOR, glow), null, 0, null);
+    }
+
+    private static int tint(float[] color, float glow) {
+        return 0xFF000000
+                | (channel(color[0] * glow) << 16)
+                | (channel(color[1] * glow) << 8)
+                | channel(color[2] * glow);
     }
 
     private static int channel(float value) {

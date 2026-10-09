@@ -43,24 +43,42 @@ public final class NoxisMoodAnimator {
      * Se suma ENCIMA de la pose actual, así que con curious = 0 no cambia nada.
      */
     /**
-     * Fascinación por un cristal (gesto aditivo, compartido por todas las especies): la cabeza
-     * gira hacia el cristal y lo mira, se ladea con ternura, las dos orejitas se paran hacia
-     * adelante y cada tanto una da un golpecito.
+     * Fascinación por un cristal (gesto aditivo, compartido por todas las especies). La cabeza ya
+     * mira el cristal (eso lo hace el servidor con su LookControl); acá se ladea con ternura, sube
+     * un poquito el mentón ("¡qué lindo!"), las orejitas se paran hacia adelante y dan golpecitos.
      */
     public static void applyFascination(ModelPart head, ModelPart rightEar, ModelPart leftEar,
-                                        float amount, float yaw, float pitch, float side, float twitch) {
+                                        float amount, float side, float twitch, float hop) {
         if (amount <= 0.0F) return;
-        head.yRot = Mth.lerp(amount, head.yRot, yaw);
-        head.xRot = Mth.lerp(amount, head.xRot, pitch - 0.06F);   // apenas hacia arriba: "¡qué lindo!"
-        head.zRot += 0.2F * amount * side;
-        // Orejitas paradas y hacia adelante, atentas.
-        rightEar.xRot -= 0.3F * amount;
-        leftEar.xRot -= 0.3F * amount;
-        rightEar.zRot += 0.15F * amount;
-        leftEar.zRot -= 0.15F * amount;
+        head.zRot += 0.28F * amount * side;
+        head.xRot -= 0.1F * amount;
+        // Rebote cartoon de la cabecita: se hunde al agacharse/aterrizar y se estira en el aire.
+        head.xRot += 0.18F * Math.min(0.0F, hop) * -1.0F;
+        // Orejitas bien paradas y hacia adelante, atentas.
+        rightEar.xRot -= 0.35F * amount;
+        leftEar.xRot -= 0.35F * amount;
+        rightEar.zRot += 0.2F * amount;
+        leftEar.zRot -= 0.2F * amount;
         // Golpecito alternado (+ derecha, - izquierda).
         if (twitch > 0.0F) rightEar.zRot -= 0.35F * twitch;
         if (twitch < 0.0F) leftEar.zRot -= 0.35F * twitch;
+    }
+
+    /**
+     * Festejo de la fascinación: bracitos arriba y abiertos, sacudiéndose de alegría y la colita
+     * moviéndose rápido de lado a lado (solo de costado: nunca sube hacia la nuca).
+     * Los ángulos de entrada son los que ya calculó el modelo; {@code cheer} los mezcla.
+     */
+    public static void applyCheer(ModelPart rightArm, ModelPart leftArm, ModelPart tail, float cheer, float age) {
+        if (cheer <= 0.0F) return;
+        float shake = Mth.sin(age * 1.1F) * 0.32F;            // sacudón rápido, como un bailecito
+        float bob = Mth.sin(age * 0.55F) * 0.15F;
+        // Bien abiertos y hacia adelante (si suben más, la cabezota los tapa).
+        rightArm.zRot = Mth.lerp(cheer, rightArm.zRot, 1.55F + shake);
+        leftArm.zRot = Mth.lerp(cheer, leftArm.zRot, -1.55F + shake);
+        rightArm.xRot = Mth.lerp(cheer, rightArm.xRot, -0.75F + bob);
+        leftArm.xRot = Mth.lerp(cheer, leftArm.xRot, -0.75F - bob);
+        tail.yRot = Mth.lerp(cheer, tail.yRot, Mth.sin(age * 0.9F) * 0.55F);
     }
 
     public static void applyCuriosity(ModelPart head, ModelPart rightEar, ModelPart leftEar,
