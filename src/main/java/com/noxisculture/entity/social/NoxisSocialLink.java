@@ -20,6 +20,8 @@ public final class NoxisSocialLink {
     private @Nullable PathfinderMob partner;
     private @Nullable Kind kind;
     private boolean leader;
+    /** Descanso en compañía: el compañero que lo invitó a acostarse a su lado (o null). */
+    private @Nullable PathfinderMob inviter;
 
     /** Desde cuándo puede volver a saludar (reloj del mundo). 0 = todavía no se sorteó. */
     private long nextGreetTime;
@@ -49,7 +51,21 @@ public final class NoxisSocialLink {
         this.leader = leader;
     }
 
+    /** El compañero (que ya se acostó) lo invita a dormir a su lado. */
+    public void invite(PathfinderMob from) {
+        this.inviter = from;
+    }
+
+    public @Nullable PathfinderMob getInviter() {
+        return this.inviter;
+    }
+
+    public void clearInvite() {
+        this.inviter = null;
+    }
+
     public void clear() {
+        this.inviter = null;
         this.partner = null;
         this.kind = null;
         this.leader = false;

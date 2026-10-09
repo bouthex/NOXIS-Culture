@@ -4,57 +4,54 @@ import com.noxisculture.entity.social.NoxisSocialAction;
 import com.noxisculture.entity.social.NoxisSocialLink;
 import java.util.EnumSet;
 import net.minecraft.util.Mth;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Descanso en compañía (servidor). Cuando a un Noxis le toca descansar y tiene un compañero
- * tranquilo cerca, a veces (en vez de descansar solo) le contagia el sueño:
+ * Descanso en compañía (servidor). Cuando a un Noxis le toca descansar, ANTES de dormirse busca
+ * compañía, en este orden:
  * <ol>
- *   <li>Cabecea y bosteza; el otro lo mira y, tras una pausa, bosteza también.</li>
- *   <li>El compañero se acerca y se pone a su lado.</li>
- *   <li>Se sientan juntos (el mismo descanso de siempre) y se apoyan uno en el otro.</li>
- *   <li>Bostezan casi a la vez, descansan un rato y se levantan con calma.</li>
+ *   <li><b>Alguien que ya duerme solo:</b> camina hasta su lado y se duerme apoyado en él.</li>
+ *   <li><b>Si no hay:</b> un compañero tranquilo que pueda descansar. Cabecea y bosteza, el otro lo
+ *       mira y se contagia; él se sienta y el compañero viene a acomodarse a su lado.</li>
+ *   <li><b>Si no encuentra a nadie</b> tras unos segundos de buscar: duerme solo, con el descanso
+ *       individual de siempre ({@link NoxisRestGoal}).</li>
  * </ol>
  *
- * <p><b>Sumarse a alguien que ya duerme solo:</b> si cerca hay un Noxis descansando solo, el
- * que tiene sueño se acerca, se acomoda a su lado y se duermen juntos. Nunca más de dos: el
- * que duerme queda reservado apenas lo eligen, así ningún tercero puede sumarse. Si todos los
- * que duermen ya tienen pareja, el nuevo duerme solo con su descanso de siempre. Si uno de
- * los dos se despierta, el otro sigue durmiendo solo.</p>
+ * <p>Parejas de a dos como máximo: apenas uno elige a otro, los dos quedan reservados entre sí y
+ * nadie más puede elegirlos. Cada uno duerme con SU PROPIO tiempo de descanso y se despierta por
+ * su cuenta: el que se despierta primero se levanta y sigue con su vida; el otro sigue durmiendo,
+ * la pareja se libera y otro Noxis puede venir a acompañarlo.</p>
  *
- * <p>Usa el descanso individual que ya existe ({@link NoxisRestful}): el mismo estado de
- * descanso, la misma animación y el mismo tiempo de espera; no lo reemplaza ni lo duplica.
- * Solo una pareja por zona. Si a cualquiera de los dos lo interrumpe algo importante, se
- * cancela para ambos y vuelven a lo normal.</p>
+ * <p>Usa el descanso que ya existe ({@link NoxisRestful}): el mismo estado, la misma animación,
+ * la misma duración y el mismo tiempo de espera.</p>
  */
 public class NoxisCompanionRestGoal<T extends PathfinderMob & NoxisSocial & NoxisRestful> extends Goal {
-    private static final double RADIUS = 5.0D;
-    private static final double ZONE = 16.0D;
-    private static final double SIDE_DISTANCE = 0.78D;   // bloques entre los dos al sentarse
+    private static final double SEARCH_RADIUS = 8.0D;    // hasta dónde busca compañía (bloques)
+    private static final int SEARCH_TICKS = 100;          // 5 s buscando antes de dormir solo
+    private static final int SOLO_WINDOW = 400;           // después, 20 s para dormirse solo
+    private static final double SIDE_DISTANCE = 0.78D;    // bloques entre los dos al acostarse
     private static final int DROWSY_TICKS = 56;
-    private static final int APPROACH_TIMEOUT = 160;
+    private static final int WALK_TIMEOUT = 200;          // 10 s para llegar al lado del otro
     private static final int MIN_REST = 400;
     private static final int EXTRA_REST = 300;
     private static final int WAKE_TICKS = 24;
 
-    private enum Phase { DROWSY, APPROACH, JOIN_APPROACH, REST, WAKE, DONE }
-    private static final double JOIN_RADIUS = 8.0D;
-    private static final int JOIN_TIMEOUT = 200;
+    private enum Phase { SEARCH, DROWSY, WALK, REST, WAKE, DONE }
 
     private final T mob;
-    private @Nullable PathfinderMob partner;
     private Phase phase = Phase.DONE;
     private int ticks;
     private int restLength;
-    private boolean partnerOnRight;
+    /** Su compañero de siesta (o null si duerme solo). */
+    private @Nullable PathfinderMob partner;
+    /** true: camina hasta el compañero, que ya está dormido (o se está por dormir). */
+    private boolean goingToPartner;
     private @Nullable Vec3 spot;
-    /** true: se suma a alguien que ya dormía solo (no lo despierta al terminar). */
-    private boolean joining;
-    /** true si este Noxis llegó a acostarse (para el tiempo de espera del descanso). */
+    /** De qué lado le queda el compañero una vez acostados. */
+    private boolean partnerOnRight;
     private boolean slept;
 
     public NoxisCompanionRestGoal(T mob) {
@@ -62,26 +59,194 @@ public class NoxisCompanionRestGoal<T extends PathfinderMob & NoxisSocial & Noxi
         this.setFlags(EnumSet.of(Flag.MOVE, Flag.JUMP, Flag.LOOK));
     }
 
+    // ------------------------------------------------------------------ empezar
+
     @Override
     public boolean canUse() {
-        RandomSource random = this.mob.getRandom();
-        // Mismas condiciones que el descanso de siempre, y solo a veces en compañía.
-        if (!this.mob.wantsToRest() || !this.mob.onGround() || this.mob.isInWater()) return false;
-        if (random.nextInt(20) != 0) return false;
-        if (this.mob.getSocialLink().isBusy() || !this.mob.canSocialize()) return false;
-        // 1) ¿Hay alguien durmiendo SOLO cerca? Se acerca y se duermen juntos.
-        this.partner = this.findLonelySleeper();
-        if (this.partner != null) {
-            this.joining = true;
+        NoxisSocialLink link = this.mob.getSocialLink();
+        // Lo invitó un compañero con sueño: va a acostarse a su lado.
+        PathfinderMob inviter = link.getInviter();
+        if (inviter != null) {
+            this.partner = inviter;
+            this.goingToPartner = true;
             return true;
         }
-        // 2) Si no, a veces contagia el sueño a un compañero despierto (como antes).
-        this.joining = false;
-        if (random.nextInt(2) != 0) return false;
-        if (NoxisSocialLink.zoneBusy(this.mob, ZONE, NoxisSocialLink.Kind.REST)) return false;
-        this.partner = NoxisSocialLink.findPartner(this.mob, RADIUS,
-                e -> e instanceof NoxisRestful r && r.isSafeToRest() && e.onGround() && !e.isInWater());
-        return this.partner != null;
+        // Le toca descansar: primero busca compañía (salvo que ya haya buscado y no encontró).
+        if (!this.mob.wantsToRest() || this.mob.mayRestAlone()) return false;
+        if (!this.mob.onGround() || this.mob.isInWater() || this.mob.getRandom().nextInt(20) != 0) return false;
+        if (link.isBusy() || !this.mob.canSocialize()) return false;
+        this.partner = null;
+        this.goingToPartner = false;
+        return true;
+    }
+
+    @Override
+    public void start() {
+        this.ticks = 0;
+        this.slept = false;
+        this.spot = null;
+        this.restLength = MIN_REST + this.mob.getRandom().nextInt(EXTRA_REST);
+        NoxisSocialLink link = this.mob.getSocialLink();
+        if (this.goingToPartner && this.partner != null) {
+            link.clearInvite();
+            this.planSpotNextTo(this.partner);
+            this.phase = Phase.WALK;
+        } else {
+            this.phase = Phase.SEARCH;
+        }
+    }
+
+    @Override
+    public boolean canContinueToUse() {
+        if (this.phase == Phase.DONE || this.mob.hurtTime != 0) return false;
+        return this.mob.isSafeForSocial();
+    }
+
+    @Override
+    public boolean requiresUpdateEveryTick() {
+        return true;
+    }
+
+    // ------------------------------------------------------------------ cada tick
+
+    @Override
+    public void tick() {
+        this.ticks++;
+        this.checkPartner();
+        switch (this.phase) {
+            case SEARCH -> this.tickSearch();
+            case DROWSY -> this.tickDrowsy();
+            case WALK -> this.tickWalk();
+            case REST -> this.tickRest();
+            case WAKE -> {
+                this.mob.getNavigation().stop();
+                if (this.ticks >= WAKE_TICKS) this.phase = Phase.DONE;
+            }
+            case DONE -> { }
+        }
+    }
+
+    /** 1) busca alguien dormido solo; 2) si no, un compañero tranquilo; 3) si no, dormirá solo. */
+    private void tickSearch() {
+        this.mob.getNavigation().stop();
+        if (this.ticks % 20 == 1) {
+            PathfinderMob sleeper = this.findLonelySleeper();
+            if (sleeper != null) {
+                this.reserve(sleeper);
+                this.goingToPartner = true;
+                this.planSpotNextTo(sleeper);
+                this.enter(Phase.WALK);
+                return;
+            }
+            PathfinderMob awake = NoxisSocialLink.findPartner(this.mob, SEARCH_RADIUS,
+                    e -> e instanceof NoxisRestful r && r.isSafeToRest() && e.onGround() && !e.isInWater()
+                            && ((NoxisSocial) e).getSocialLink().getInviter() == null
+                            && this.mob.getNavigation().createPath(e, 1) != null);
+            if (awake != null) {
+                this.reserve(awake);
+                awake.getNavigation().stop();
+                this.mob.setSocialAnim(NoxisSocialAction.REST_DROWSY);
+                ((NoxisSocial) awake).setSocialAnim(NoxisSocialAction.REST_WATCH);
+                this.enter(Phase.DROWSY);
+                return;
+            }
+        }
+        if (this.ticks >= SEARCH_TICKS) {
+            // Nadie disponible: duerme solo, con el descanso de siempre.
+            this.mob.allowRestAlone(SOLO_WINDOW);
+            this.phase = Phase.DONE;
+        }
+    }
+
+    /** Le agarra sueño; el compañero lo mira, se contagia y después viene a acostarse a su lado. */
+    private void tickDrowsy() {
+        PathfinderMob other = this.partner;
+        if (other == null) {                      // el compañero se fue: busca otra vez desde cero
+            this.mob.setSocialAnim(NoxisSocialAction.NONE);
+            this.enter(Phase.SEARCH);
+            return;
+        }
+        this.mob.getNavigation().stop();
+        other.getNavigation().stop();
+        this.mob.getLookControl().setLookAt(other, 6.0F, 20.0F);
+        other.getLookControl().setLookAt(this.mob, 20.0F, 30.0F);
+        if (this.ticks == 8) this.mob.playYawn();
+        if (this.ticks == 46) ((NoxisSocial) other).playYawn();
+        if (this.ticks >= DROWSY_TICKS) {
+            // Se acuesta acá mismo; el compañero (con SU propio descanso) viene a su lado.
+            this.mob.setSocialAnim(NoxisSocialAction.NONE);
+            ((NoxisSocial) other).setSocialAnim(NoxisSocialAction.NONE);
+            ((NoxisSocial) other).getSocialLink().invite(this.mob);
+            this.fallAsleep();
+            this.enter(Phase.REST);
+        }
+    }
+
+    /** Camina hasta el lado del compañero (con navegación, con límite de tiempo) y se acuesta. */
+    private void tickWalk() {
+        PathfinderMob other = this.partner;
+        if (other == null || this.spot == null) {   // ya no está (se despertó / se fue): desiste
+            this.phase = Phase.DONE;
+            return;
+        }
+        this.mob.getLookControl().setLookAt(other, 10.0F, 20.0F);
+        Vec3 target = this.spot;
+        double dx = target.x - this.mob.getX();
+        double dz = target.z - this.mob.getZ();
+        double d2 = dx * dx + dz * dz;
+        if (d2 < 0.2D * 0.2D || (this.ticks > 40 && d2 < 0.45D * 0.45D)) {
+            this.mob.getNavigation().stop();
+            face(this.mob, other.getYRot());
+            this.mob.playYawn();
+            this.fallAsleep();
+            // Se apoyan uno en el otro.
+            this.mob.setSocialAnim(this.partnerOnRight ? NoxisSocialAction.REST_LEAN_RIGHT : NoxisSocialAction.REST_LEAN_LEFT);
+            ((NoxisSocial) other).setSocialAnim(this.partnerOnRight ? NoxisSocialAction.REST_LEAN_LEFT : NoxisSocialAction.REST_LEAN_RIGHT);
+            this.enter(Phase.REST);
+        } else if (this.ticks >= WALK_TIMEOUT) {
+            this.phase = Phase.DONE;                                   // no llegó: sigue con lo suyo
+        } else if (this.ticks % 10 == 1 || this.mob.getNavigation().isDone()) {
+            if (!this.mob.getNavigation().moveTo(target.x, target.y, target.z, 0.3D)) {
+                this.mob.getMoveControl().setWantedPosition(target.x, target.y, target.z, 0.3D);
+            }
+        }
+    }
+
+    /** Duerme con su propio tiempo; si el compañero se despierta antes, sigue durmiendo solo. */
+    private void tickRest() {
+        this.mob.getNavigation().stop();
+        PathfinderMob other = this.partner;
+        if (other != null && other instanceof NoxisRestful r && r.isResting()) {
+            face(this.mob, other.getYRot());
+            if (this.ticks == 40) ((NoxisSocial) other).playYawn();
+        }
+        if (this.ticks > 60 && this.mob.getRandom().nextInt(400) == 0) this.mob.playYawn();
+        if (this.ticks >= this.restLength) {
+            // Se despierta él solo: libera la pareja SIN despertar al otro.
+            this.releasePartner();
+            this.mob.setResting(false);
+            this.mob.setSocialAnim(NoxisSocialAction.NONE);
+            this.enter(Phase.WAKE);
+        }
+    }
+
+    // ------------------------------------------------------------------ pareja
+
+    /**
+     * ¿Sigue la pareja? Si el compañero desapareció, se despertó (estando este ya acostado y el
+     * otro ya acostado también) o soltó el enlace, se libera la pareja.
+     */
+    private void checkPartner() {
+        PathfinderMob other = this.partner;
+        if (other == null) return;
+        boolean linked = other.isAlive() && other instanceof NoxisSocial s && s.getSocialLink().isLinkedWith(this.mob);
+        // Si iba hacia uno que ya dormía, ese tiene que seguir durmiendo.
+        boolean sleeperAwake = this.goingToPartner && this.phase == Phase.WALK
+                && other instanceof NoxisRestful r && !r.isResting();
+        if (!linked || sleeperAwake) {
+            this.releasePartner();
+            if (this.phase == Phase.REST) this.mob.setSocialAnim(NoxisSocialAction.NONE);
+        }
     }
 
     /** Un Noxis que ya duerme y está SOLO (sin pareja ni reserva), al que se pueda llegar. */
@@ -89,7 +254,7 @@ public class NoxisCompanionRestGoal<T extends PathfinderMob & NoxisSocial & Noxi
         PathfinderMob best = null;
         double bestDist = Double.MAX_VALUE;
         for (PathfinderMob e : this.mob.level().getEntitiesOfClass(PathfinderMob.class,
-                this.mob.getBoundingBox().inflate(JOIN_RADIUS, 2.0D, JOIN_RADIUS),
+                this.mob.getBoundingBox().inflate(SEARCH_RADIUS, 2.0D, SEARCH_RADIUS),
                 e -> e != this.mob && e.isAlive() && e instanceof NoxisRestful r && r.isResting()
                         && e instanceof NoxisSocial s && !s.getSocialLink().isBusy() && s.isSafeForSocial())) {
             double d = e.distanceToSqr(this.mob);
@@ -101,199 +266,14 @@ public class NoxisCompanionRestGoal<T extends PathfinderMob & NoxisSocial & Noxi
         return best;
     }
 
-    @Override
-    public void start() {
-        PathfinderMob other = this.partner;
-        if (other == null) return;
+    /** Los dos quedan reservados entre sí: nadie más puede elegirlos (máximo dos por pareja). */
+    private void reserve(PathfinderMob other) {
+        this.partner = other;
         this.mob.getSocialLink().link(other, NoxisSocialLink.Kind.REST, true);
         ((NoxisSocial) other).getSocialLink().link(this.mob, NoxisSocialLink.Kind.REST, false);
-        this.ticks = 0;
-        this.slept = false;
-        this.restLength = MIN_REST + this.mob.getRandom().nextInt(EXTRA_REST);
-        if (this.joining) {
-            // Reservado: desde ya nadie más puede sumarse a ese que duerme.
-            Vec3 right = rightOf(other.getYRot());
-            Vec3 toMe = this.mob.position().subtract(other.position());
-            boolean meOnItsRight = toMe.x * right.x + toMe.z * right.z >= 0.0D;
-            this.spot = other.position().add(right.scale(meOnItsRight ? SIDE_DISTANCE : -SIDE_DISTANCE));
-            this.partnerOnRight = !meOnItsRight;           // al acostarme, él queda del otro lado
-            this.phase = Phase.JOIN_APPROACH;
-            return;
-        }
-        this.mob.getNavigation().stop();
-        other.getNavigation().stop();
-        this.phase = Phase.DROWSY;
-        this.mob.setSocialAnim(NoxisSocialAction.REST_DROWSY);
-        ((NoxisSocial) other).setSocialAnim(NoxisSocialAction.REST_WATCH);
     }
 
-    @Override
-    public boolean canContinueToUse() {
-        PathfinderMob other = this.partner;
-        if (this.joining) {
-            // Si el compañero se despierta, este sigue durmiendo solo hasta terminar.
-            return this.phase != Phase.DONE && this.mob.isSafeForSocial() && this.mob.hurtTime == 0
-                    && (other != null || this.phase == Phase.REST || this.phase == Phase.WAKE);
-        }
-        return this.phase != Phase.DONE && other != null && other.isAlive()
-                && other instanceof NoxisSocial s && s.getSocialLink().isLinkedWith(this.mob)
-                && this.mob.isSafeForSocial() && s.isSafeForSocial()
-                && this.mob.hurtTime == 0 && other.hurtTime == 0
-                && this.mob.distanceToSqr(other) < 100.0D;
-    }
-
-    @Override
-    public boolean requiresUpdateEveryTick() {
-        return true;
-    }
-
-    @Override
-    public void tick() {
-        if (this.joining) {
-            this.tickJoin();
-            return;
-        }
-        PathfinderMob other = this.partner;
-        if (other == null) return;
-        NoxisSocial otherSocial = (NoxisSocial) other;
-        this.ticks++;
-        switch (this.phase) {
-            case DROWSY -> {
-                // Le agarra sueño: cabecea y bosteza. El otro lo mira... y se contagia.
-                this.mob.getNavigation().stop();
-                other.getNavigation().stop();
-                this.mob.getLookControl().setLookAt(other, 6.0F, 20.0F);
-                other.getLookControl().setLookAt(this.mob, 20.0F, 30.0F);
-                if (this.ticks == 8) this.mob.playYawn();
-                if (this.ticks == 46) otherSocial.playYawn();
-                if (this.ticks >= DROWSY_TICKS) {
-                    // El compañero se pone al lado, del lado en el que ya estaba.
-                    Vec3 right = rightOf(this.mob.getYRot());
-                    Vec3 toOther = other.position().subtract(this.mob.position());
-                    this.partnerOnRight = toOther.x * right.x + toOther.z * right.z >= 0.0D;
-                    this.spot = this.mob.position().add(right.scale(this.partnerOnRight ? SIDE_DISTANCE : -SIDE_DISTANCE));
-                    this.enter(Phase.APPROACH);
-                }
-            }
-            case APPROACH -> {
-                this.mob.getNavigation().stop();
-                this.mob.getLookControl().setLookAt(other, 10.0F, 20.0F);
-                Vec3 target = this.spot;
-                if (target == null) { this.phase = Phase.DONE; return; }
-                double dx = target.x - other.getX();
-                double dz = target.z - other.getZ();
-                if (dx * dx + dz * dz < 0.2D * 0.2D || (this.ticks > 30 && dx * dx + dz * dz < 0.45D * 0.45D)) {
-                    other.getNavigation().stop();
-                    // Se sientan juntos: el MISMO descanso de siempre para los dos.
-                    this.mob.setResting(true);
-                    ((NoxisRestful) other).setResting(true);
-                    this.slept = true;
-                    this.mob.setSocialAnim(this.partnerOnRight ? NoxisSocialAction.REST_LEAN_RIGHT : NoxisSocialAction.REST_LEAN_LEFT);
-                    otherSocial.setSocialAnim(this.partnerOnRight ? NoxisSocialAction.REST_LEAN_LEFT : NoxisSocialAction.REST_LEAN_RIGHT);
-                    this.enter(Phase.REST);
-                } else if (this.ticks >= APPROACH_TIMEOUT) {
-                    this.phase = Phase.DONE;                    // no pudo acomodarse: lo dejan
-                } else if (this.ticks % 10 == 1 || other.getNavigation().isDone()) {
-                    if (!other.getNavigation().moveTo(target.x, target.y, target.z, 0.3D)) {
-                        // Muy cerquita: un pasito directo.
-                        other.getMoveControl().setWantedPosition(target.x, target.y, target.z, 0.3D);
-                    }
-                }
-            }
-            case REST -> {
-                this.mob.getNavigation().stop();
-                other.getNavigation().stop();
-                // Mirando para el mismo lado, uno al lado del otro.
-                float yaw = this.mob.getYRot();
-                face(this.mob, yaw);
-                face(other, yaw);
-                // Bostezan casi a la vez (con un pequeño desfase), y alguna vez más mientras descansan.
-                if (this.ticks == 30) this.mob.playYawn();
-                if (this.ticks == 38) otherSocial.playYawn();
-                if (this.ticks > 60 && this.mob.getRandom().nextInt(400) == 0) {
-                    (this.mob.getRandom().nextBoolean() ? (NoxisSocial) this.mob : otherSocial).playYawn();
-                }
-                if (this.ticks >= this.restLength) {
-                    this.mob.setResting(false);
-                    ((NoxisRestful) other).setResting(false);
-                    this.mob.setSocialAnim(NoxisSocialAction.NONE);
-                    otherSocial.setSocialAnim(NoxisSocialAction.NONE);
-                    this.enter(Phase.WAKE);
-                }
-            }
-            case JOIN_APPROACH -> { }
-            case WAKE -> {
-                // Se levantan con calma antes de volver a lo suyo.
-                this.mob.getNavigation().stop();
-                other.getNavigation().stop();
-                if (this.ticks >= WAKE_TICKS) this.phase = Phase.DONE;
-            }
-            case DONE -> { }
-        }
-    }
-
-    /** Sumarse a alguien que ya dormía solo. */
-    private void tickJoin() {
-        this.ticks++;
-        PathfinderMob other = this.partner;
-        // ¿Se despertó (o desapareció) el compañero? Se libera la pareja; este sigue solo.
-        if (other != null && (!other.isAlive() || !(other instanceof NoxisRestful r) || !r.isResting()
-                || !((NoxisSocial) other).getSocialLink().isLinkedWith(this.mob))) {
-            this.releasePartner();
-            other = null;
-            if (this.phase == Phase.JOIN_APPROACH) {   // todavía no se había acostado: desiste
-                this.phase = Phase.DONE;
-                return;
-            }
-            this.mob.setSocialAnim(NoxisSocialAction.NONE);
-        }
-        switch (this.phase) {
-            case JOIN_APPROACH -> {
-                if (other == null || this.spot == null) { this.phase = Phase.DONE; return; }
-                this.mob.getLookControl().setLookAt(other, 10.0F, 20.0F);
-                Vec3 target = this.spot;
-                double dx = target.x - this.mob.getX();
-                double dz = target.z - this.mob.getZ();
-                double d2 = dx * dx + dz * dz;
-                if (d2 < 0.2D * 0.2D || (this.ticks > 40 && d2 < 0.45D * 0.45D)) {
-                    this.mob.getNavigation().stop();
-                    // Se acomoda a su lado, bosteza y se duerme apoyado en él.
-                    face(this.mob, other.getYRot());
-                    this.mob.setResting(true);
-                    this.slept = true;
-                    this.mob.playYawn();
-                    this.mob.setSocialAnim(this.partnerOnRight ? NoxisSocialAction.REST_LEAN_RIGHT : NoxisSocialAction.REST_LEAN_LEFT);
-                    ((NoxisSocial) other).setSocialAnim(this.partnerOnRight ? NoxisSocialAction.REST_LEAN_LEFT : NoxisSocialAction.REST_LEAN_RIGHT);
-                    this.enter(Phase.REST);
-                } else if (this.ticks >= JOIN_TIMEOUT) {
-                    this.phase = Phase.DONE;                    // no llegó: duerme solo otro día
-                } else if (this.ticks % 10 == 1 || this.mob.getNavigation().isDone()) {
-                    if (!this.mob.getNavigation().moveTo(target.x, target.y, target.z, 0.3D)) {
-                        this.mob.getMoveControl().setWantedPosition(target.x, target.y, target.z, 0.3D);
-                    }
-                }
-            }
-            case REST -> {
-                this.mob.getNavigation().stop();
-                if (other != null) face(this.mob, other.getYRot());
-                if (this.ticks == 40 && other != null) ((NoxisSocial) other).playYawn();
-                if (this.ticks > 60 && this.mob.getRandom().nextInt(400) == 0) this.mob.playYawn();
-                if (this.ticks >= this.restLength) {
-                    this.mob.setResting(false);
-                    this.mob.setSocialAnim(NoxisSocialAction.NONE);
-                    this.releasePartner();
-                    this.enter(Phase.WAKE);
-                }
-            }
-            case WAKE -> {
-                this.mob.getNavigation().stop();
-                if (this.ticks >= WAKE_TICKS) this.phase = Phase.DONE;
-            }
-            default -> this.phase = Phase.DONE;
-        }
-    }
-
-    /** Suelta la pareja sin despertarla (sigue durmiendo sola con su descanso de siempre). */
+    /** Suelta la pareja sin despertar a nadie: el otro sigue con lo suyo (o durmiendo solo). */
     private void releasePartner() {
         PathfinderMob other = this.partner;
         if (other instanceof NoxisSocial s && s.getSocialLink().isLinkedWith(this.mob)) {
@@ -302,6 +282,19 @@ public class NoxisCompanionRestGoal<T extends PathfinderMob & NoxisSocial & Noxi
         }
         this.partner = null;
         this.mob.getSocialLink().clear();
+    }
+
+    private void planSpotNextTo(PathfinderMob other) {
+        Vec3 right = rightOf(other.getYRot());
+        Vec3 toMe = this.mob.position().subtract(other.position());
+        boolean meOnItsRight = toMe.x * right.x + toMe.z * right.z >= 0.0D;
+        this.spot = other.position().add(right.scale(meOnItsRight ? SIDE_DISTANCE : -SIDE_DISTANCE));
+        this.partnerOnRight = !meOnItsRight;        // al acostarme mirando igual, el otro queda del otro lado
+    }
+
+    private void fallAsleep() {
+        this.mob.setResting(true);
+        this.slept = true;
     }
 
     private void enter(Phase next) {
@@ -322,35 +315,18 @@ public class NoxisCompanionRestGoal<T extends PathfinderMob & NoxisSocial & Noxi
 
     @Override
     public void stop() {
-        if (this.joining) {
-            this.releasePartner();
-            this.mob.setResting(false);
-            this.mob.setSocialAnim(NoxisSocialAction.NONE);
-            this.mob.getSocialLink().clear();
-            if (this.slept) this.mob.onRestFinished();
-            this.spot = null;
-            this.phase = Phase.DONE;
-            this.joining = false;
-            return;
-        }
         PathfinderMob other = this.partner;
-        // Termina (o se cancela) para los dos, de forma segura.
+        // Si todavía estaba invitando a alguien que no llegó a acostarse, retira la invitación.
+        if (other instanceof NoxisSocial s && s.getSocialLink().getInviter() == this.mob) {
+            s.getSocialLink().clearInvite();
+        }
+        this.releasePartner();
         this.mob.setResting(false);
         this.mob.setSocialAnim(NoxisSocialAction.NONE);
-        this.mob.getSocialLink().clear();
-        this.mob.onRestFinished();
-        if (other instanceof NoxisSocial s) {
-            if (s.getSocialLink().isLinkedWith(this.mob)) {
-                s.getSocialLink().clear();
-                s.setSocialAnim(NoxisSocialAction.NONE);
-            }
-            if (other instanceof NoxisRestful r) {
-                r.setResting(false);
-                r.onRestFinished();
-            }
-        }
-        this.partner = null;
+        if (this.slept) this.mob.onRestFinished();     // mismo tiempo de espera que el descanso de siempre
         this.spot = null;
         this.phase = Phase.DONE;
+        this.goingToPartner = false;
+        this.slept = false;
     }
 }

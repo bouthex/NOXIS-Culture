@@ -23,20 +23,22 @@ public class NoxisSocialFollowGoal<T extends PathfinderMob & NoxisSocial> extend
     @Override
     public boolean canUse() {
         NoxisSocialLink link = this.mob.getSocialLink();
-        return link.isBusy() && !link.isLeader();
+        return link.isBusy() && !link.isLeader() && link.getInviter() == null;
     }
 
     @Override
     public boolean canContinueToUse() {
         NoxisSocialLink link = this.mob.getSocialLink();
         PathfinderMob partner = link.getPartner();
-        return link.isBusy() && !link.isLeader() && partner != null && partner.isAlive()
+        return link.isBusy() && !link.isLeader() && link.getInviter() == null && partner != null && partner.isAlive()
                 && partner instanceof NoxisSocial s && s.getSocialLink().isLinkedWith(this.mob)
                 && this.mob.isSafeForSocial();
     }
 
     @Override
     public void stop() {
+        // Lo invitaron a dormir al lado: no suelta nada, sigue su propio descanso en compañía.
+        if (this.mob.getSocialLink().getInviter() != null) return;
         // Lo interrumpieron (o terminó): suelta el enlace; el que guía se entera y termina.
         this.mob.getSocialLink().clear();
         this.mob.setSocialAnim(NoxisSocialAction.NONE);

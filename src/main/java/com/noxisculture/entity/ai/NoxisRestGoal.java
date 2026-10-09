@@ -24,7 +24,7 @@ public class NoxisRestGoal<T extends PathfinderMob & NoxisRestful> extends Goal 
 
     @Override
     public boolean canUse() {
-        return this.mob.wantsToRest() && this.mob.onGround() && !this.mob.isInWater()
+        return this.mob.wantsToRest() && this.mob.mayRestAlone() && this.mob.onGround() && !this.mob.isInWater()
                 && this.mob.getRandom().nextInt(20) == 0;
     }
 

@@ -404,6 +404,29 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
     @Override
     public void setResting(boolean resting) {
         this.entityData.set(RESTING, resting);
+        if (!resting && this.socialLink.isBusy() && this.socialLink.getKind() == NoxisSocialLink.Kind.REST) {
+            // Se despierta: libera a su compañero de siesta (que sigue durmiendo, si quiere).
+            net.minecraft.world.entity.PathfinderMob p = this.socialLink.getPartner();
+            if (p instanceof NoxisSocial s && s.getSocialLink().isLinkedWith(this)) {
+                s.getSocialLink().clear();
+                s.setSocialAnim(NoxisSocialAction.NONE);
+            }
+            this.socialLink.clear();
+            this.setSocialAnim(NoxisSocialAction.NONE);
+        }
+    }
+
+    /** Hasta cuándo puede dormirse solo (después de buscar compañía sin encontrar). */
+    private long restAloneUntil;
+
+    @Override
+    public boolean mayRestAlone() {
+        return this.level().getGameTime() < this.restAloneUntil;
+    }
+
+    @Override
+    public void allowRestAlone(int ticks) {
+        this.restAloneUntil = this.level().getGameTime() + ticks;
     }
 
     @Override
