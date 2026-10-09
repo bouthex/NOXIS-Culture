@@ -42,6 +42,8 @@ public class NoxisVillagerRenderState extends LivingEntityRenderState {
     public float natureTilt;
     public float naturePupils;
     public float natureSit;
+    /** Regalo: bracito estirado ofreciendo la flor. */
+    public float natureOffer;
     public float natureSide = 1.0F;
     /** La flor que tiene en la mano (vacía si no tiene nada). */
     public final ItemStackRenderState heldFlower = new ItemStackRenderState();

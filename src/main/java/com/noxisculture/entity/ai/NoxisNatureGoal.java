@@ -12,7 +12,14 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.PathfinderMob;
+import net.minecraft.world.entity.animal.Animal;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -26,6 +33,9 @@ import org.jspecify.annotations.Nullable;
  *   <li><b>Elegir y admirar una flor:</b> mira varias flores, elige una (prefiere amarillas y
  *       violetas), se acerca, la recoge con cuidado, la contempla, la huele y la vuelve a plantar
  *       en el mismo lugar y con el mismo estado. Después la mira una última vez.</li>
+ *   <li>A veces (30%), en vez de devolverla, <b>se la regala</b> a alguien cercano: un jugador,
+ *       otro Noxis o un animal pacífico. Se acerca, se la ofrece y se la lanza suavecito como
+ *       objeto real. Si no hay nadie cerca, la devuelve a su lugar como siempre.</li>
  *   <li><b>Olfatear una flor</b> sin recogerla.</li>
  *   <li><b>Sentarse a contemplar</b> un lugar lindo con flores o plantas.</li>
  * </ol>
@@ -40,10 +50,15 @@ public class NoxisNatureGoal<T extends PathfinderMob & NoxisNatureLover> extends
     private static final double SPEED = 0.4D;
     private static final double REACH = 1.4D;          // distancia (bloques) para tocar la flor
     private static final int WALK_TIMEOUT = 240;       // 12 s para llegar; si no, desiste
+    private static final float GIFT_CHANCE = 0.3F;     // 3 de cada 10 flores recogidas se regalan
+    private static final double GIFT_RADIUS = 8.0D;
+    private static final double GIFT_DISTANCE = 2.2D;  // distancia (bloques) desde la que la lanza
+    private static final int GIFT_TOSS_TICK = 14;
 
     private enum Activity { PICK, SNIFF, SIT }
 
-    private enum Step { SURVEY, APPROACH, PICK, ADMIRE, RETURN, REPLANT, LAST_LOOK, SNIFF, SIT, DONE }
+    private enum Step { SURVEY, APPROACH, PICK, ADMIRE, RETURN, REPLANT, LAST_LOOK, SNIFF, SIT,
+        GIFT_APPROACH, GIFT, DONE }
 
     private final T mob;
     private int nextDecisionTick;
@@ -58,6 +73,10 @@ public class NoxisNatureGoal<T extends PathfinderMob & NoxisNatureLover> extends
     private final List<BlockPos> candidates = new ArrayList<>();
     private @Nullable Vec3 lookAt;
     private boolean reserved;
+    private boolean wantsToGift;
+    /** Tick del paso actual en el que suena el olfateo (una sola vez por animación); -1 = no. */
+    private int sniffSoundAt = -1;
+    private @Nullable LivingEntity recipient;
 
     public NoxisNatureGoal(T mob) {
         this.mob = mob;
@@ -198,6 +217,7 @@ public class NoxisNatureGoal<T extends PathfinderMob & NoxisNatureLover> extends
     }
 
     private void enter(Step next, int length, byte action) {
+        this.sniffSoundAt = -1;
         this.step = next;
         this.stepTicks = 0;
         this.stepLength = length;
@@ -218,6 +238,10 @@ public class NoxisNatureGoal<T extends PathfinderMob & NoxisNatureLover> extends
     public void tick() {
         this.stepTicks++;
         Level level = this.mob.level();
+        if (this.stepTicks == this.sniffSoundAt) {
+            this.mob.playSound(ModSounds.NOXIS_SNIFF, 0.7F, 0.95F + this.mob.getRandom().nextFloat() * 0.15F);
+            this.sniffSoundAt = -1;                         // una sola vez por animación
+        }
         NoxisFlowerCarry carry = this.mob.getFlowerCarry();
         switch (this.step) {
             case SURVEY -> {
@@ -235,7 +259,10 @@ public class NoxisNatureGoal<T extends PathfinderMob & NoxisNatureLover> extends
                 if (this.isNear(this.target)) {
                     this.mob.getNavigation().stop();
                     if (this.activity == Activity.PICK) this.enter(Step.PICK, 16, NoxisNatureAction.PICK);
-                    else this.enter(Step.SNIFF, 64 + this.mob.getRandom().nextInt(20), NoxisNatureAction.SNIFF);
+                    else {
+                        this.enter(Step.SNIFF, 64 + this.mob.getRandom().nextInt(20), NoxisNatureAction.SNIFF);
+                        this.sniffSoundAt = 9;   // cuando acerca la naricita
+                    }
                 } else if (this.stepTicks >= this.stepLength) {
                     this.step = Step.DONE;                         // no pudo llegar: desiste
                 } else if (this.stepTicks % 20 == 1 || this.mob.getNavigation().isDone()) {
@@ -255,6 +282,8 @@ public class NoxisNatureGoal<T extends PathfinderMob & NoxisNatureLover> extends
                 }
                 if (this.stepTicks >= this.stepLength) {
                     this.enter(Step.ADMIRE, 130 + this.mob.getRandom().nextInt(40), NoxisNatureAction.ADMIRE);
+                    this.sniffSoundAt = 70;   // cuando acerca la flor a la carita
+                    this.wantsToGift = this.mob.getRandom().nextFloat() < GIFT_CHANCE;
                 }
             }
             case ADMIRE -> {
@@ -263,14 +292,52 @@ public class NoxisNatureGoal<T extends PathfinderMob & NoxisNatureLover> extends
                 Vec3 forward = Vec3.directionFromRotation(0.0F, this.mob.yBodyRot);
                 this.mob.getLookControl().setLookAt(this.mob.getX() + forward.x, this.mob.getEyeY() - 0.15D,
                         this.mob.getZ() + forward.z, 10.0F, 30.0F);
-                if (this.stepTicks == 74) {
+                if (this.stepTicks == 104) {
                     this.mob.playSound(ModSounds.NOXIS_HAPPY, 0.45F, 1.15F);
                 }
                 if (this.stepTicks == 98 && level instanceof ServerLevel server) {
                     server.sendParticles(ParticleTypes.HEART, this.mob.getX(), this.mob.getEyeY() + 0.45D,
                             this.mob.getZ(), 1, 0.1D, 0.05D, 0.1D, 0.0D);
                 }
-                if (this.stepTicks >= this.stepLength) this.enter(Step.RETURN, WALK_TIMEOUT, NoxisNatureAction.NONE);
+                if (this.stepTicks >= this.stepLength) {
+                    // ¿Se la regala a alguien? Si no hay nadie apropiado cerca, la devuelve a su lugar.
+                    this.recipient = this.wantsToGift ? this.findRecipient() : null;
+                    if (this.recipient != null) this.enter(Step.GIFT_APPROACH, WALK_TIMEOUT, NoxisNatureAction.NONE);
+                    else this.enter(Step.RETURN, WALK_TIMEOUT, NoxisNatureAction.NONE);
+                }
+            }
+            case GIFT_APPROACH -> {
+                LivingEntity to = this.recipient;
+                if (!this.isValidRecipient(to)) {                  // se fue: la devuelve a su lugar
+                    this.recipient = null;
+                    this.enter(Step.RETURN, WALK_TIMEOUT, NoxisNatureAction.NONE);
+                    return;
+                }
+                this.mob.getLookControl().setLookAt(to, 30.0F, 30.0F);
+                if (this.mob.distanceToSqr(to) < GIFT_DISTANCE * GIFT_DISTANCE) {
+                    this.mob.getNavigation().stop();
+                    this.enter(Step.GIFT, 34, NoxisNatureAction.GIFT);
+                } else if (this.stepTicks >= this.stepLength) {
+                    this.recipient = null;
+                    this.enter(Step.RETURN, WALK_TIMEOUT, NoxisNatureAction.NONE);
+                } else if (this.stepTicks % 20 == 1 || this.mob.getNavigation().isDone()) {
+                    this.mob.getNavigation().moveTo(to, SPEED);
+                }
+            }
+            case GIFT -> {
+                this.mob.getNavigation().stop();
+                LivingEntity to = this.recipient;
+                if (to != null) this.mob.getLookControl().setLookAt(to, 30.0F, 30.0F);
+                if (this.stepTicks == GIFT_TOSS_TICK) {
+                    if (to != null && to.isAlive() && carry.isHolding()) {
+                        this.tossGift(level, carry, to);
+                    } else {
+                        this.recipient = null;
+                        this.enter(Step.RETURN, WALK_TIMEOUT, NoxisNatureAction.NONE);
+                        return;
+                    }
+                }
+                if (this.stepTicks >= this.stepLength) this.step = Step.DONE;
             }
             case RETURN -> {
                 BlockPos home = carry.getOrigin();
@@ -310,6 +377,51 @@ public class NoxisNatureGoal<T extends PathfinderMob & NoxisNatureLover> extends
             }
             case DONE -> { }
         }
+    }
+
+    // ------------------------------------------------------------------ regalo
+
+    /** Alguien cercano a quien regalarle la flor: un jugador, otro Noxis o un animal pacífico. */
+    private @Nullable LivingEntity findRecipient() {
+        RandomSource random = this.mob.getRandom();
+        AABB area = this.mob.getBoundingBox().inflate(GIFT_RADIUS, 3.0D, GIFT_RADIUS);
+        List<LivingEntity> options = new ArrayList<>();
+        List<Float> weights = new ArrayList<>();
+        for (LivingEntity e : this.mob.level().getEntitiesOfClass(LivingEntity.class, area, this::isValidRecipient)) {
+            float w = e instanceof Player ? 3.0F : e instanceof NoxisNatureLover ? 2.0F : 1.0F;
+            if (this.mob.getNavigation().createPath(e, 1) == null) continue;
+            options.add(e);
+            weights.add(w * (0.5F + random.nextFloat()));
+        }
+        return options.isEmpty() ? null : options.get(weightedIndex(weights, random));
+    }
+
+    private boolean isValidRecipient(@Nullable LivingEntity e) {
+        if (e == null || e == this.mob || !e.isAlive() || e.isRemoved()) return false;
+        if (e.distanceToSqr(this.mob) > (GIFT_RADIUS + 4.0D) * (GIFT_RADIUS + 4.0D)) return false;
+        if (e instanceof Player player) return !player.isSpectator();
+        if (e instanceof NoxisNatureLover) return true;
+        return e instanceof Animal;
+    }
+
+    /** Convierte la flor en un objeto real y se la lanza suavecito al destinatario. */
+    private void tossGift(Level level, NoxisFlowerCarry carry, LivingEntity to) {
+        ItemStack gift = carry.giveAway();
+        this.mob.syncHeldFlower();
+        if (gift.isEmpty() || !(level instanceof ServerLevel server)) return;
+        Vec3 from = this.mob.position().add(0.0D, this.mob.getBbHeight() * 0.55D, 0.0D);
+        Vec3 dir = to.position().subtract(this.mob.position());
+        Vec3 flat = new Vec3(dir.x, 0.0D, dir.z);
+        double dist = Math.max(0.5D, flat.length());
+        Vec3 push = flat.normalize().scale(Math.min(0.32D, 0.12D + dist * 0.07D)).add(0.0D, 0.22D, 0.0D);
+        ItemEntity item = new ItemEntity(level, from.x + flat.normalize().x * 0.3D, from.y,
+                from.z + flat.normalize().z * 0.3D, gift);
+        item.setDeltaMovement(push);
+        item.setPickUpDelay(10);
+        level.addFreshEntity(item);
+        this.mob.playSound(ModSounds.NOXIS_HAPPY, 0.55F, 1.25F);
+        server.sendParticles(ParticleTypes.HEART, this.mob.getX(), this.mob.getEyeY() + 0.4D, this.mob.getZ(),
+                1, 0.1D, 0.05D, 0.1D, 0.0D);
     }
 
     private @Nullable Vec3 randomNatureSpot() {
@@ -354,6 +466,9 @@ public class NoxisNatureGoal<T extends PathfinderMob & NoxisNatureLover> extends
             NoxisFlowerReservations.release(this.mob, this.target);
         }
         this.reserved = false;
+        this.wantsToGift = false;
+        this.recipient = null;
+        this.sniffSoundAt = -1;
         this.target = null;
         this.candidates.clear();
         this.step = Step.DONE;

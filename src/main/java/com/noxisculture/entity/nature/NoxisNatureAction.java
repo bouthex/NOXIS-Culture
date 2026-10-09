@@ -19,4 +19,6 @@ public final class NoxisNatureAction {
     public static final byte SNIFF = 6;
     /** Sentado, contemplando el paisaje. */
     public static final byte SIT = 7;
+    /** Le regala la flor a alguien: se la acerca y se la lanza suavecito. */
+    public static final byte GIFT = 8;
 }

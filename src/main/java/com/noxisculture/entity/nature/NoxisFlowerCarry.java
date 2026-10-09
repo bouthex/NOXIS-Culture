@@ -20,6 +20,7 @@ import org.jspecify.annotations.Nullable;
  *   <li>Al devolverla, solo la planta si el lugar sigue vacío (aire) y el suelo la sostiene;
  *       nunca pisa un bloque que alguien haya puesto mientras tanto.</li>
  *   <li>Si no se puede devolver de forma segura, la deja como objeto en el piso.</li>
+ *   <li>Si la regala, esa misma flor pasa a ser el objeto que lanza (no se replanta).</li>
  *   <li>Se guarda en el NBT del Noxis: si el chunk se descarga con la flor en la mano, al
  *       volver la devuelve (o la suelta como objeto).</li>
  * </ul>
@@ -85,6 +86,16 @@ public final class NoxisFlowerCarry {
     public void returnOrDrop(Level level, Entity holder) {
         if (!this.isHolding()) return;
         if (!this.replant(level)) this.drop(level, holder);
+    }
+
+    /**
+     * La entrega como regalo: devuelve LA flor (la misma, una sola) y la mano queda vacía.
+     * Quien la recibe la convierte en objeto; el lugar original queda libre.
+     */
+    public ItemStack giveAway() {
+        ItemStack gift = this.stack;
+        this.clear();
+        return gift;
     }
 
     /** La deja como objeto en el piso, al lado del Noxis. */

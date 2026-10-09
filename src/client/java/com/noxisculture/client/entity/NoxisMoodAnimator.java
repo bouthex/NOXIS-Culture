@@ -115,7 +115,8 @@ public final class NoxisMoodAnimator {
      * Brazos con la flor: estirarse hacia la flor al recogerla/plantarla, sostenerla a la altura
      * del pecho y acercarla a la carita para olerla (la otra manito acompaña, con cariño).
      */
-    public static void applyFlowerArms(ModelPart rightArm, ModelPart leftArm, float lean, float hold, float raise) {
+    public static void applyFlowerArms(ModelPart rightArm, ModelPart leftArm, float lean, float hold, float raise,
+                                       float offer) {
         rightArm.xRot = Mth.lerp(lean, rightArm.xRot, -1.2F);
         rightArm.zRot = Mth.lerp(lean, rightArm.zRot, 0.05F);
         float carry = hold * (1.0F - lean);
@@ -124,6 +125,9 @@ public final class NoxisMoodAnimator {
         float cup = carry * raise * 0.8F;
         leftArm.xRot = Mth.lerp(cup, leftArm.xRot, -1.1F);
         leftArm.zRot = Mth.lerp(cup, leftArm.zRot, 0.45F);
+        // Regalo: estira el bracito hacia adelante (y un poquito arriba) ofreciendo la flor.
+        rightArm.xRot = Mth.lerp(offer, rightArm.xRot, -1.75F);
+        rightArm.zRot = Mth.lerp(offer, rightArm.zRot, -0.1F);
     }
 
     public static void applyCuriosity(ModelPart head, ModelPart rightEar, ModelPart leftEar,

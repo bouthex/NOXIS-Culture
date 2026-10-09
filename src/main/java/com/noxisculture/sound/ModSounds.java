@@ -24,6 +24,8 @@ public final class ModSounds {
     public static final SoundEvent NOXIS_YAWN = register("entity.noxis.yawn");
     /** Festejo al concretar un tradeo (y más fuerte al subir de nivel). */
     public static final SoundEvent NOXIS_CELEBRATE = register("entity.noxis.celebrate");
+    /** Olfateo curioso al acercar una flor a la naricita. */
+    public static final SoundEvent NOXIS_SNIFF = register("entity.noxis.sniff");
 
     private static SoundEvent register(String name) {
         Identifier id = NoxisCulture.id(name);

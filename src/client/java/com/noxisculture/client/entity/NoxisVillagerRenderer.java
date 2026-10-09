@@ -57,6 +57,7 @@ public class NoxisVillagerRenderer extends MobRenderer<NoxisVillager, NoxisVilla
         state.natureTilt = entity.getNatureAnimation().getTilt(partialTick);
         state.naturePupils = entity.getNatureAnimation().getPupils(partialTick);
         state.natureSit = entity.getNatureAnimation().getSit(partialTick);
+        state.natureOffer = entity.getNatureAnimation().getOffer(partialTick);
         state.natureSide = entity.getNatureAnimation().getSide();
         ItemStack flower = entity.getHeldFlower();
         if (flower.isEmpty()) {

@@ -31,7 +31,8 @@ public final class NoxisNatureAnimation {
     private static final int TILT = 7;       // cabecita ladeada con ternura
     private static final int PUPILS = 8;     // pupilas mirando la flor
     private static final int SIT = 9;        // sentado contemplando
-    private static final int CHANNELS = 10;
+    private static final int OFFER = 10;     // bracito estirado regalando la flor
+    private static final int CHANNELS = 11;
 
     public void tick(byte serverAction, boolean holdingFlower, RandomSource random) {
         System.arraycopy(this.now, 0, this.old, 0, CHANNELS);
@@ -75,6 +76,14 @@ public final class NoxisNatureAnimation {
                 target[EYES] = t >= 20 && t < 40 ? 1.0F : 0.0F;
                 target[EARS] = t >= 8 && t < 56 ? 1.0F : 0.0F;
             }
+            case NoxisNatureAction.GIFT -> {
+                // 0-14: mira al destinatario y le acerca la flor · 14: se la lanza suavecito
+                // · después: bracito que baja despacio, ojitos felices y orejitas contentas.
+                target[OFFER] = t < 16 ? 1.0F : t < 24 ? 0.5F : 0.0F;
+                target[TILT] = 0.8F;
+                target[EARS] = 0.7F;
+                target[EYES] = t >= 17 && t < 30 ? 1.0F : 0.0F;
+            }
             case NoxisNatureAction.SIT -> {
                 target[SIT] = 1.0F;
                 target[EARS] = 0.3F;
@@ -113,6 +122,7 @@ public final class NoxisNatureAnimation {
     public float getTilt(float pt) { return this.get(TILT, pt); }
     public float getPupils(float pt) { return this.get(PUPILS, pt); }
     public float getSit(float pt) { return this.get(SIT, pt); }
+    public float getOffer(float pt) { return this.get(OFFER, pt); }
 
     /** +1 o -1: hacia qué lado ladea la cabecita esta vez. */
     public float getSide() { return this.side; }

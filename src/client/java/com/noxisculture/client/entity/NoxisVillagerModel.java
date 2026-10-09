@@ -35,11 +35,9 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
     private static final String EYES_TIRED = "eyes_tired";
     private static final String EYES_CLOSED = "eyes_closed";
     private static final String EYES_OPEN = "eyes_open";
-    /** Pupilas mirando la flor (parches de 1x2 px con píxeles que ya existen en la textura del ojo). */
+    /** Pupilas agrandadas al contemplar la flor (parches de 1x2 px con el píxel de pupila que ya existe). */
     private static final String PUPIL_RIGHT = "pupil_right";
     private static final String PUPIL_LEFT = "pupil_left";
-    private static final String PUPIL_COVER_RIGHT = "pupil_cover_right";
-    private static final String PUPIL_COVER_LEFT = "pupil_cover_left";
     /** Punto invisible en la manito donde se dibuja la flor. */
     private static final String FLOWER_ANCHOR = "flower_anchor";
 
@@ -76,8 +74,6 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
     private final int pass;
     private final ModelPart pupilRight;
     private final ModelPart pupilLeft;
-    private final ModelPart pupilCoverRight;
-    private final ModelPart pupilCoverLeft;
     private final ModelPart flowerAnchor;
 
     public NoxisVillagerModel(ModelPart root) {
@@ -97,8 +93,6 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         this.eyesOpen = this.head.getChild(EYES_OPEN);
         this.pupilRight = this.head.getChild(PUPIL_RIGHT);
         this.pupilLeft = this.head.getChild(PUPIL_LEFT);
-        this.pupilCoverRight = this.head.getChild(PUPIL_COVER_RIGHT);
-        this.pupilCoverLeft = this.head.getChild(PUPIL_COVER_LEFT);
         this.flowerAnchor = root.getChild(FLOWER_ANCHOR);
         this.umbrella = root.getChild(UMBRELLA);
         this.umbrellaCanopy = this.umbrella.getChild(UMBRELLA_CANOPY);
@@ -136,20 +130,15 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         head.addOrReplaceChild(EYES_CLOSED,
                 CubeListBuilder.create().texOffs(20, 59).addBox(-5.0F, -7.0F, -4.05F, 10.0F, 4.0F, 0.0F),
                 PartPose.ZERO);
-        // Pupilas al centro del ojo (mirando atento la flor que tiene delante): un parche oscuro donde
-        // va la pupila nueva y uno amarillo que tapa la pupila de siempre (que mira hacia afuera). Usan píxeles que YA existen
-        // en las texturas (pupila u=41, amarillo u=42/47); solo se ven al contemplar la flor.
+        // Pupilas agrandadas al contemplar la flor: un píxel oscuro más al lado de cada pupila
+        // (la pupila de siempre queda donde está, así se conserva la mirada bizca). Usa el píxel de
+        // pupila que YA existe (u=48, v=61): su cara de atrás cae en un píxel transparente, así no
+        // aparecen rayas ni manchas. Va apenas delante del ojo para no pelear con él.
         head.addOrReplaceChild(PUPIL_RIGHT,
-                CubeListBuilder.create().texOffs(41, 61).addBox(-3.0F, -5.0F, -4.06F, 1.0F, 2.0F, 0.0F),
-                PartPose.ZERO);
-        head.addOrReplaceChild(PUPIL_COVER_RIGHT,
-                CubeListBuilder.create().texOffs(42, 61).addBox(-4.0F, -5.0F, -4.06F, 1.0F, 2.0F, 0.0F),
+                CubeListBuilder.create().texOffs(48, 61).addBox(-3.0F, -5.0F, -4.1F, 1.0F, 2.0F, 0.0F),
                 PartPose.ZERO);
         head.addOrReplaceChild(PUPIL_LEFT,
-                CubeListBuilder.create().texOffs(41, 61).addBox(2.0F, -5.0F, -4.06F, 1.0F, 2.0F, 0.0F),
-                PartPose.ZERO);
-        head.addOrReplaceChild(PUPIL_COVER_LEFT,
-                CubeListBuilder.create().texOffs(47, 61).addBox(3.0F, -5.0F, -4.06F, 1.0F, 2.0F, 0.0F),
+                CubeListBuilder.create().texOffs(48, 61).addBox(2.0F, -5.0F, -4.1F, 1.0F, 2.0F, 0.0F),
                 PartPose.ZERO);
         head.addOrReplaceChild(PartNames.LEFT_EAR,
                 CubeListBuilder.create().texOffs(0, 28).mirror().addBox(-1.5F, -3.0F, -0.5F, 3.0F, 3.0F, 1.0F),
@@ -327,12 +316,10 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         this.eyesClosed.visible = closed;
         this.eyesTired.visible = sleepy && !closed;
         this.eyesOpen.visible = !closed && !sleepy;
-        // Pupilas mirando la flor (solo con los ojitos abiertos normales).
+        // Pupilas agrandadas, fascinado con la flor (solo con los ojitos abiertos normales).
         boolean pupils = this.eyesOpen.visible && state.naturePupils > 0.5F;
         this.pupilRight.visible = pupils;
         this.pupilLeft.visible = pupils;
-        this.pupilCoverRight.visible = pupils;
-        this.pupilCoverLeft.visible = pupils;
         // Con el parpadeo lento, la cabecita se le cae un poquito (cabeceo de sueño).
         if (slowBlink) {
             this.head.xRot += 0.12F * torchAnim;
@@ -436,7 +423,8 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         // ---- Fascinación: festejo con bracitos arriba, colita contenta y saltitos cartoon ----
         NoxisMoodAnimator.applyCheer(this.rightArm, this.leftArm, this.tail, state.crystalCheer, age);
         // ---- Naturaleza: la flor en la manito ----
-        NoxisMoodAnimator.applyFlowerArms(this.rightArm, this.leftArm, state.natureLean, state.natureHold, state.natureRaise);
+        NoxisMoodAnimator.applyFlowerArms(this.rightArm, this.leftArm, state.natureLean, state.natureHold,
+                state.natureRaise, state.natureOffer);
         {
             // Punta de la mano (igual que la antorcha) y, un poquito más adelante, la flor.
             float ax = this.rightArm.xRot;
