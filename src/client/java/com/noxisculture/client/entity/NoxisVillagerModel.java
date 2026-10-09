@@ -47,6 +47,8 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
     public static final int PASS_SLEEP_BUBBLE = 2;
     /** Globito de sueño (solo lo dibuja la copia {@link #PASS_SLEEP_BUBBLE}). */
     private static final String SLEEP_BUBBLE = "sleep_bubble";
+    /** Mechoncito de pelo verde (solo se ve cuando no tiene sombrero). */
+    private static final String HAIR_TUFT = "hair_tuft";
     private static final String UMBRELLA = "umbrella";
     private static final String UMBRELLA_CANOPY = "umbrella_canopy";
     private static final float HAT_Y = -8.0F;
@@ -77,6 +79,7 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
     private final int pass;
     private final ModelPart eyesBig;
     private final ModelPart sleepBubble;
+    private final ModelPart hairTuft;
     private final ModelPart flowerAnchor;
 
     public NoxisVillagerModel(ModelPart root) {
@@ -96,6 +99,7 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         this.eyesOpen = this.head.getChild(EYES_OPEN);
         this.eyesBig = this.head.getChild(EYES_BIG);
         this.sleepBubble = this.head.getChild(SLEEP_BUBBLE);
+        this.hairTuft = this.head.getChild(HAIR_TUFT);
         this.flowerAnchor = root.getChild(FLOWER_ANCHOR);
         this.umbrella = root.getChild(UMBRELLA);
         this.umbrellaCanopy = this.umbrella.getChild(UMBRELLA_CANOPY);
@@ -143,6 +147,13 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         // Globito de sueño: un cubito de 4 px que sale de la naricita, a un costado de la carita.
         // Usa su propia textura (noxis_sleep_bubble.png, en u=64 v=64): cada cara es un círculo
         // celeste con brillito, así desde cualquier ángulo se ve redondito.
+        // Mechoncito verde (sin sombrero): tallito con un rulito, con píxeles verdes que ya existen.
+        head.addOrReplaceChild(HAIR_TUFT,
+                CubeListBuilder.create()
+                        .texOffs(27, 30).addBox(-0.5F, -10.0F, -0.5F, 1.0F, 2.0F, 1.0F)
+                        .texOffs(28, 31).addBox(0.5F, -10.8F, -0.5F, 1.0F, 1.0F, 1.0F)
+                        .texOffs(30, 31).addBox(-1.5F, -9.0F, -0.5F, 1.0F, 1.0F, 1.0F),
+                PartPose.ZERO);
         head.addOrReplaceChild(SLEEP_BUBBLE,
                 CubeListBuilder.create().texOffs(64, 64).addBox(-2.0F, -2.0F, -4.0F, 4.0F, 4.0F, 4.0F),
                 PartPose.offset(1.2F, -2.2F, -4.1F));
@@ -522,6 +533,32 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         int capeStyle = state.variant - 1;          // 0 = sin capa; 1..3 = estilos de capa
         boolean hasCape = capeStyle >= 0;
         NoxisCape.animate(this.body, capeStyle, state.capeSwing, state.capeTurn, age, sit);
+        // ---- Durmiendo en la pecera: bien apretadito para no tocar el vidrio ----
+        if (state.inBowl) {
+            if (hasCape) {
+                // La parte de abajo de la capa queda acostada en el piso de la pecera.
+                this.body.getChild(NoxisCape.capeName(capeStyle)).getChild(NoxisCape.CAPE_LOWER).xRot = 1.6F;
+            }
+            // Orejitas plegadas hacia atrás, como gatito acurrucado.
+            this.rightEar.zRot += 0.35F;
+            this.leftEar.zRot -= 0.35F;
+            this.rightEar.xRot += 1.25F;
+            this.leftEar.xRot += 1.25F;
+            // Cabecita quieta, apenas inclinada (sin cabeceos que la acerquen al vidrio).
+            this.head.yRot = 0.0F;
+            this.head.zRot = 0.0F;
+            this.head.xRot = 0.15F + 0.03F * Mth.sin(age * 0.05F);
+            this.head.x = 0.0F;
+            this.head.z = 0.0F;
+        }
+        // ---- Sombrero o mechoncito ----
+        this.hat.visible = state.hasHat;
+        this.hairTuft.visible = !state.hasHat;
+        if (!state.hasHat) {
+            // Sin el ala del sombrero, las orejitas bajan un píxel y quedan pegadas a la cabeza.
+            this.rightEar.y += 1.0F;
+            this.leftEar.y += 1.0F;
+        }
         if (hasCape) {
             // Sentado con capa: la colita sale derecha por su ojal (no hacia el costado).
             this.tail.yRot = Mth.lerp(sit, this.tail.yRot, 0.0F);
@@ -532,7 +569,7 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         this.sleepBubble.visible = this.pass == PASS_SLEEP_BUBBLE && bubble > 0.02F;
         this.sleepBubble.xScale = bubble;
         this.sleepBubble.yScale = bubble;
-        this.sleepBubble.zScale = bubble;
+        this.sleepBubble.zScale = state.inBowl ? bubble * 0.25F : bubble;   // en la pecera: casi plano
         if (this.pass == PASS_SLEEP_BUBBLE) {
             // Solo el globito: los ojitos tampoco se dibujan en esta pasada.
             this.eyesOpen.visible = false;

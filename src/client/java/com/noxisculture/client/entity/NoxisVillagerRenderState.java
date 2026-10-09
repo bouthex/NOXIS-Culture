@@ -55,6 +55,9 @@ public class NoxisVillagerRenderState extends LivingEntityRenderState {
     public float socialDoze;
     public float socialYawn;
     public float socialLean;
+    /** Duerme dentro de una pecera / tiene puesto el sombrero. */
+    public boolean inBowl;
+    public boolean hasHat = true;
     /** La flor que tiene en la mano (vacía si no tiene nada). */
     public final ItemStackRenderState heldFlower = new ItemStackRenderState();
     /** true mientras se está levantando (para no repetir el rebote del "plop" al revés). */

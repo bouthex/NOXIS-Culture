@@ -1,5 +1,7 @@
 package com.noxisculture.block;
 
+import com.noxisculture.block.custom.NoxisBowlBlock;
+import com.noxisculture.block.custom.NoxisHatBlock;
 import com.noxisculture.block.custom.NoxisLightBlock;
 import com.noxisculture.block.custom.NoyuxCauldronBlock;
 import com.noxisculture.fluid.ModFluids;
@@ -69,6 +71,30 @@ public final class ModBlocks {
                     .strength(5.0F, 6.0F)
                     .sound(SoundType.AMETHYST)
                     .lightLevel(state -> 5)); // el ojo corrupto ilumina un poco
+
+    // ---------------- Vida Noxis ----------------
+
+    /** Pecera Noxis: donde duermen los Noxis (una por Noxis). */
+    public static final Block NOXIS_BOWL = register(
+            ModBlockItemIds.NOXIS_BOWL, NoxisBowlBlock::new,
+            BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.WOOD)
+                    .strength(1.0F)
+                    .sound(SoundType.GLASS)
+                    .noOcclusion()
+                    .isRedstoneConductor((state, level, pos) -> false)
+                    .isSuffocating((state, level, pos) -> false)
+                    .isViewBlocking((state, level, pos) -> false));
+
+    /** Sombrero de Noxis apoyado en el suelo (mientras su dueño duerme). */
+    public static final Block NOXIS_HAT = register(
+            ModBlockItemIds.NOXIS_HAT, NoxisHatBlock::new,
+            BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_BLACK)
+                    .strength(0.3F)
+                    .sound(SoundType.WOOL)
+                    .noOcclusion()
+                    .pushReaction(PushReaction.DESTROY));
 
     // ---------------- Técnicos (sin ítem) ----------------
 

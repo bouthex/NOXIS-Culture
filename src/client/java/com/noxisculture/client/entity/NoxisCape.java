@@ -33,7 +33,7 @@ public final class NoxisCape {
     /** Cantidad de estilos de capa (misma base amarilla; cambian ribete, costuras y detalles del Nixil). */
     public static final int STYLES = 3;
 
-    private static String capeName(int style) {
+    public static String capeName(int style) {
         return CAPE + "_" + style;
     }
 

@@ -8,6 +8,8 @@ import com.noxisculture.entity.ai.NoxisFascinatable;
 import com.noxisculture.entity.ai.NoxisNatureGoal;
 import com.noxisculture.entity.ai.NoxisNatureLover;
 import com.noxisculture.entity.ai.NoxisReceiveGiftGoal;
+import com.noxisculture.entity.ai.NoxisBowlSleepGoal;
+import com.noxisculture.entity.ai.NoxisBowlSleeper;
 import com.noxisculture.entity.ai.NoxisCompanionRestGoal;
 import com.noxisculture.entity.ai.NoxisGreetGoal;
 import com.noxisculture.entity.ai.NoxisSocial;
@@ -77,7 +79,7 @@ import org.jspecify.annotations.Nullable;
  * nos da gratis el menú de comercio vanilla, el guardado de ofertas y la
  * integración con TradeWithPlayerGoal, sin el sistema de profesiones/cerebro.
  */
-public class NoxisVillager extends AbstractVillager implements NoxisLightSource, NoxisRestful, NoxisWorker, NoxisFascinatable, NoxisNatureLover, NoxisSocial {
+public class NoxisVillager extends AbstractVillager implements NoxisLightSource, NoxisRestful, NoxisWorker, NoxisFascinatable, NoxisNatureLover, NoxisSocial, NoxisBowlSleeper {
     /** Puede reponer en su mesa como mucho cada medio día (~2 veces por día, como vanilla). */
     private static final long RESTOCK_INTERVAL_TICKS = 12_000L;
     /** Espera tras cerrar el menú antes de subir de nivel (vanilla: 40 ticks = 2 s). */
@@ -113,6 +115,15 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
     /** Gesto social en curso (saludo, descanso en compañía): lo decide el servidor, el cliente lo anima. */
     private static final EntityDataAccessor<Byte> SOCIAL_ANIM =
             SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BYTE);
+    /** Duerme dentro de una pecera / tiene puesto el sombrero (se ven en el cliente y se guardan). */
+    private static final EntityDataAccessor<Boolean> IN_BOWL =
+            SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> HAS_HAT =
+            SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BOOLEAN);
+    /** Cada Noxis se duerme a su hora: entre 0 y 2 minutos después de que oscurece. */
+    private static final int BEDTIME_RANDOM = 2400;
+    /** ...y se despierta a su ritmo: entre 0 y 40 s después del amanecer. */
+    private static final int WAKE_RANDOM = 800;
     private static final int HAPPY_AFTER_TRADE_TICKS = 60;
     /** ~1 vez por día de Minecraft (24000 ticks), con algo de azar. */
     private static final int REST_COOLDOWN_TICKS = 20_000;
@@ -150,6 +161,11 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
     private final NoxisFlowerCarry flowerCarry = new NoxisFlowerCarry();
     /** Flor de regalo que otro Noxis le lanzó y todavía viene en camino (servidor, no se guarda). */
     private final NoxisSocialLink socialLink = new NoxisSocialLink();
+    // Pecera y sombrero (servidor; se guardan con el Noxis).
+    private @Nullable BlockPos bowlPos;
+    private @Nullable BlockPos hatPos;
+    private long bedtime = -1L;
+    private long wakeTime = -1L;
     private final NoxisSocialAnimation socialAnimation = new NoxisSocialAnimation();
     private @Nullable ItemEntity incomingGift;
     private @Nullable LivingEntity giftGiver;
@@ -172,6 +188,8 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
         builder.define(NATURE_ACTION, NoxisNatureAction.NONE);
         builder.define(HELD_FLOWER, ItemStack.EMPTY);
         builder.define(SOCIAL_ANIM, NoxisSocialAction.NONE);
+        builder.define(IN_BOWL, false);
+        builder.define(HAS_HAT, true);
     }
 
     public NoxisMood getMood() {
@@ -220,7 +238,7 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
 
     @Override
     public boolean canBeFascinated() {
-        return this.getMood() == NoxisMood.NEUTRAL && !this.isTrading() && !this.isResting()
+        return !this.isInBowl() && this.getMood() == NoxisMood.NEUTRAL && !this.isTrading() && !this.isResting()
                 && !this.isHoldingTorch() && !this.isHoldingUmbrella()
                 && this.getNatureAction() == NoxisNatureAction.NONE && !this.flowerCarry.isHolding()
                 && !this.socialLink.isBusy();
@@ -230,7 +248,7 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
 
     @Override
     public boolean canEnjoyNature() {
-        return this.getMood() == NoxisMood.NEUTRAL && !this.isTrading() && !this.isResting()
+        return !this.isInBowl() && this.getMood() == NoxisMood.NEUTRAL && !this.isTrading() && !this.isResting()
                 && !this.isHoldingTorch() && !this.isHoldingUmbrella() && !this.isFascinated()
                 && this.incomingGift == null && this.getNatureAction() != NoxisNatureAction.RECEIVE
                 && !this.socialLink.isBusy();
@@ -252,7 +270,7 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
 
     @Override
     public boolean isSafeForSocial() {
-        return this.getMood() == NoxisMood.NEUTRAL && !this.isTrading() && !this.isHoldingTorch()
+        return !this.isInBowl() && this.getMood() == NoxisMood.NEUTRAL && !this.isTrading() && !this.isHoldingTorch()
                 && !this.isHoldingUmbrella() && !this.isFascinated() && this.hurtTime == 0;
     }
 
@@ -278,6 +296,65 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
         } else {
             super.handleEntityEvent(id);
         }
+    }
+
+    // ---------------- Pecera y sombrero (NoxisBowlSleeper) ----------------
+
+    @Override
+    public boolean isInBowl() {
+        return this.entityData.get(IN_BOWL);
+    }
+
+    @Override
+    public void setInBowl(boolean inBowl) {
+        this.entityData.set(IN_BOWL, inBowl);
+    }
+
+    @Override
+    public @Nullable BlockPos getBowlPos() {
+        return this.bowlPos;
+    }
+
+    @Override
+    public void setBowlPos(@Nullable BlockPos pos) {
+        this.bowlPos = pos == null ? null : pos.immutable();
+    }
+
+    @Override
+    public boolean hasHat() {
+        return this.entityData.get(HAS_HAT);
+    }
+
+    @Override
+    public void setHasHat(boolean hat) {
+        this.entityData.set(HAS_HAT, hat);
+    }
+
+    @Override
+    public @Nullable BlockPos getHatPos() {
+        return this.hatPos;
+    }
+
+    @Override
+    public void setHatPos(@Nullable BlockPos pos) {
+        this.hatPos = pos == null ? null : pos.immutable();
+    }
+
+    @Override
+    public boolean isBedtime() {
+        return this.bedtime >= 0L && this.level().getGameTime() >= this.bedtime;
+    }
+
+    @Override
+    public boolean isWakeTime() {
+        return this.wakeTime >= 0L && this.level().getGameTime() >= this.wakeTime;
+    }
+
+    @Override
+    public boolean canGoToBowl() {
+        return this.getMood() != NoxisMood.SCARED && !this.isTrading() && !this.isFascinated()
+                && this.getNatureAction() == NoxisNatureAction.NONE && !this.flowerCarry.isHolding()
+                && this.incomingGift == null && !this.socialLink.isBusy() && !this.isBaby();
     }
 
     /** Animación de saludos y descansos en compañía (solo visual, cliente). */
@@ -397,7 +474,7 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
 
     @Override
     public boolean isSafeToRest() {
-        return this.getMood() == NoxisMood.NEUTRAL && !this.isTrading() && !this.isHoldingTorch()
+        return !this.isInBowl() && this.getMood() == NoxisMood.NEUTRAL && !this.isTrading() && !this.isHoldingTorch()
                 && !this.isHoldingUmbrella();
     }
 
@@ -448,6 +525,9 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
         this.goalSelector.addGoal(1, new AvoidEntityGoal<>(this, Monster.class, 8.0F, 0.5D, 0.6D));
         this.goalSelector.addGoal(1, new PanicGoal(this, 0.6D));
         this.goalSelector.addGoal(2, new LookAtTradingPlayerGoal(this));
+        // De noche: a dormir a la pecera. Misma prioridad que huir/asustarse: un monstruo cerca no la
+        // saca de la pecera (solo la despierta un golpe), pero si ya estaba huyendo no se acuesta.
+        this.goalSelector.addGoal(1, new NoxisBowlSleepGoal<>(this));
         // Descanso en compañía: va antes que el individual (a veces, si hay compañero, descansan juntos).
         this.goalSelector.addGoal(3, new NoxisCompanionRestGoal<>(this));
         this.goalSelector.addGoal(3, new NoxisSocialFollowGoal<>(this));
@@ -466,6 +546,9 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
 
     @Override
     public InteractionResult mobInteract(Player player, InteractionHand hand) {
+        if (this.isInBowl()) {
+            return InteractionResult.PASS;                  // durmiendo en su pecera: no comercia
+        }
         if (this.isAlive() && !this.isTrading() && !this.isBaby()) {
             if (hand == InteractionHand.MAIN_HAND) {
                 player.awardStat(Stats.TALKED_TO_VILLAGER);
@@ -610,11 +693,23 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
         if (this.tickCount % 20 == 0) {
             boolean dark = this.level().isDarkOutside()
                     || this.level().getBrightness(LightLayer.SKY, this.blockPosition()) < CAVE_SKY_LIGHT;
-            if (dark != this.isHoldingTorch()) {
-                this.entityData.set(TORCH, dark);
+            // Durmiendo en la pecera no sostiene la antorcha.
+            boolean torch = dark && !this.isInBowl();
+            if (torch != this.isHoldingTorch()) {
+                this.entityData.set(TORCH, torch);
+            }
+            // Horario de sueño propio: a cada uno le da sueño a su hora y se despierta a su ritmo.
+            long now = this.level().getGameTime();
+            if (this.level().isDarkOutside()) {
+                if (this.bedtime < 0L) this.bedtime = now + this.random.nextInt(BEDTIME_RANDOM);
+                this.wakeTime = -1L;
+            } else {
+                this.bedtime = -1L;
+                if (this.wakeTime < 0L) this.wakeTime = now + this.random.nextInt(WAKE_RANDOM);
             }
             // Si llueve (o nieva) y tiene el cielo encima, saca el paraguas con la otra mano.
-            boolean wet = this.level().isRaining() && this.level().canSeeSky(this.blockPosition().above());
+            boolean wet = this.level().isRaining() && this.level().canSeeSky(this.blockPosition().above())
+                    && !this.isInBowl();
             if (wet != this.isHoldingUmbrella()) {
                 this.entityData.set(UMBRELLA, wet);
             }
@@ -742,6 +837,10 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
 
         output.putInt("rest_cooldown", this.restCooldown);
         this.flowerCarry.save(output);
+        output.putBoolean("has_hat", this.hasHat());
+        output.putBoolean("in_bowl", this.isInBowl());
+        if (this.bowlPos != null) output.store("bowl_pos", BlockPos.CODEC, this.bowlPos);
+        if (this.hatPos != null) output.store("hat_pos", BlockPos.CODEC, this.hatPos);
     }
 
     @Override
@@ -757,12 +856,26 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
         this.restCooldown = input.getInt("rest_cooldown").orElse(this.restCooldown);
         this.flowerCarry.load(input);
         this.syncHeldFlower();
+        this.setHasHat(input.getBooleanOr("has_hat", true));
+        this.setInBowl(input.getBooleanOr("in_bowl", false));
+        this.bowlPos = input.read("bowl_pos", BlockPos.CODEC).orElse(null);
+        this.hatPos = input.read("hat_pos", BlockPos.CODEC).orElse(null);
+        if (this.bowlPos == null) this.setInBowl(false);
     }
 
     /** Al desaparecer (muerte, descarga del chunk...), se lleva su luz. */
     @Override
     public void remove(Entity.RemovalReason reason) {
         this.lightController.clear(this.level());
+        // Si muere (o lo eliminan) con una pecera reservada o ocupada, la pecera queda libre.
+        if (!this.level().isClientSide() && this.bowlPos != null
+                && (reason == Entity.RemovalReason.KILLED || reason == Entity.RemovalReason.DISCARDED)) {
+            net.minecraft.world.level.block.state.BlockState bowl = this.level().getBlockState(this.bowlPos);
+            if (bowl.is(com.noxisculture.block.ModBlocks.NOXIS_BOWL)) {
+                this.level().setBlock(this.bowlPos,
+                        bowl.setValue(com.noxisculture.block.custom.NoxisBowlBlock.OCCUPIED, false), 3);
+            }
+        }
         // Si muere (o lo eliminan) con una flor en la mano, la flor queda en el piso.
         if (!this.level().isClientSide()
                 && (reason == Entity.RemovalReason.KILLED || reason == Entity.RemovalReason.DISCARDED)) {

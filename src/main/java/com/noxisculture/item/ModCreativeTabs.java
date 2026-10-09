@@ -41,6 +41,9 @@ public final class ModCreativeTabs {
                 // Materiales y herramientas
                 output.accept(ModItems.NIXIL);
                 output.accept(ModItems.COSMOS_PICKAXE);
+                // Vida Noxis
+                output.accept(ModBlocks.NOXIS_BOWL.asItem());
+                output.accept(ModBlocks.NOXIS_HAT.asItem());
             })
             .build();
 
