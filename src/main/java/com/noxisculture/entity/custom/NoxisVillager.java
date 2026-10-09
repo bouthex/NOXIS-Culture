@@ -5,6 +5,12 @@ import com.noxisculture.entity.idle.NoxisCuriosity;
 import com.noxisculture.entity.cape.NoxisCapePhysics;
 import com.noxisculture.entity.ai.NoxisCrystalFascinationGoal;
 import com.noxisculture.entity.ai.NoxisFascinatable;
+import com.noxisculture.entity.ai.NoxisNatureGoal;
+import com.noxisculture.entity.ai.NoxisNatureLover;
+import com.noxisculture.entity.idle.NoxisNatureAnimation;
+import com.noxisculture.entity.nature.NoxisFlowerCarry;
+import com.noxisculture.entity.nature.NoxisNatureAction;
+import net.minecraft.world.item.ItemStack;
 import com.noxisculture.entity.ai.NoxisRestGoal;
 import com.noxisculture.entity.ai.NoxisRestful;
 import com.noxisculture.entity.ai.NoxisWorkAtTableGoal;
@@ -60,7 +66,7 @@ import org.jspecify.annotations.Nullable;
  * nos da gratis el menú de comercio vanilla, el guardado de ofertas y la
  * integración con TradeWithPlayerGoal, sin el sistema de profesiones/cerebro.
  */
-public class NoxisVillager extends AbstractVillager implements NoxisLightSource, NoxisRestful, NoxisWorker, NoxisFascinatable {
+public class NoxisVillager extends AbstractVillager implements NoxisLightSource, NoxisRestful, NoxisWorker, NoxisFascinatable, NoxisNatureLover {
     /** Puede reponer en su mesa como mucho cada medio día (~2 veces por día, como vanilla). */
     private static final long RESTOCK_INTERVAL_TICKS = 12_000L;
     /** Espera tras cerrar el menú antes de subir de nivel (vanilla: 40 ticks = 2 s). */
@@ -88,6 +94,11 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
     /** true mientras mira fascinado un cristal (lo decide el servidor; el cliente anima). */
     private static final EntityDataAccessor<Boolean> FASCINATED =
             SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BOOLEAN);
+    /** Interacciones con la naturaleza: qué está haciendo y la flor que tiene en la mano. */
+    private static final EntityDataAccessor<Byte> NATURE_ACTION =
+            SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BYTE);
+    private static final EntityDataAccessor<ItemStack> HELD_FLOWER =
+            SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.ITEM_STACK);
     private static final int HAPPY_AFTER_TRADE_TICKS = 60;
     /** ~1 vez por día de Minecraft (24000 ticks), con algo de azar. */
     private static final int REST_COOLDOWN_TICKS = 20_000;
@@ -121,6 +132,8 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
     private final NoxisCapePhysics capePhysics = new NoxisCapePhysics();
     private final NoxisCuriosity curiosity = new NoxisCuriosity();
     private final NoxisCrystalFascination crystalFascination = new NoxisCrystalFascination();
+    private final NoxisNatureAnimation natureAnimation = new NoxisNatureAnimation();
+    private final NoxisFlowerCarry flowerCarry = new NoxisFlowerCarry();
     /** El primer descanso llega pronto (1-5 min) para poder verlo; después, ~1 por día. */
     private int restCooldown = 1_200 + (int) (Math.random() * 4_800);
 
@@ -137,6 +150,8 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
         builder.define(UMBRELLA, false);
         builder.define(VARIANT, VARIANT_PLAIN);
         builder.define(FASCINATED, false);
+        builder.define(NATURE_ACTION, NoxisNatureAction.NONE);
+        builder.define(HELD_FLOWER, ItemStack.EMPTY);
     }
 
     public NoxisMood getMood() {
@@ -186,7 +201,45 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
     @Override
     public boolean canBeFascinated() {
         return this.getMood() == NoxisMood.NEUTRAL && !this.isTrading() && !this.isResting()
-                && !this.isHoldingTorch() && !this.isHoldingUmbrella();
+                && !this.isHoldingTorch() && !this.isHoldingUmbrella()
+                && this.getNatureAction() == NoxisNatureAction.NONE && !this.flowerCarry.isHolding();
+    }
+
+    // ---------------- Naturaleza (NoxisNatureLover) ----------------
+
+    @Override
+    public boolean canEnjoyNature() {
+        return this.getMood() == NoxisMood.NEUTRAL && !this.isTrading() && !this.isResting()
+                && !this.isHoldingTorch() && !this.isHoldingUmbrella() && !this.isFascinated();
+    }
+
+    @Override
+    public void setNatureAction(byte action) {
+        this.entityData.set(NATURE_ACTION, action);
+    }
+
+    public byte getNatureAction() {
+        return this.entityData.get(NATURE_ACTION);
+    }
+
+    @Override
+    public NoxisFlowerCarry getFlowerCarry() {
+        return this.flowerCarry;
+    }
+
+    @Override
+    public void syncHeldFlower() {
+        this.entityData.set(HELD_FLOWER, this.flowerCarry.getStack().copy());
+    }
+
+    /** La flor que se ve en su mano (sincronizada; en el cliente es solo para dibujarla). */
+    public ItemStack getHeldFlower() {
+        return this.entityData.get(HELD_FLOWER);
+    }
+
+    /** Animación de las interacciones con la naturaleza (solo visual, cliente). */
+    public NoxisNatureAnimation getNatureAnimation() {
+        return this.natureAnimation;
     }
 
     @Override
@@ -255,6 +308,7 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
         this.goalSelector.addGoal(3, new NoxisRestGoal<>(this));
         this.goalSelector.addGoal(4, new NoxisWorkAtTableGoal<>(this, 0.45D));
         this.goalSelector.addGoal(4, new NoxisCrystalFascinationGoal<>(this));
+        this.goalSelector.addGoal(4, new NoxisNatureGoal<>(this));
         this.goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 0.35D));
         this.goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 6.0F));
         this.goalSelector.addGoal(9, new RandomLookAroundGoal(this));
@@ -379,6 +433,12 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
         if (this.restCooldown > 0) {
             this.restCooldown--;
         }
+        // Si se guardó el mundo con una flor en la mano, la devuelve a su lugar (o la suelta).
+        if (this.flowerCarry.isOrphan() && this.tickCount > 20) {
+            this.flowerCarry.returnOrDrop(this.level(), this);
+            this.syncHeldFlower();
+            this.setNatureAction(NoxisNatureAction.NONE);
+        }
         // Variante de ropa: se elige una sola vez, al aparecer.
         if (!this.variantChosen) {
             this.variantChosen = true;
@@ -431,7 +491,10 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
         // Los dos gestos tranquilos nunca se pisan: el que empezó primero termina antes que el otro.
         boolean fascinated = this.isFascinated() || this.crystalFascination.isActive()
                 || this.crystalFascination.getAmount(1.0F) > 0.01F;
-        this.curiosity.tick(calm && !fascinated, this.random);
+        // Naturaleza: la acción llega del servidor; acá solo se anima.
+        this.natureAnimation.tick(this.getNatureAction(), !this.getHeldFlower().isEmpty(), this.random);
+        boolean withNature = this.natureAnimation.isBusy();
+        this.curiosity.tick(calm && !fascinated && !withNature, this.random);
         // Fascinación: la señal llega del servidor; acá solo se corta si se ve algo prioritario.
         boolean free = this.getMood() == NoxisMood.NEUTRAL && this.scaredAnim < 0.02F
                 && !this.isTrading() && !this.isResting() && !this.isHoldingTorch() && !this.isHoldingUmbrella();
@@ -510,6 +573,7 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
         output.putInt("variant", this.getVariant());
 
         output.putInt("rest_cooldown", this.restCooldown);
+        this.flowerCarry.save(output);
     }
 
     @Override
@@ -523,12 +587,19 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
         this.entityData.set(VARIANT, (byte) Mth.clamp(input.getInt("variant").orElse(0), 0, VARIANT_CAPE + CAPE_STYLES - 1));
 
         this.restCooldown = input.getInt("rest_cooldown").orElse(this.restCooldown);
+        this.flowerCarry.load(input);
+        this.syncHeldFlower();
     }
 
     /** Al desaparecer (muerte, descarga del chunk...), se lleva su luz. */
     @Override
     public void remove(Entity.RemovalReason reason) {
         this.lightController.clear(this.level());
+        // Si muere (o lo eliminan) con una flor en la mano, la flor queda en el piso.
+        if (!this.level().isClientSide()
+                && (reason == Entity.RemovalReason.KILLED || reason == Entity.RemovalReason.DISCARDED)) {
+            this.flowerCarry.drop(this.level(), this);
+        }
         super.remove(reason);
     }
 

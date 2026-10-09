@@ -2,7 +2,10 @@ package com.noxisculture.client.entity;
 
 import com.noxisculture.NoxisCulture;
 import com.noxisculture.entity.custom.NoxisVillager;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.client.renderer.entity.MobRenderer;
 import net.minecraft.resources.Identifier;
 
@@ -13,6 +16,8 @@ public class NoxisVillagerRenderer extends MobRenderer<NoxisVillager, NoxisVilla
         super(context, new NoxisVillagerModel(context.bakeLayer(ModModelLayers.NOXIS_VILLAGER)), 0.45F);
         this.addLayer(new NoxisVillagerEyesLayer(this));
         // Brillo extra de los ojos al fascinarse con un cristal (copia del modelo que solo dibuja los ojitos).
+        // La flor en la mano (interacciones con la naturaleza).
+        this.addLayer(new NoxisHeldFlowerLayer(this));
         this.addLayer(new NoxisCrystalGlowLayer(this,
                 new NoxisVillagerModel(context.bakeLayer(ModModelLayers.NOXIS_VILLAGER), NoxisVillagerModel.PASS_GLOW_EYES)));
     }
@@ -42,6 +47,24 @@ public class NoxisVillagerRenderer extends MobRenderer<NoxisVillager, NoxisVilla
         state.crystalHop = entity.getCrystalFascination().getHop(partialTick);
         state.crystalTwitch = entity.getCrystalFascination().getTwitch(partialTick);
         state.crystalSide = entity.getCrystalFascination().getSide();
+        state.natureSurvey = entity.getNatureAnimation().getSurvey(partialTick);
+        state.natureLean = entity.getNatureAnimation().getLean(partialTick);
+        state.natureHold = entity.getNatureAnimation().getHold(partialTick);
+        state.natureRaise = entity.getNatureAnimation().getRaise(partialTick);
+        state.natureSniff = entity.getNatureAnimation().getSniff(partialTick);
+        state.natureEyesClosed = entity.getNatureAnimation().getEyesClosed(partialTick);
+        state.natureEars = entity.getNatureAnimation().getEars(partialTick);
+        state.natureTilt = entity.getNatureAnimation().getTilt(partialTick);
+        state.naturePupils = entity.getNatureAnimation().getPupils(partialTick);
+        state.natureSit = entity.getNatureAnimation().getSit(partialTick);
+        state.natureSide = entity.getNatureAnimation().getSide();
+        ItemStack flower = entity.getHeldFlower();
+        if (flower.isEmpty()) {
+            state.heldFlower.clear();
+        } else {
+            Minecraft.getInstance().getItemModelResolver()
+                    .updateForLiving(state.heldFlower, flower, ItemDisplayContext.FIXED, entity);
+        }
         state.restRising = !entity.isResting();
     }
 

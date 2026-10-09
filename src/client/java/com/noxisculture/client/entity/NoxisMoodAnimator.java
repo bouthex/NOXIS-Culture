@@ -81,6 +81,51 @@ public final class NoxisMoodAnimator {
         tail.yRot = Mth.lerp(cheer, tail.yRot, Mth.sin(age * 0.9F) * 0.55F);
     }
 
+    /**
+     * Interacciones con la naturaleza (gesto aditivo, compartido por todas las especies): mira
+     * alrededor eligiendo flor, se agacha a recogerla, contempla la flor ladeando la cabecita,
+     * la olfatea moviendo la naricita y mueve las orejitas suave.
+     * La dirección de la mirada la pone el servidor (mira la flor elegida).
+     */
+    public static void applyNature(ModelPart head, ModelPart body, ModelPart rightEar, ModelPart leftEar, float age,
+                                   float survey, float lean, float hold, float raise, float sniff,
+                                   float ears, float tilt, float side) {
+        // Duda entre varias flores: pequeños giros de cabeza.
+        head.yRot += Mth.sin(age * 0.22F) * 0.16F * survey;
+        head.zRot += Mth.sin(age * 0.13F) * 0.08F * survey;
+        // Se agacha con cuidado (recoger, plantar, olfatear).
+        body.xRot += 0.35F * lean;
+        head.xRot += 0.45F * lean;
+        head.z -= 1.6F * lean;
+        head.y += 1.0F * lean;
+        // Contempla la flor que tiene en la mano: cabecita un poco baja y ladeada con ternura.
+        float look = hold * (1.0F - lean);
+        head.xRot += 0.25F * look - 0.12F * raise * look;
+        head.zRot += 0.24F * tilt * side;
+        // Olfatea: la naricita sube y baja rapidito.
+        head.xRot += Mth.sin(age * 1.7F) * 0.045F * sniff;
+        // Orejitas que se mueven suave, cada una a su ritmo.
+        rightEar.zRot += Mth.sin(age * 0.7F) * 0.16F * ears;
+        leftEar.zRot += Mth.sin(age * 0.7F + 1.9F) * 0.16F * ears;
+        rightEar.xRot -= 0.15F * ears;
+        leftEar.xRot -= 0.15F * ears;
+    }
+
+    /**
+     * Brazos con la flor: estirarse hacia la flor al recogerla/plantarla, sostenerla a la altura
+     * del pecho y acercarla a la carita para olerla (la otra manito acompaña, con cariño).
+     */
+    public static void applyFlowerArms(ModelPart rightArm, ModelPart leftArm, float lean, float hold, float raise) {
+        rightArm.xRot = Mth.lerp(lean, rightArm.xRot, -1.2F);
+        rightArm.zRot = Mth.lerp(lean, rightArm.zRot, 0.05F);
+        float carry = hold * (1.0F - lean);
+        rightArm.xRot = Mth.lerp(carry, rightArm.xRot, Mth.lerp(raise, -0.55F, -1.5F));
+        rightArm.zRot = Mth.lerp(carry, rightArm.zRot, Mth.lerp(raise, 0.08F, -0.5F));
+        float cup = carry * raise * 0.8F;
+        leftArm.xRot = Mth.lerp(cup, leftArm.xRot, -1.1F);
+        leftArm.zRot = Mth.lerp(cup, leftArm.zRot, 0.45F);
+    }
+
     public static void applyCuriosity(ModelPart head, ModelPart rightEar, ModelPart leftEar,
                                       float curious, float side, float flick) {
         if (curious <= 0.0F) {

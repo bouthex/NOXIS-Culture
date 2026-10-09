@@ -35,6 +35,14 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
     private static final String EYES_TIRED = "eyes_tired";
     private static final String EYES_CLOSED = "eyes_closed";
     private static final String EYES_OPEN = "eyes_open";
+    /** Pupilas mirando la flor (parches de 1x2 px con píxeles que ya existen en la textura del ojo). */
+    private static final String PUPIL_RIGHT = "pupil_right";
+    private static final String PUPIL_LEFT = "pupil_left";
+    private static final String PUPIL_COVER_RIGHT = "pupil_cover_right";
+    private static final String PUPIL_COVER_LEFT = "pupil_cover_left";
+    /** Punto invisible en la manito donde se dibuja la flor. */
+    private static final String FLOWER_ANCHOR = "flower_anchor";
+
     /** Qué dibuja esta copia del modelo: el Noxis normal o solo los ojitos (brillo de la fascinación). */
     public static final int PASS_NORMAL = 0;
     public static final int PASS_GLOW_EYES = 1;
@@ -66,6 +74,11 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
     private final ModelPart leftLeg;
 
     private final int pass;
+    private final ModelPart pupilRight;
+    private final ModelPart pupilLeft;
+    private final ModelPart pupilCoverRight;
+    private final ModelPart pupilCoverLeft;
+    private final ModelPart flowerAnchor;
 
     public NoxisVillagerModel(ModelPart root) {
         this(root, PASS_NORMAL);
@@ -82,6 +95,11 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         this.eyesTired = this.head.getChild(EYES_TIRED);
         this.eyesClosed = this.head.getChild(EYES_CLOSED);
         this.eyesOpen = this.head.getChild(EYES_OPEN);
+        this.pupilRight = this.head.getChild(PUPIL_RIGHT);
+        this.pupilLeft = this.head.getChild(PUPIL_LEFT);
+        this.pupilCoverRight = this.head.getChild(PUPIL_COVER_RIGHT);
+        this.pupilCoverLeft = this.head.getChild(PUPIL_COVER_LEFT);
+        this.flowerAnchor = root.getChild(FLOWER_ANCHOR);
         this.umbrella = root.getChild(UMBRELLA);
         this.umbrellaCanopy = this.umbrella.getChild(UMBRELLA_CANOPY);
         this.tail = root.getChild(PartNames.BODY).getChild(TAIL);
@@ -117,6 +135,21 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
                 PartPose.ZERO);
         head.addOrReplaceChild(EYES_CLOSED,
                 CubeListBuilder.create().texOffs(20, 59).addBox(-5.0F, -7.0F, -4.05F, 10.0F, 4.0F, 0.0F),
+                PartPose.ZERO);
+        // Pupilas al centro del ojo (mirando atento la flor que tiene delante): un parche oscuro donde
+        // va la pupila nueva y uno amarillo que tapa la pupila de siempre (que mira hacia afuera). Usan píxeles que YA existen
+        // en las texturas (pupila u=41, amarillo u=42/47); solo se ven al contemplar la flor.
+        head.addOrReplaceChild(PUPIL_RIGHT,
+                CubeListBuilder.create().texOffs(41, 61).addBox(-3.0F, -5.0F, -4.06F, 1.0F, 2.0F, 0.0F),
+                PartPose.ZERO);
+        head.addOrReplaceChild(PUPIL_COVER_RIGHT,
+                CubeListBuilder.create().texOffs(42, 61).addBox(-4.0F, -5.0F, -4.06F, 1.0F, 2.0F, 0.0F),
+                PartPose.ZERO);
+        head.addOrReplaceChild(PUPIL_LEFT,
+                CubeListBuilder.create().texOffs(41, 61).addBox(2.0F, -5.0F, -4.06F, 1.0F, 2.0F, 0.0F),
+                PartPose.ZERO);
+        head.addOrReplaceChild(PUPIL_COVER_LEFT,
+                CubeListBuilder.create().texOffs(47, 61).addBox(3.0F, -5.0F, -4.06F, 1.0F, 2.0F, 0.0F),
                 PartPose.ZERO);
         head.addOrReplaceChild(PartNames.LEFT_EAR,
                 CubeListBuilder.create().texOffs(0, 28).mirror().addBox(-1.5F, -3.0F, -0.5F, 3.0F, 3.0F, 1.0F),
@@ -195,6 +228,9 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
                         .texOffs(100, 64).addBox(-1.0F, -32.0F, -1.0F, 2.0F, 2.0F, 2.0F),     // gema
                 PartPose.ZERO);
 
+        // Punto (sin cubos) donde se dibuja la flor en la mano; se mueve con la manito.
+        root.addOrReplaceChild(FLOWER_ANCHOR, CubeListBuilder.create(), PartPose.ZERO);
+
         return LayerDefinition.create(mesh, 128, 128);
     }
 
@@ -204,6 +240,11 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         float c3 = c1 + 1.0F;
         float k = x - 1.0F;
         return 1.0F + c3 * k * k * k + c1 * k * k;
+    }
+
+    /** Dónde se dibuja la flor (para {@link NoxisHeldFlowerLayer}). */
+    public ModelPart flowerAnchor() {
+        return this.flowerAnchor;
     }
 
     @Override
@@ -217,6 +258,9 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         float scared = state.scaredAnim;
         float torchAnim = state.torchAnim;
         float rest = state.restAnim;
+        // Sentarse: el descanso o la contemplación de la naturaleza usan la misma postura
+        // (la carita de sueño, las orejas caídas y el sombrero son SOLO del descanso).
+        float sit = Math.max(rest, state.natureSit);
 
         // ---- Bamboleo cartoon al caminar ----
         float[] waddle = NoxisMoodAnimator.waddle(pos, amount, happy);
@@ -224,12 +268,12 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         float bounce = waddle[1];
         float hop = Math.abs(Mth.sin(age * 0.3F)) * 0.6F * happy * (1.0F - amount);
         // Sentarse en dos tiempos: primero dobla las patitas, después "plop" con un rebotito.
-        float legPhase = Mth.clamp(rest * 1.6F, 0.0F, 1.0F);
-        float plop = easeOutBack(Mth.clamp((rest - 0.2F) / 0.8F, 0.0F, 1.0F));
+        float legPhase = Mth.clamp(sit * 1.6F, 0.0F, 1.0F);
+        float plop = easeOutBack(Mth.clamp((sit - 0.2F) / 0.8F, 0.0F, 1.0F));
         float sitDrop = 2.0F * plop;
 
         this.body.zRot = roll;
-        this.body.xRot = 0.12F * torchAnim - 0.08F * rest; // se inclina para ver / se recuesta un poquito
+        this.body.xRot = 0.12F * torchAnim - 0.08F * sit; // se inclina para ver / se recuesta un poquito
         this.body.y = HEAD_Y - bounce - hop + sitDrop;
 
         // ---- Cabeza ----
@@ -256,14 +300,18 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         this.rightEar.zRot -= 0.55F * rest - 0.35F * plopBounce;
         this.leftEar.zRot += 0.55F * rest - 0.35F * plopBounce;
         this.hat.xRot = -0.05F + 0.2F * rest;
-        this.tail.xRot = Mth.lerp(rest, this.tail.xRot, -0.15F);
-        this.tail.yRot = Mth.lerp(rest, this.tail.yRot, 1.25F);
+        this.tail.xRot = Mth.lerp(sit, this.tail.xRot, -0.15F);
+        this.tail.yRot = Mth.lerp(sit, this.tail.yRot, 1.25F);
         // Curiosidad repentina (gesto compartido; solo aparece estando quieto y tranquilo).
         NoxisMoodAnimator.applyCuriosity(this.head, this.rightEar, this.leftEar,
                 state.curious, state.curiousSide, state.curiousFlick);
         // Fascinación por un cristal: ladea la cabeza y para las orejitas (mirarlo lo hace el servidor).
         NoxisMoodAnimator.applyFascination(this.head, this.rightEar, this.leftEar,
                 state.crystalAmount, state.crystalSide, state.crystalTwitch, state.crystalHop);
+        // Naturaleza: mirar flores, agacharse, contemplar y olfatear (mirarlas lo hace el servidor).
+        NoxisMoodAnimator.applyNature(this.head, this.body, this.rightEar, this.leftEar, age,
+                state.natureSurvey, state.natureLean, state.natureHold, state.natureRaise, state.natureSniff,
+                state.natureEars, state.natureTilt, state.natureSide);
 
         // ---- Párpados (expresión) ----
         // esfuerzo por ver con la antorcha: entrecierra; cansado: casi cierra y parpadea lento.
@@ -274,10 +322,17 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         boolean sleepy = torchAnim > 0.5F || rest > 0.5F;
         boolean slowBlink = sleepy && (t % 110) < 8;
         boolean normalBlink = (t % 83) < 3;
-        boolean closed = slowBlink || (rest > 0.5F && dozing) || (!sleepy && normalBlink);
+        boolean closed = slowBlink || (rest > 0.5F && dozing) || (!sleepy && normalBlink)
+                || state.natureEyesClosed > 0.5F;                    // disfrutando el aroma
         this.eyesClosed.visible = closed;
         this.eyesTired.visible = sleepy && !closed;
         this.eyesOpen.visible = !closed && !sleepy;
+        // Pupilas mirando la flor (solo con los ojitos abiertos normales).
+        boolean pupils = this.eyesOpen.visible && state.naturePupils > 0.5F;
+        this.pupilRight.visible = pupils;
+        this.pupilLeft.visible = pupils;
+        this.pupilCoverRight.visible = pupils;
+        this.pupilCoverLeft.visible = pupils;
         // Con el parpadeo lento, la cabecita se le cae un poquito (cabeceo de sueño).
         if (slowBlink) {
             this.head.xRot += 0.12F * torchAnim;
@@ -286,7 +341,7 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         // ---- Patitas: pasitos, o estiradas hacia adelante al sentarse ----
         // Sentado: patitas hacia adelante, un poquito para arriba y abiertas en V, asomando
         // delante de la pancita (se mueven hacia adelante para que el cuerpo no las tape).
-        float kick = Mth.sin(age * 0.15F) * 0.08F * rest;   // las balancea suavecito
+        float kick = Mth.sin(age * 0.15F) * 0.08F * sit;   // las balancea suavecito
         this.rightLeg.xRot = Mth.lerp(legPhase, Mth.cos(pos * 1.2F) * 1.1F * amount, -1.65F + kick);
         this.leftLeg.xRot = Mth.lerp(legPhase, Mth.cos(pos * 1.2F + Mth.PI) * 1.1F * amount, -1.65F - kick);
         this.rightLeg.yRot = 0.35F * legPhase;
@@ -311,7 +366,7 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         float rightZ = 0.15F + roll + (0.9F + wave) * happy - 0.5F * scared;
         float leftZ = -0.15F + roll - (0.9F - wave) * happy + 0.5F * scared;
         // Sentado: manitos apoyadas sobre la pancita.
-        float armsPhase = rest * rest; // las manitos llegan a la pancita al final
+        float armsPhase = sit * sit; // las manitos llegan a la pancita al final
         rightX = Mth.lerp(armsPhase, rightX, -0.55F);
         leftX = Mth.lerp(armsPhase, leftX, -0.55F);
         rightZ = Mth.lerp(armsPhase, rightZ, -0.15F);
@@ -380,6 +435,21 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
 
         // ---- Fascinación: festejo con bracitos arriba, colita contenta y saltitos cartoon ----
         NoxisMoodAnimator.applyCheer(this.rightArm, this.leftArm, this.tail, state.crystalCheer, age);
+        // ---- Naturaleza: la flor en la manito ----
+        NoxisMoodAnimator.applyFlowerArms(this.rightArm, this.leftArm, state.natureLean, state.natureHold, state.natureRaise);
+        {
+            // Punta de la mano (igual que la antorcha) y, un poquito más adelante, la flor.
+            float ax = this.rightArm.xRot;
+            float az = this.rightArm.zRot;
+            float yy = 3.0F * Mth.cos(ax);
+            float zz = 3.0F * Mth.sin(ax);
+            float raise = state.natureRaise;
+            this.flowerAnchor.x = this.rightArm.x - yy * Mth.sin(az) + 1.6F * raise;
+            this.flowerAnchor.y = this.rightArm.y + yy * Mth.cos(az) + 1.8F * raise;   // pétalos a la altura de la naricita
+            this.flowerAnchor.z = this.rightArm.z + zz - 1.3F - 1.4F * raise;
+            this.flowerAnchor.zRot = -0.25F * (1.0F - raise);
+            this.flowerAnchor.xRot = 0.12F * raise;
+        }
         float hopState = state.crystalHop;
         if (hopState > 0.0F) {
             // En el aire: todo el Noxis sube (las patitas también, un poquito recogidas).
@@ -404,10 +474,10 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         // ---- Variante de ropa: capa de espalda (componente reutilizable por todas las especies Noxis) ----
         int capeStyle = state.variant - 1;          // 0 = sin capa; 1..3 = estilos de capa
         boolean hasCape = capeStyle >= 0;
-        NoxisCape.animate(this.body, capeStyle, state.capeSwing, state.capeTurn, age, rest);
+        NoxisCape.animate(this.body, capeStyle, state.capeSwing, state.capeTurn, age, sit);
         if (hasCape) {
             // Sentado con capa: la colita sale derecha por su ojal (no hacia el costado).
-            this.tail.yRot = Mth.lerp(rest, this.tail.yRot, 0.0F);
+            this.tail.yRot = Mth.lerp(sit, this.tail.yRot, 0.0F);
         }
 
         if (this.pass != PASS_NORMAL) {

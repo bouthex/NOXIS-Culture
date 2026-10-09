@@ -1,6 +1,7 @@
 package com.noxisculture.client.entity;
 
 import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
+import net.minecraft.client.renderer.item.ItemStackRenderState;
 
 /** Datos visuales copiados de la entidad en cada frame. */
 public class NoxisVillagerRenderState extends LivingEntityRenderState {
@@ -30,6 +31,20 @@ public class NoxisVillagerRenderState extends LivingEntityRenderState {
     public float crystalHop;
     public float crystalTwitch;
     public float crystalSide = 1.0F;
+    /** Naturaleza: mirar alrededor, agacharse, sostener/acercar la flor, olfatear, ojitos, orejas, ladeo, pupilas, sentarse. */
+    public float natureSurvey;
+    public float natureLean;
+    public float natureHold;
+    public float natureRaise;
+    public float natureSniff;
+    public float natureEyesClosed;
+    public float natureEars;
+    public float natureTilt;
+    public float naturePupils;
+    public float natureSit;
+    public float natureSide = 1.0F;
+    /** La flor que tiene en la mano (vacía si no tiene nada). */
+    public final ItemStackRenderState heldFlower = new ItemStackRenderState();
     /** true mientras se está levantando (para no repetir el rebote del "plop" al revés). */
     public boolean restRising;
 }
