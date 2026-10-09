@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "G G",
+    "G G",
+    "PPP"
+  ],
+  "key": {
+    "G": "minecraft:glass",
+    "P": "#minecraft:planks"
+  },
+  "result": {
+    "id": "noxis_culture:noxis_bowl",
+    "count": 1
+  }
+}
