@@ -7,6 +7,10 @@ import com.noxisculture.entity.ai.NoxisCrystalFascinationGoal;
 import com.noxisculture.entity.ai.NoxisFascinatable;
 import com.noxisculture.entity.ai.NoxisNatureGoal;
 import com.noxisculture.entity.ai.NoxisNatureLover;
+import com.noxisculture.entity.ai.NoxisReceiveGiftGoal;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.level.block.Block;
 import com.noxisculture.entity.idle.NoxisNatureAnimation;
 import com.noxisculture.entity.nature.NoxisFlowerCarry;
 import com.noxisculture.entity.nature.NoxisNatureAction;
@@ -134,6 +138,9 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
     private final NoxisCrystalFascination crystalFascination = new NoxisCrystalFascination();
     private final NoxisNatureAnimation natureAnimation = new NoxisNatureAnimation();
     private final NoxisFlowerCarry flowerCarry = new NoxisFlowerCarry();
+    /** Flor de regalo que otro Noxis le lanzó y todavía viene en camino (servidor, no se guarda). */
+    private @Nullable ItemEntity incomingGift;
+    private @Nullable LivingEntity giftGiver;
     /** El primer descanso llega pronto (1-5 min) para poder verlo; después, ~1 por día. */
     private int restCooldown = 1_200 + (int) (Math.random() * 4_800);
 
@@ -210,7 +217,56 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
     @Override
     public boolean canEnjoyNature() {
         return this.getMood() == NoxisMood.NEUTRAL && !this.isTrading() && !this.isResting()
-                && !this.isHoldingTorch() && !this.isHoldingUmbrella() && !this.isFascinated();
+                && !this.isHoldingTorch() && !this.isHoldingUmbrella() && !this.isFascinated()
+                && this.incomingGift == null && this.getNatureAction() != NoxisNatureAction.RECEIVE;
+    }
+
+    // ---- Recibir flores de regalo ----
+
+    @Override
+    public boolean canReceiveGift() {
+        return this.canEnjoyNature() && !this.flowerCarry.isHolding()
+                && this.getNatureAction() == NoxisNatureAction.NONE && !this.isBaby();
+    }
+
+    @Override
+    public void expectGift(ItemEntity gift, LivingEntity giver) {
+        this.incomingGift = gift;
+        this.giftGiver = giver;
+    }
+
+    @Override
+    public @Nullable ItemEntity getIncomingGift() {
+        return this.incomingGift;
+    }
+
+    @Override
+    public @Nullable LivingEntity getGiftGiver() {
+        return this.giftGiver;
+    }
+
+    @Override
+    public void clearIncomingGift() {
+        this.incomingGift = null;
+        this.giftGiver = null;
+    }
+
+    @Override
+    public void showGiftInHand(ItemStack stack) {
+        if (stack.isEmpty() || this.flowerCarry.isHolding()) {
+            this.syncHeldFlower();                       // vuelve a mostrar lo de siempre (nada)
+        } else {
+            this.entityData.set(HELD_FLOWER, stack.copy());
+        }
+    }
+
+    @Override
+    public void storeGift(ItemStack stack) {
+        // Reutiliza el inventario que ya trae AbstractVillager (Minecraft lo guarda con el Noxis).
+        ItemStack rest = this.getInventory().addItem(stack);
+        if (!rest.isEmpty()) {
+            Block.popResource(this.level(), this.blockPosition(), rest);   // inventario lleno: queda en el piso
+        }
     }
 
     @Override
@@ -306,6 +362,7 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
         this.goalSelector.addGoal(1, new PanicGoal(this, 0.6D));
         this.goalSelector.addGoal(2, new LookAtTradingPlayerGoal(this));
         this.goalSelector.addGoal(3, new NoxisRestGoal<>(this));
+        this.goalSelector.addGoal(3, new NoxisReceiveGiftGoal<>(this));
         this.goalSelector.addGoal(4, new NoxisWorkAtTableGoal<>(this, 0.45D));
         this.goalSelector.addGoal(4, new NoxisCrystalFascinationGoal<>(this));
         this.goalSelector.addGoal(4, new NoxisNatureGoal<>(this));

@@ -21,4 +21,6 @@ public final class NoxisNatureAction {
     public static final byte SIT = 7;
     /** Le regala la flor a alguien: se la acerca y se la lanza suavecito. */
     public static final byte GIFT = 8;
+    /** Recibe una flor de regalo de otro Noxis: la espera, la atrapa feliz y la mira con ternura. */
+    public static final byte RECEIVE = 9;
 }

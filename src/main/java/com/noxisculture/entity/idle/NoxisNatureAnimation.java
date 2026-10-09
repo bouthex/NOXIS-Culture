@@ -16,6 +16,8 @@ public final class NoxisNatureAnimation {
     private byte action = NoxisNatureAction.NONE;
     private int t;
     private float side = 1.0F;
+    /** Ticks desde que tiene una flor en la mano (para la carita feliz al recibir un regalo). */
+    private int holdT;
 
     // Valores actuales y del tick anterior (para interpolar entre frames).
     private final float[] now = new float[CHANNELS];
@@ -43,6 +45,7 @@ public final class NoxisNatureAnimation {
         } else {
             this.t++;
         }
+        this.holdT = holdingFlower ? this.holdT + 1 : 0;
         float[] target = new float[CHANNELS];
         int t = this.t;
         switch (this.action) {
@@ -83,6 +86,20 @@ public final class NoxisNatureAnimation {
                 target[TILT] = 0.8F;
                 target[EARS] = 0.7F;
                 target[EYES] = t >= 17 && t < 30 ? 1.0F : 0.0F;
+            }
+            case NoxisNatureAction.RECEIVE -> {
+                if (!holdingFlower) {
+                    // Esperando el regalo: orejitas paradas y cabecita ladeada.
+                    target[TILT] = 0.5F;
+                    target[EARS] = 1.0F;
+                } else {
+                    // ¡Lo recibió! Ojitos felices al principio y después la mira con ternura.
+                    target[RAISE] = 0.55F;
+                    target[TILT] = 1.0F;
+                    target[EARS] = this.holdT < 30 ? 1.0F : 0.4F;
+                    target[EYES] = this.holdT < 14 ? 1.0F : 0.0F;
+                    target[PUPILS] = this.holdT >= 16 ? 1.0F : 0.0F;
+                }
             }
             case NoxisNatureAction.SIT -> {
                 target[SIT] = 1.0F;

@@ -400,7 +400,7 @@ public class NoxisNatureGoal<T extends PathfinderMob & NoxisNatureLover> extends
         if (e == null || e == this.mob || !e.isAlive() || e.isRemoved()) return false;
         if (e.distanceToSqr(this.mob) > (GIFT_RADIUS + 4.0D) * (GIFT_RADIUS + 4.0D)) return false;
         if (e instanceof Player player) return !player.isSpectator();
-        if (e instanceof NoxisNatureLover) return true;
+        if (e instanceof NoxisNatureLover lover) return lover.canReceiveGift();
         return e instanceof Animal;
     }
 
@@ -419,6 +419,11 @@ public class NoxisNatureGoal<T extends PathfinderMob & NoxisNatureLover> extends
         item.setDeltaMovement(push);
         item.setPickUpDelay(10);
         level.addFreshEntity(item);
+        if (to instanceof NoxisNatureLover lover && lover.canReceiveGift()) {
+            // Otro Noxis: la espera y la atrapa. Mientras vuela, nadie más puede levantarla.
+            item.setPickUpDelay(60);
+            lover.expectGift(item, this.mob);
+        }
         this.mob.playSound(ModSounds.NOXIS_HAPPY, 0.55F, 1.25F);
         server.sendParticles(ParticleTypes.HEART, this.mob.getX(), this.mob.getEyeY() + 0.4D, this.mob.getZ(),
                 1, 0.1D, 0.05D, 0.1D, 0.0D);
