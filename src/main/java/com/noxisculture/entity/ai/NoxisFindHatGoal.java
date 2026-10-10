@@ -255,9 +255,9 @@ public class NoxisFindHatGoal<T extends PathfinderMob & NoxisBowlSleeper> extend
             this.targetItem = item;
         }
         // Sombreros colocados como bloque.
-        BlockPos origin = this.mob.blockPosition();
-        for (BlockPos pos : BlockPos.betweenClosed(origin.offset(-RADIUS, -HEIGHT, -RADIUS),
-                origin.offset(RADIUS, HEIGHT, RADIUS))) {
+        BlockPos here = this.mob.blockPosition();
+        for (BlockPos pos : BlockPos.betweenClosed(here.offset(-RADIUS, -HEIGHT, -RADIUS),
+                here.offset(RADIUS, HEIGHT, RADIUS))) {
             if (!level.getBlockState(pos).is(ModBlocks.NOXIS_HAT) || reserved.contains(pos)) continue;
             double d = pos.distToCenterSqr(this.mob.position());
             if (d >= best) continue;
