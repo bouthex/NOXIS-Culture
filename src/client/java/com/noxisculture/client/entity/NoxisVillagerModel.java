@@ -1,5 +1,6 @@
 package com.noxisculture.client.entity;
 
+import com.noxisculture.entity.idle.NoxisBowlHop;
 import com.noxisculture.entity.idle.NoxisHatAnimation;
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.geom.ModelPart;
@@ -556,6 +557,11 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         if (state.hatAnim != NoxisHatAnimation.NONE) {
             this.applyHatAnimation(state.hatAnim, state.hatAnimTime);
         }
+        // ---- Saltito para entrar / salir de la pecera ----
+        this.setSqueeze(1.0F, 1.0F);
+        if (state.bowlHop != NoxisBowlHop.NONE) {
+            this.applyBowlHop(state.bowlHop, state.bowlHopTime);
+        }
         // ---- Sombrero o mechoncito ----
         this.hat.visible = state.hasHat;
         this.hairTuft.visible = !state.hasHat;
@@ -627,5 +633,52 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         this.leftArm.xRot = Mth.lerp(k, lx, Mth.lerp(carry, Mth.lerp(lift, lx, -2.4F), -1.2F));
         this.rightArm.zRot = Mth.lerp(k, rz, rz + 0.9F * up - 0.2F * carry);
         this.leftArm.zRot = Mth.lerp(k, lz, lz - 0.9F * up + 0.2F * carry);
+    }
+
+    /**
+     * Saltito de la pecera: se agacha preparándose, se suelta con un "boing", recoge las patitas
+     * y levanta los bracitos en el aire, se aprieta (más angostito y alto) para pasar por el
+     * cuellito de la pecera y aterriza con un rebotito. Se suma encima de la pose que ya tenga.
+     */
+    private void applyBowlHop(byte type, float t) {
+        float[] c = NoxisBowlHop.curves(type, t);
+        float crouch = c[0];
+        float tuck = c[1];
+        float squeeze = c[2];
+        float arms = c[3];
+        float land = c[4];
+        float down = 2.0F * crouch + 1.4F * land;               // agachadito / aplastón al aterrizar
+        this.head.y += down;
+        this.body.y += down * 0.75F;
+        this.rightArm.y += down * 0.75F;
+        this.leftArm.y += down * 0.75F;
+        this.head.xRot += 0.15F * crouch;                        // mira la abertura, concentrado
+        // Patitas recogidas en el aire.
+        this.rightLeg.xRot = Mth.lerp(tuck, this.rightLeg.xRot, -1.35F);
+        this.leftLeg.xRot = Mth.lerp(tuck, this.leftLeg.xRot, -1.35F);
+        this.rightLeg.y -= 1.5F * tuck;
+        this.leftLeg.y -= 1.5F * tuck;
+        // Bracitos arriba (como zambulléndose).
+        this.rightArm.xRot = Mth.lerp(arms, this.rightArm.xRot, -2.9F);
+        this.leftArm.xRot = Mth.lerp(arms, this.leftArm.xRot, -2.9F);
+        this.rightArm.zRot = Mth.lerp(arms, this.rightArm.zRot, 0.25F);
+        this.leftArm.zRot = Mth.lerp(arms, this.leftArm.zRot, -0.25F);
+        // Apretadito para pasar por el cuellito.
+        float narrow = 1.0F - 0.4F * squeeze;
+        this.setSqueeze(narrow, 1.0F + 0.15F * squeeze);
+        this.rightArm.x *= narrow;
+        this.leftArm.x *= narrow;
+        this.rightLeg.x *= narrow;
+        this.leftLeg.x *= narrow;
+    }
+
+    /** Escala de la cabeza y el cuerpo (1 = normal; el saltito de la pecera los aprieta). */
+    private void setSqueeze(float wide, float tall) {
+        this.head.xScale = wide;
+        this.head.zScale = wide;
+        this.head.yScale = tall;
+        this.body.xScale = wide;
+        this.body.zScale = wide;
+        this.body.yScale = tall;
     }
 }

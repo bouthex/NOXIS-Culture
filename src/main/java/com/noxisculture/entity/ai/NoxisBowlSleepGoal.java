@@ -2,6 +2,7 @@ package com.noxisculture.entity.ai;
 
 import com.noxisculture.block.ModBlocks;
 import com.noxisculture.block.custom.NoxisBowlBlock;
+import com.noxisculture.entity.idle.NoxisBowlHop;
 import com.noxisculture.entity.idle.NoxisHatAnimation;
 import com.noxisculture.sound.ModSounds;
 import java.util.EnumSet;
@@ -27,8 +28,9 @@ import org.jspecify.annotations.Nullable;
  * vuelve a poner; si alguien se lo llevó, se queda sin sombrero.
  *
  * <p>Entra y sale SALTANDO por la abertura de arriba (nunca atraviesa el vidrio ni se
- * teletransporta): un saltito en arco que pasa por encima del borde. Mientras salta, el Noxis
- * no choca con nada (lo mueve este objetivo, tick a tick).</p>
+ * teletransporta): se para pegado a la pecera, mira la abertura, se agacha, sube derecho hasta
+ * pasar el borde, avanza por encima y cae adentro apretadito (al salir, lo mismo al revés).
+ * Mientras salta lo mueve este objetivo, tick a tick ({@link NoxisBowlHop}).</p>
  *
  * <p>Una pecera, un Noxis: la reserva se marca en el bloque apenas la elige. Si no encuentra
  * pecera libre, sigue despierto con lo suyo. Todo se guarda con el mundo (la pecera, el estado
@@ -39,15 +41,13 @@ public class NoxisBowlSleepGoal<T extends PathfinderMob & NoxisBowlSleeper & Nox
     private static final int SEARCH_HEIGHT = 4;
     private static final int SEARCH_INTERVAL = 100;      // busca pecera cada 5 s
     private static final int WALK_TIMEOUT = 600;         // 30 s para llegar
-    private static final double REACH = 1.7D;
     private static final double FLOOR = 2.0D / 16.0D;    // el piso de madera de la pecera
-    /** Punto más alto del saltito: por encima del borde de vidrio (21 px). */
-    private static final double APEX = 23.5D / 16.0D;
-    /** Arriba del borde (si no hay lugar al costado para bajar). */
+    /** Arriba del borde (salida de emergencia, si no hay ningún lugar al costado). */
     private static final double LIP_TOP = 21.0D / 16.0D;
-    private static final int HOP_TICKS = 14;
+    /** Si al despertarse no hay lugar libre al costado para bajar, sigue adentro y reintenta. */
+    private static final int EXIT_RETRY = 100;
 
-    private enum Phase { WALK, HAT_OFF, CLIMB_IN, SLEEP, CLIMB_OUT, HAT_ON, DONE }
+    private enum Phase { WALK, HAT_OFF, PREP, CLIMB_IN, SLEEP, CLIMB_OUT, HAT_ON, DONE }
 
     private final T mob;
     private Phase phase = Phase.DONE;
@@ -58,6 +58,9 @@ public class NoxisBowlSleepGoal<T extends PathfinderMob & NoxisBowlSleeper & Nox
     /** Saltito para entrar o salir: desde dónde y hasta dónde. */
     private @Nullable Vec3 hopFrom;
     private @Nullable Vec3 hopTo;
+    /** Lugar pegado a la pecera desde donde salta adentro. */
+    private @Nullable BlockPos approach;
+    private int nextExitTry;
 
     public NoxisBowlSleepGoal(T mob) {
         this.mob = mob;
@@ -88,6 +91,8 @@ public class NoxisBowlSleepGoal<T extends PathfinderMob & NoxisBowlSleeper & Nox
         this.hatSpot = null;
         this.hopFrom = null;
         this.hopTo = null;
+        this.approach = null;
+        this.nextExitTry = 0;
         if (this.mob.isInBowl()) {
             this.phase = Phase.SLEEP;
             this.mob.setResting(true);
@@ -117,13 +122,13 @@ public class NoxisBowlSleepGoal<T extends PathfinderMob & NoxisBowlSleeper & Nox
             return;
         }
         if (this.phase == Phase.CLIMB_OUT) {
-            if (this.tickHop(false)) this.landOutside();
+            if (this.tickHop(NoxisBowlHop.OUT)) this.landOutside();
             return;
         }
         BlockPos bowl = this.mob.getBowlPos();
         if (bowl == null || !level.getBlockState(bowl).is(ModBlocks.NOXIS_BOWL)) {
             // La pecera ya no está (la rompieron): se despierta / deja de ir.
-            this.mob.setBowlHop(false);
+            this.mob.setBowlHop(NoxisBowlHop.NONE);
             this.leaveBowl();
             this.afterLeaving();
             return;
@@ -132,11 +137,18 @@ public class NoxisBowlSleepGoal<T extends PathfinderMob & NoxisBowlSleeper & Nox
             case WALK -> {
                 if (!this.mob.isBedtime() || !this.mob.canGoToBowl()) { this.phase = Phase.DONE; return; }
                 Vec3 center = Vec3.atBottomCenterOf(bowl);
-                this.mob.getLookControl().setLookAt(center.x, center.y + 0.5D, center.z);
-                double dx = center.x - this.mob.getX();
-                double dz = center.z - this.mob.getZ();
-                if (dx * dx + dz * dz < REACH * REACH && Math.abs(bowl.getY() - this.mob.getY()) < 1.5D) {
+                if (this.approach == null || this.ticks % 40 == 1 && !this.isStandable(this.approach)) {
+                    this.approach = this.findApproachSpot(bowl);
+                }
+                BlockPos spot = this.approach;
+                Vec3 target = spot != null ? Vec3.atBottomCenterOf(spot) : center;
+                double reach = spot != null ? 0.35D : 1.3D;
+                double dx = target.x - this.mob.getX();
+                double dz = target.z - this.mob.getZ();
+                if (dx * dx + dz * dz < reach * reach && Math.abs(target.y - this.mob.getY()) < 1.0D) {
+                    // Llegó al lado de la pecera: mira hacia la abertura.
                     this.mob.getNavigation().stop();
+                    this.faceBowl(bowl);
                     if (this.mob.hasHat()) {
                         // Primero se saca el sombrero (con su animación) y lo deja al costado.
                         this.hatSpot = this.findFreeSpotNear(bowl, null);
@@ -145,12 +157,15 @@ public class NoxisBowlSleepGoal<T extends PathfinderMob & NoxisBowlSleeper & Nox
                         this.phase = Phase.HAT_OFF;
                         this.mob.setHatAnim(NoxisHatAnimation.OFF);
                     } else {
-                        this.startClimbIn(bowl);
+                        this.startPrep();
                     }
                 } else if (this.ticks >= WALK_TIMEOUT) {
                     this.phase = Phase.DONE;                     // no pudo llegar
-                } else if (this.ticks % 20 == 1 || this.mob.getNavigation().isDone()) {
-                    this.mob.getNavigation().moveTo(center.x, bowl.getY(), center.z, 0.45D);
+                } else {
+                    this.mob.getLookControl().setLookAt(center.x, center.y + 0.5D, center.z);
+                    if (this.ticks % 20 == 1 || this.mob.getNavigation().isDone()) {
+                        this.mob.getNavigation().moveTo(target.x, target.y, target.z, 0.45D);
+                    }
                 }
             }
             case HAT_OFF -> {
@@ -172,13 +187,19 @@ public class NoxisBowlSleepGoal<T extends PathfinderMob & NoxisBowlSleeper & Nox
                     this.mob.setHatPos(spot);
                 } else if (this.ticks >= NoxisHatAnimation.OFF_LENGTH) {
                     this.mob.setHatAnim(NoxisHatAnimation.NONE);
-                    this.startClimbIn(bowl);
+                    this.startPrep();
                 }
             }
+            case PREP -> {
+                // Se agacha mirando la abertura, preparándose para saltar.
+                this.mob.getNavigation().stop();
+                this.faceBowl(bowl);
+                if (this.ticks >= NoxisBowlHop.PREP_TICKS) this.startClimbIn(bowl);
+            }
             case CLIMB_IN -> {
-                if (this.tickHop(true)) {
-                    // Aterrizó adentro: a dormir.
-                    this.mob.setBowlHop(false);
+                if (this.tickHop(NoxisBowlHop.IN)) {
+                    // Aterrizó apretadito en el fondo: se acomoda y se duerme.
+                    this.mob.setBowlHop(NoxisBowlHop.NONE);
                     this.mob.setInBowl(true);
                     this.mob.setResting(true);
                     this.mob.playSound(ModSounds.NOXIS_YAWN, 0.6F, 1.0F);
@@ -189,7 +210,7 @@ public class NoxisBowlSleepGoal<T extends PathfinderMob & NoxisBowlSleeper & Nox
             case SLEEP -> {
                 this.mob.getNavigation().stop();
                 this.holdInside(bowl);
-                if (this.mob.isWakeTime() || this.mob.hurtTime > 0) {
+                if ((this.mob.isWakeTime() || this.mob.hurtTime > 0) && this.mob.tickCount >= this.nextExitTry) {
                     this.startClimbOut(bowl);
                 }
             }
@@ -199,20 +220,33 @@ public class NoxisBowlSleepGoal<T extends PathfinderMob & NoxisBowlSleeper & Nox
 
     // ------------------------------------------------------------------ saltitos
 
+    private void startPrep() {
+        this.ticks = 0;
+        this.phase = Phase.PREP;
+        this.mob.setBowlHop(NoxisBowlHop.PREP);
+    }
+
     private void startClimbIn(BlockPos bowl) {
         this.mob.getNavigation().stop();
         this.startHop(this.mob.position(), new Vec3(bowl.getX() + 0.5D, bowl.getY() + FLOOR, bowl.getZ() + 0.5D));
+        this.mob.setBowlHop(NoxisBowlHop.IN);
         this.phase = Phase.CLIMB_IN;
     }
 
-    /** Se despierta y sale saltando por arriba, del lado donde dejó el sombrero. */
+    /**
+     * Se despierta y sale saltando por la abertura, hacia el lado donde dejó el sombrero. Si no
+     * hay ningún lugar libre al costado para bajar, se queda adentro y vuelve a intentar.
+     */
     private void startClimbOut(BlockPos bowl) {
         BlockPos out = this.findFreeSpotNear(bowl, this.mob.getHatPos());
-        Vec3 to = out != null
-                ? new Vec3(out.getX() + 0.5D, out.getY(), out.getZ() + 0.5D)
-                : new Vec3(bowl.getX() + 0.5D, bowl.getY() + LIP_TOP, bowl.getZ() + 0.5D);   // se queda arriba del borde
+        if (out == null) {
+            this.nextExitTry = this.mob.tickCount + EXIT_RETRY;
+            return;
+        }
         this.mob.setResting(false);                              // se despereza mientras sale
-        this.startHop(this.mob.position(), to);
+        this.mob.setInBowl(false);
+        this.startHop(this.mob.position(), new Vec3(out.getX() + 0.5D, out.getY(), out.getZ() + 0.5D));
+        this.mob.setBowlHop(NoxisBowlHop.OUT);
         this.phase = Phase.CLIMB_OUT;
     }
 
@@ -220,58 +254,51 @@ public class NoxisBowlSleepGoal<T extends PathfinderMob & NoxisBowlSleeper & Nox
         this.hopFrom = from;
         this.hopTo = to;
         this.ticks = 0;
-        this.mob.setBowlHop(true);
+        this.mob.getNavigation().stop();
         this.mob.setDeltaMovement(Vec3.ZERO);
         double dx = to.x - from.x;
         double dz = to.z - from.z;
-        if (dx * dx + dz * dz > 1.0E-4D) {
-            float yaw = (float) (Mth.atan2(dz, dx) * Mth.RAD_TO_DEG) - 90.0F;
-            this.mob.setYRot(yaw);
-            this.mob.yBodyRot = yaw;
-            this.mob.yHeadRot = yaw;
-        }
+        if (dx * dx + dz * dz > 1.0E-4D) this.face(dx, dz);
+    }
+
+    private void faceBowl(BlockPos bowl) {
+        double dx = bowl.getX() + 0.5D - this.mob.getX();
+        double dz = bowl.getZ() + 0.5D - this.mob.getZ();
+        if (dx * dx + dz * dz > 1.0E-4D) this.face(dx, dz);
+        this.mob.getLookControl().setLookAt(bowl.getX() + 0.5D, bowl.getY() + 1.2D, bowl.getZ() + 0.5D);
+    }
+
+    private void face(double dx, double dz) {
+        float yaw = (float) (Mth.atan2(dz, dx) * Mth.RAD_TO_DEG) - 90.0F;
+        this.mob.setYRot(yaw);
+        this.mob.yBodyRot = yaw;
+        this.mob.yHeadRot = yaw;
     }
 
     /**
-     * Mueve el saltito un tick. Entrando: sube, cruza por encima del borde y cae adentro.
-     * Saliendo: sube derecho por la abertura, cruza por encima del borde y baja afuera.
+     * Mueve el saltito un tick por su camino (ver {@link NoxisBowlHop}): siempre sube derecho
+     * hasta pasar el borde ANTES de avanzar por encima de la abertura, así nunca cruza el vidrio.
      * @return true cuando aterrizó
      */
-    private boolean tickHop(boolean in) {
+    private boolean tickHop(byte type) {
         Vec3 from = this.hopFrom;
         Vec3 to = this.hopTo;
         BlockPos bowl = this.mob.getBowlPos();
         if (from == null || to == null) return true;
-        double apex = (bowl != null ? bowl.getY() : Math.max(from.y, to.y)) + APEX;
+        double apex = (bowl != null ? bowl.getY() : Math.max(from.y, to.y)) + NoxisBowlHop.APEX;
         apex = Math.max(apex, Math.max(from.y, to.y) + 0.3D);
-        float t = Math.min(1.0F, this.ticks / (float) HOP_TICKS);
-        float h;
-        double y;
-        if (in) {
-            h = NoxisHatAnimation.smooth((t - 0.1F) / 0.45F);
-            if (t < 0.35F) y = Mth.lerp(easeOut(t / 0.35F), from.y, apex);
-            else if (t < 0.6F) y = apex;
-            else { float d = (t - 0.6F) / 0.4F; y = Mth.lerp(d * d, apex, to.y); }
-        } else {
-            h = NoxisHatAnimation.smooth((t - 0.3F) / 0.4F);
-            if (t < 0.3F) y = Mth.lerp(easeOut(t / 0.3F), from.y, apex);
-            else if (t < 0.65F) y = apex;
-            else { float d = (t - 0.65F) / 0.35F; y = Mth.lerp(d * d, apex, to.y); }
-        }
+        float f = Math.min(1.0F, this.ticks / (float) NoxisBowlHop.HOP_TICKS);
+        float h = NoxisBowlHop.horizontal(type, f);
+        double y = NoxisBowlHop.height(type, f, from.y, apex, to.y);
         this.mob.setPos(Mth.lerp(h, from.x, to.x), y, Mth.lerp(h, from.z, to.z));
         this.mob.setDeltaMovement(Vec3.ZERO);
         this.mob.getNavigation().stop();
-        return this.ticks >= HOP_TICKS;
-    }
-
-    private static float easeOut(float x) {
-        x = Mth.clamp(x, 0.0F, 1.0F);
-        return 1.0F - (1.0F - x) * (1.0F - x);
+        return this.ticks >= NoxisBowlHop.HOP_TICKS;
     }
 
     /** Aterrizó afuera: libera la pecera y va por su sombrero (si sigue ahí). */
     private void landOutside() {
-        this.mob.setBowlHop(false);
+        this.mob.setBowlHop(NoxisBowlHop.NONE);
         this.freeBowl();
         this.afterLeaving();
     }
@@ -285,8 +312,9 @@ public class NoxisBowlSleepGoal<T extends PathfinderMob & NoxisBowlSleeper & Nox
             this.phase = Phase.HAT_ON;
             this.mob.setHatAnim(NoxisHatAnimation.ON);
         } else {
-            // Alguien se lo llevó: se queda sin sombrero (después lo puede buscar por ahí).
+            // Alguien se lo llevó: sale a buscar uno por la zona (NoxisFindHatGoal), un rato.
             this.mob.setHatPos(null);
+            if (!this.mob.hasHat()) this.mob.startHatSearch(this.mob.blockPosition());
             this.phase = Phase.DONE;
         }
     }
@@ -387,6 +415,23 @@ public class NoxisBowlSleepGoal<T extends PathfinderMob & NoxisBowlSleeper & Nox
         return best;
     }
 
+    /** El lugar pegado a la pecera más cercano al Noxis (puede ser donde ya está parado). */
+    private @Nullable BlockPos findApproachSpot(BlockPos bowl) {
+        BlockPos best = null;
+        double bestDist = Double.MAX_VALUE;
+        for (Direction dir : Direction.Plane.HORIZONTAL) {
+            for (int dy = 0; dy >= -1; dy--) {
+                BlockPos p = bowl.relative(dir).above(dy);
+                if (!this.isStandable(p)) continue;
+                boolean taken = !this.mob.level().getEntities(this.mob, new AABB(p)).isEmpty();
+                double d = p.distToCenterSqr(this.mob.position());
+                if (!taken && d < bestDist) { best = p.immutable(); bestDist = d; }
+                break;
+            }
+        }
+        return best;
+    }
+
     /**
      * Un lugar libre al lado de la pecera, con piso firme (para el sombrero o para salir).
      * Elige el más cercano a {@code prefer} (o al Noxis, si es null).
@@ -423,9 +468,8 @@ public class NoxisBowlSleepGoal<T extends PathfinderMob & NoxisBowlSleeper & Nox
             this.mob.setPos(from.x, from.y, from.z);              // no llegó a entrar: vuelve afuera
         } else if (this.phase == Phase.CLIMB_OUT && to != null) {
             this.mob.setPos(to.x, to.y, to.z);                    // termina de salir
-            this.mob.setInBowl(false);
         }
-        this.mob.setBowlHop(false);
+        this.mob.setBowlHop(NoxisBowlHop.NONE);
         this.hopFrom = null;
         this.hopTo = null;
         if (this.mob.isInBowl() || this.mob.getBowlPos() != null) this.leaveBowl();

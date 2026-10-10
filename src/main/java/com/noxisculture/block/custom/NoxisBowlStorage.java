@@ -57,7 +57,7 @@ public final class NoxisBowlStorage {
         // El sombrero queda afuera, donde lo dejó (el jugador lo puede juntar): ya no lo busca ahí.
         sleeper.setHatPos(null);
         sleeper.setHatAnim(NoxisHatAnimation.NONE);
-        sleeper.setBowlHop(false);
+        sleeper.setBowlHop(com.noxisculture.entity.idle.NoxisBowlHop.NONE);
         sleeper.setBowlPos(null);                     // así al quitarlo no toca el bloque
 
         TagValueOutput output = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, level.registryAccess());

@@ -126,6 +126,9 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
     /** Animación de sacarse/ponerse el sombrero (la decide el servidor; no se guarda). */
     private static final EntityDataAccessor<Byte> HAT_ANIM =
             SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BYTE);
+    /** Saltito de la pecera (prepararse / entrar / salir): lo decide el servidor; no se guarda. */
+    private static final EntityDataAccessor<Byte> BOWL_HOP =
+            SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BYTE);
     /** Cada Noxis se duerme a su hora: entre 0 y 2 minutos después de que oscurece. */
     private static final int BEDTIME_RANDOM = 2400;
     /** ...y se despierta a su ritmo: entre 0 y 40 s después del amanecer. */
@@ -170,8 +173,12 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
     // Pecera y sombrero (servidor; se guardan con el Noxis).
     private @Nullable BlockPos bowlPos;
     private @Nullable BlockPos hatPos;
-    /** Saltando para entrar o salir de la pecera (servidor, no se guarda). */
-    private boolean bowlHop;
+    private final com.noxisculture.entity.idle.NoxisBowlHop bowlHopAnimation = new com.noxisculture.entity.idle.NoxisBowlHop();
+    /** Búsqueda temporal de sombrero (al despertarse sin el suyo; no se guarda). */
+    private @Nullable BlockPos hatSearchOrigin;
+    private long hatSearchUntil = -1L;
+    /** Cuánto dura como máximo la búsqueda de sombrero al despertarse (45 s). */
+    private static final int HAT_SEARCH_TICKS = 900;
     private long bedtime = -1L;
     private long wakeTime = -1L;
     private final NoxisSocialAnimation socialAnimation = new NoxisSocialAnimation();
@@ -201,6 +208,7 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
         builder.define(IN_BOWL, false);
         builder.define(HAS_HAT, true);
         builder.define(HAT_ANIM, com.noxisculture.entity.idle.NoxisHatAnimation.NONE);
+        builder.define(BOWL_HOP, com.noxisculture.entity.idle.NoxisBowlHop.NONE);
     }
 
     public NoxisMood getMood() {
@@ -342,14 +350,46 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
     }
 
     @Override
-    public void setBowlHop(boolean hop) {
-        this.bowlHop = hop;
+    public void setBowlHop(byte anim) {
+        this.entityData.set(BOWL_HOP, anim);
+        if (anim != com.noxisculture.entity.idle.NoxisBowlHop.NONE) this.entityData.set(TORCH, false);
+    }
+
+    /** ¿Está en el aire, saltando para entrar o salir de la pecera? */
+    private boolean isBowlHopping() {
+        byte a = this.entityData.get(BOWL_HOP);
+        return a == com.noxisculture.entity.idle.NoxisBowlHop.IN || a == com.noxisculture.entity.idle.NoxisBowlHop.OUT;
+    }
+
+    /** Saltito de la pecera (solo visual, cliente). */
+    public com.noxisculture.entity.idle.NoxisBowlHop getBowlHopAnimation() {
+        return this.bowlHopAnimation;
+    }
+
+    @Override
+    public void startHatSearch(BlockPos origin) {
+        this.hatSearchOrigin = origin.immutable();
+        this.hatSearchUntil = this.level().getGameTime() + HAT_SEARCH_TICKS;
+    }
+
+    @Override
+    public @Nullable BlockPos getHatSearchOrigin() {
+        if (this.hatSearchOrigin != null && (this.hasHat() || this.level().getGameTime() > this.hatSearchUntil)) {
+            this.stopHatSearch();                      // ya lo tiene, o se acabó el tiempo
+        }
+        return this.hatSearchOrigin;
+    }
+
+    @Override
+    public void stopHatSearch() {
+        this.hatSearchOrigin = null;
+        this.hatSearchUntil = -1L;
     }
 
     /** Durante el saltito de la pecera lo mueve el objetivo de dormir: acá no se mueve solo. */
     @Override
     public void travel(Vec3 input) {
-        if (this.bowlHop) {
+        if (this.isBowlHopping()) {
             this.setDeltaMovement(Vec3.ZERO);
             return;
         }
@@ -376,7 +416,7 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
     /** Durmiendo en la pecera (o saltando para entrar/salir) nadie lo empuja. */
     @Override
     public boolean isPushable() {
-        return !this.isInBowl() && !this.bowlHop && super.isPushable();
+        return !this.isInBowl() && !this.isBowlHopping() && super.isPushable();
     }
 
     @Override
@@ -766,7 +806,8 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
                     || this.level().getBrightness(LightLayer.SKY, this.blockPosition()) < CAVE_SKY_LIGHT;
             // Sin antorcha dentro de la pecera ni mientras se saca o se pone el sombrero (usa los bracitos).
             boolean torch = dark && !this.isInBowl()
-                    && this.entityData.get(HAT_ANIM) == com.noxisculture.entity.idle.NoxisHatAnimation.NONE;
+                    && this.entityData.get(HAT_ANIM) == com.noxisculture.entity.idle.NoxisHatAnimation.NONE
+                    && this.entityData.get(BOWL_HOP) == com.noxisculture.entity.idle.NoxisBowlHop.NONE;
             if (torch != this.isHoldingTorch()) {
                 this.entityData.set(TORCH, torch);
             }
@@ -812,6 +853,7 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
                 && !this.isHoldingTorch() && this.torchAnim < 0.01F
                 && !this.isHoldingUmbrella() && this.umbrellaAnim < 0.01F
                 && this.hatAnimation.getAnim() == com.noxisculture.entity.idle.NoxisHatAnimation.NONE
+                && this.bowlHopAnimation.getAnim() == com.noxisculture.entity.idle.NoxisBowlHop.NONE
                 && dx * dx + dz * dz < 1.0E-4D;
         // Los dos gestos tranquilos nunca se pisan: el que empezó primero termina antes que el otro.
         boolean fascinated = this.isFascinated() || this.crystalFascination.isActive()
@@ -822,6 +864,7 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
         // Saludos y descanso en compañía: la señal llega del servidor; acá solo se anima.
         this.socialAnimation.tick(this.getSocialAnim(), this.random);
         this.hatAnimation.tick(this.entityData.get(HAT_ANIM));
+        this.bowlHopAnimation.tick(this.entityData.get(BOWL_HOP));
         boolean withSocial = this.socialAnimation.isBusy();
         this.curiosity.tick(calm && !fascinated && !withNature && !withSocial, this.random);
         // Fascinación: la señal llega del servidor; acá solo se corta si se ve algo prioritario.

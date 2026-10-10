@@ -61,6 +61,9 @@ public class NoxisVillagerRenderState extends LivingEntityRenderState {
     /** Animación de sacarse/ponerse el sombrero (0 = ninguna) y su tiempo en ticks. */
     public byte hatAnim;
     public float hatAnimTime;
+    /** Saltito de la pecera (0 = ninguno) y su tiempo en ticks. */
+    public byte bowlHop;
+    public float bowlHopTime;
     /** La flor que tiene en la mano (vacía si no tiene nada). */
     public final ItemStackRenderState heldFlower = new ItemStackRenderState();
     /** true mientras se está levantando (para no repetir el rebote del "plop" al revés). */

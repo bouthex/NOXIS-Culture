@@ -10,9 +10,11 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.goal.Goal;
+import net.minecraft.world.entity.ai.util.LandRandomPos;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.pathfinder.Path;
+import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -27,14 +29,18 @@ import org.jspecify.annotations.Nullable;
  * duerme. Si otro llega primero, se rinde sin drama.</p>
  */
 public class NoxisFindHatGoal<T extends PathfinderMob & NoxisBowlSleeper> extends Goal {
-    private static final int RADIUS = 10;
+    private static final int RADIUS = 15;
+    /** En la búsqueda al despertarse: no se aleja más que esto del lugar donde se despertó. */
+    private static final double SEARCH_LEASH = 15.0D;
+    private static final int ROAM_RESCAN = 20;           // mientras recorre, mira cada 1 s
+    private static final int ROAM_LEG = 120;             // cada tramo del recorrido, como mucho 6 s
     private static final int HEIGHT = 3;
     private static final int SEARCH_INTERVAL = 60;       // mira cada 3 s (más o menos)
     private static final int WALK_TIMEOUT = 400;         // 20 s para llegar
     private static final double REACH_BLOCK = 1.8D;
     private static final double REACH_ITEM = 1.3D;
 
-    private enum Phase { WALK, PUT_ON, DONE }
+    private enum Phase { WALK, PUT_ON, ROAM, DONE }
 
     private final T mob;
     private Phase phase = Phase.DONE;
@@ -42,6 +48,7 @@ public class NoxisFindHatGoal<T extends PathfinderMob & NoxisBowlSleeper> extend
     private int nextSearchTick;
     private @Nullable BlockPos targetBlock;
     private @Nullable ItemEntity targetItem;
+    private int roamLegTicks;
 
     public NoxisFindHatGoal(T mob) {
         this.mob = mob;
@@ -55,18 +62,25 @@ public class NoxisFindHatGoal<T extends PathfinderMob & NoxisBowlSleeper> extend
 
     @Override
     public boolean canUse() {
-        if (!this.canSearch() || this.mob.tickCount < this.nextSearchTick) return false;
+        if (!this.canSearch()) return false;
+        boolean searching = this.mob.getHatSearchOrigin() != null;
+        if (!searching && this.mob.tickCount < this.nextSearchTick) return false;
         this.nextSearchTick = this.mob.tickCount + SEARCH_INTERVAL + this.mob.getRandom().nextInt(30);
         this.targetBlock = null;
         this.targetItem = null;
         this.findHat();
-        return this.targetBlock != null || this.targetItem != null;
+        // Recién despertado sin sombrero: aunque no vea ninguno, sale a recorrer la zona.
+        return this.targetBlock != null || this.targetItem != null || searching;
     }
 
     @Override
     public void start() {
         this.ticks = 0;
-        this.phase = Phase.WALK;
+        if (this.targetBlock != null || this.targetItem != null) {
+            this.phase = Phase.WALK;
+        } else {
+            this.startRoamLeg();
+        }
     }
 
     @Override
@@ -83,6 +97,10 @@ public class NoxisFindHatGoal<T extends PathfinderMob & NoxisBowlSleeper> extend
     public void tick() {
         this.ticks++;
         Level level = this.mob.level();
+        if (this.phase == Phase.ROAM) {
+            this.tickRoam();
+            return;
+        }
         if (!this.targetStillThere(level)) {
             // Otro llegó primero (o lo levantaron): sigue con lo suyo.
             this.mob.setHatAnim(NoxisHatAnimation.NONE);
@@ -137,6 +155,55 @@ public class NoxisFindHatGoal<T extends PathfinderMob & NoxisBowlSleeper> extend
         }
     }
 
+    // ------------------------------------------------------------------ recorrer la zona
+
+    /** Camina hacia otro punto de la zona, sin alejarse de donde se despertó. */
+    private void startRoamLeg() {
+        this.phase = Phase.ROAM;
+        this.roamLegTicks = 0;
+        BlockPos origin = this.mob.getHatSearchOrigin();
+        if (origin == null) { this.phase = Phase.DONE; return; }
+        Vec3 center = Vec3.atBottomCenterOf(origin);
+        for (int i = 0; i < 6; i++) {
+            Vec3 p = this.mob.position().distanceTo(center) > SEARCH_LEASH * 0.6D
+                    ? LandRandomPos.getPosTowards(this.mob, 8, 4, center)
+                    : LandRandomPos.getPos(this.mob, 8, 4);
+            if (p != null && p.distanceTo(center) <= SEARCH_LEASH) {
+                this.mob.getNavigation().moveTo(p.x, p.y, p.z, 0.45D);
+                return;
+            }
+        }
+        this.mob.getNavigation().moveTo(center.x, center.y, center.z, 0.45D);   // vuelve al centro
+    }
+
+    private void tickRoam() {
+        if (!this.canSearch() || this.mob.getHatSearchOrigin() == null) {
+            // Se acabó el tiempo de búsqueda (o algo más importante): vuelve a lo de siempre.
+            this.mob.stopHatSearch();
+            this.phase = Phase.DONE;
+            return;
+        }
+        this.roamLegTicks++;
+        if (this.ticks % ROAM_RESCAN == 0) {
+            this.findHat();
+            if (this.targetBlock != null || this.targetItem != null) {
+                this.mob.getNavigation().stop();
+                this.ticks = 0;
+                this.phase = Phase.WALK;                        // ¡vio uno!
+                return;
+            }
+        }
+        // Mira para los costados mientras camina, como buscando.
+        if (this.ticks % 30 == 0) {
+            double a = this.mob.getRandom().nextDouble() * Math.PI * 2.0D;
+            this.mob.getLookControl().setLookAt(this.mob.getX() + Math.cos(a) * 4.0D, this.mob.getEyeY() - 0.6D,
+                    this.mob.getZ() + Math.sin(a) * 4.0D);
+        }
+        if (this.mob.getNavigation().isDone() || this.roamLegTicks >= ROAM_LEG) {
+            this.startRoamLeg();
+        }
+    }
+
     /** Lo agarra: el bloque desaparece o el ítem se descuenta, y queda puesto. */
     private void takeHat(Level level) {
         if (this.targetBlock != null) {
@@ -149,6 +216,7 @@ public class NoxisFindHatGoal<T extends PathfinderMob & NoxisBowlSleeper> extend
             this.mob.playSound(ModBlocks.NOXIS_HAT.defaultBlockState().getSoundType().getBreakSound(), 0.5F, 1.2F);
         }
         this.mob.setHasHat(true);
+        this.mob.stopHatSearch();
     }
 
     private boolean targetStillThere(Level level) {
@@ -159,7 +227,11 @@ public class NoxisFindHatGoal<T extends PathfinderMob & NoxisBowlSleeper> extend
 
     /** El sombrero más cercano (bloque o ítem) al que pueda llegar. */
     private void findHat() {
+        this.targetBlock = null;
+        this.targetItem = null;
         Level level = this.mob.level();
+        BlockPos origin = this.mob.getHatSearchOrigin();
+        double leash = (SEARCH_LEASH + 3.0D) * (SEARCH_LEASH + 3.0D);
         // Sombreros que otros Noxis dejaron al lado de su pecera: esos no se tocan.
         Set<BlockPos> reserved = new HashSet<>();
         List<PathfinderMob> others = level.getEntitiesOfClass(PathfinderMob.class,
@@ -177,6 +249,7 @@ public class NoxisFindHatGoal<T extends PathfinderMob & NoxisBowlSleeper> extend
         for (ItemEntity item : items) {
             double d = this.mob.distanceToSqr(item);
             if (d >= best) continue;
+            if (origin != null && origin.distToCenterSqr(item.position()) > leash) continue;
             if (this.mob.getNavigation().createPath(item, 1) == null) continue;
             best = d;
             this.targetItem = item;
@@ -188,6 +261,7 @@ public class NoxisFindHatGoal<T extends PathfinderMob & NoxisBowlSleeper> extend
             if (!level.getBlockState(pos).is(ModBlocks.NOXIS_HAT) || reserved.contains(pos)) continue;
             double d = pos.distToCenterSqr(this.mob.position());
             if (d >= best) continue;
+            if (origin != null && pos.distSqr(origin) > leash) continue;
             if (this.mob.getNavigation().createPath(pos, 1) == null) continue;
             best = d;
             this.targetBlock = pos.immutable();

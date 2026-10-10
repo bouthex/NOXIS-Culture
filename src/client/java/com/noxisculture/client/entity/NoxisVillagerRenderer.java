@@ -75,6 +75,8 @@ public class NoxisVillagerRenderer extends MobRenderer<NoxisVillager, NoxisVilla
         state.hasHat = entity.hasHat();
         state.hatAnim = entity.getHatAnimation().getAnim();
         state.hatAnimTime = entity.getHatAnimation().getTime(partialTick);
+        state.bowlHop = entity.getBowlHopAnimation().getAnim();
+        state.bowlHopTime = entity.getBowlHopAnimation().getTime(partialTick);
         ItemStack flower = entity.getHeldFlower();
         if (flower.isEmpty()) {
             state.heldFlower.clear();

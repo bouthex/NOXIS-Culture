@@ -35,23 +35,34 @@ public class NoxisBowlBlock extends Block {
     public static final MapCodec<NoxisBowlBlock> CODEC = simpleCodec(NoxisBowlBlock::new);
     public static final BooleanProperty OCCUPIED = BlockStateProperties.OCCUPIED;
 
-    /** Contorno: la pecera entera (para apuntarla y romperla). */
+    /**
+     * Contorno vacía (como un caldero): el vidrio con su forma real y el hueco del medio libre,
+     * así quien está adentro puede mirar y apuntar hacia afuera.
+     */
+    private static final VoxelShape OUTLINE_HOLLOW = Shapes.or(
+            Block.box(0, 0, 0, 16, 2, 16),
+            ring(2, 18, 0, 16, 1.25),
+            ring(18, 18.5, 0, 16, 3),
+            ring(18.5, 19.5, 3, 13, 1),
+            ring(19.5, 21, 0.5, 15.5, 2.5));
+    /**
+     * Contorno llena: con un Noxis durmiendo (o reservada), la pecera entera se apunta como un
+     * bloque, así desde afuera se apunta al vidrio y nunca se golpea al Noxis sin querer.
+     */
     private static final VoxelShape OUTLINE = Shapes.or(
             Block.box(0, 0, 0, 16, 18, 16),
             Block.box(3, 18, 3, 13, 19.5, 13),
             Block.box(0.5, 19.5, 0.5, 15.5, 21, 15.5));
     /**
-     * Choque, igual para todos (jugadores, Noxis y demás): base de madera + el vidrio completo
-     * (paredes, hombro, cuellito y borde de arriba). Adentro queda el hueco donde duerme el Noxis,
-     * y arriba una abertura chica: nadie atraviesa el vidrio. Entrar y salir lo hace el Noxis con
-     * un saltito por encima del borde (ver NoxisBowlSleepGoal).
+     * Choque, igual para todos (como un caldero): base de madera que sostiene lo que entra + las
+     * cuatro paredes de vidrio. Arriba queda abierto: el jugador (o cualquier cosa chica que
+     * quepa) puede saltar adentro y quedarse parado en el fondo, y nadie atraviesa las paredes.
+     * Las paredes llegan a 18 px (lo que mide el cuerpo de la pecera), así un jugador puede
+     * saltar adentro desde el piso. El cuellito y el borde de arriba son solo decorativos.
      */
     private static final VoxelShape WALLS = Shapes.or(
             Block.box(0, 0, 0, 16, 2, 16),
-            ring(2, 18, 0, 16, 1.25),          // paredes
-            ring(18, 18.5, 0, 16, 3),          // hombro
-            ring(18.5, 19.5, 3, 13, 1),        // cuellito
-            ring(19.5, 21, 0.5, 15.5, 2.5));   // borde de arriba
+            ring(2, 18, 0, 16, 1.25));
 
     /** Marco cuadrado de vidrio: cuatro paredes de espesor {@code t} entre {@code o0} y {@code o1}. */
     private static VoxelShape ring(double y0, double y1, double o0, double o1, double t) {
@@ -79,7 +90,7 @@ public class NoxisBowlBlock extends Block {
 
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return OUTLINE;
+        return state.getValue(OCCUPIED) ? OUTLINE : OUTLINE_HOLLOW;
     }
 
     @Override

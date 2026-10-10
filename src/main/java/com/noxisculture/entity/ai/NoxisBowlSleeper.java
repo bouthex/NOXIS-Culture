@@ -29,10 +29,22 @@ public interface NoxisBowlSleeper {
     void setHatAnim(byte anim);
 
     /**
-     * Saltito para entrar o salir de la pecera: mientras dura, la entidad no se mueve sola
-     * (ni gravedad ni choques); la lleva el objetivo de dormir, tick a tick. No se guarda.
+     * Saltito para entrar o salir de la pecera ({@code NoxisBowlHop.NONE/PREP/IN/OUT}): mientras
+     * salta (IN/OUT) la entidad no se mueve sola (ni gravedad ni choques); la lleva el objetivo
+     * de dormir, tick a tick. El cliente lo usa para la pose. No se guarda.
      */
-    void setBowlHop(boolean hop);
+    void setBowlHop(byte anim);
+
+    /**
+     * Empieza la búsqueda temporal de sombrero (al despertarse sin el suyo): busca y recorre la
+     * zona sin alejarse de {@code origin}, por un tiempo limitado.
+     */
+    void startHatSearch(BlockPos origin);
+
+    /** Centro de la búsqueda de sombrero en curso, o null si no está buscando. */
+    @Nullable BlockPos getHatSearchOrigin();
+
+    void stopHatSearch();
 
     /** ¿Ya le dio sueño esta noche? (cada Noxis tiene su propio horario). */
     boolean isBedtime();
