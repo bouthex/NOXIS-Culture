@@ -40,10 +40,15 @@ public class NoxisHatArmorRenderer implements ArmorRenderer {
     private static final String GEM = "gem";
     /** Tamaño del sombrero puesto en un jugador, respecto del sombrero del Noxis. */
     private static final float WORN_SCALE = 1.15F;
+    /**
+     * Altura de la base del ala respecto de la cabeza (la cabeza termina en -8; la capa del pelo de
+     * la skin llega a -8.5): el ala se apoya justo sobre el pelo, sin hueco y sin hundirse.
+     */
+    private static final float BRIM_Y = -8.3F;
 
-    private final HumanoidModel<HumanoidRenderState> crownModel;
-    private final HumanoidModel<HumanoidRenderState> bandModel;
-    private final HumanoidModel<HumanoidRenderState> fixedModel;
+    private final HatModel crownModel;
+    private final HatModel bandModel;
+    private final HatModel fixedModel;
 
     public NoxisHatArmorRenderer(EntityRendererProvider.Context context) {
         this.crownModel = part(context, true, false, false);
@@ -51,11 +56,34 @@ public class NoxisHatArmorRenderer implements ArmorRenderer {
         this.fixedModel = part(context, false, false, true);
     }
 
+    /**
+     * El modelo del sombrero puesto: copia la posición de la cabeza de quien lo lleva y después
+     * fija su propio tamaño y altura (la escala se aplica desde la base del ala, que queda
+     * apoyada en la cabeza).
+     */
+    private static final class HatModel extends HumanoidModel<HumanoidRenderState> {
+        final ModelPart hat;
+
+        HatModel(ModelPart root) {
+            super(root);
+            this.hat = this.head.getChild(HAT);
+        }
+
+        @Override
+        public void setupAnim(HumanoidRenderState state) {
+            // La pose de la cabeza ya vino copiada del modelo de quien lo lleva: solo el sombrero.
+            this.hat.y = BRIM_Y;
+            this.hat.xScale = WORN_SCALE;
+            this.hat.yScale = WORN_SCALE;
+            this.hat.zScale = WORN_SCALE;
+        }
+    }
+
     /** Una copia del sombrero que solo muestra algunas de sus piezas. */
-    private static HumanoidModel<HumanoidRenderState> part(EntityRendererProvider.Context context,
+    private static HatModel part(EntityRendererProvider.Context context,
                                                           boolean crown, boolean band, boolean fixed) {
-        HumanoidModel<HumanoidRenderState> model = new HumanoidModel<>(context.bakeLayer(LAYER));
-        ModelPart hat = model.head.getChild(HAT);
+        HatModel model = new HatModel(context.bakeLayer(LAYER));
+        ModelPart hat = model.hat;
         hat.getChild(BRIM).visible = crown;
         hat.getChild(CROWN).visible = crown;
         hat.getChild(BAND).visible = band;
@@ -81,7 +109,7 @@ public class NoxisHatArmorRenderer implements ArmorRenderer {
         // Un poco más grande que el original (x1.15) para acercarse a cómo le queda a un Noxis:
         // la base del ala sigue apoyada en el mismo lugar (escala desde el pie del sombrero).
         PartDefinition hat = head.addOrReplaceChild(HAT, CubeListBuilder.create(),
-                PartPose.offset(0.0F, -8.5F, 0.0F).scaled(WORN_SCALE));
+                PartPose.offset(0.0F, BRIM_Y, 0.0F));
         hat.addOrReplaceChild(BRIM,
                 CubeListBuilder.create().texOffs(0, 46).addBox(-6.0F, -1.0F, -6.0F, 12.0F, 1.0F, 12.0F), PartPose.ZERO);
         hat.addOrReplaceChild(CROWN,
@@ -107,18 +135,18 @@ public class NoxisHatArmorRenderer implements ArmorRenderer {
         draw(contextModel, state, this.crownModel, collector, poseStack, light, crown);
         draw(contextModel, state, this.bandModel, collector, poseStack, light, band);
         draw(contextModel, state, this.fixedModel, collector, poseStack, light, -1);
-        ArmorRenderer.submitTransformCopyingModel(contextModel, state, this.fixedModel, state, false, collector.order(1),
+        ArmorRenderer.submitTransformCopyingModel(contextModel, state, this.fixedModel, state, true, collector.order(1),
                 poseStack, NoxisHatLayer.GEM_GLOW, 0xF000F0, OverlayTexture.NO_OVERLAY, -1, null, 0, null);
         if (stack.hasFoil()) {
-            ArmorRenderer.submitTransformCopyingModel(contextModel, state, this.crownModel, state, false,
+            ArmorRenderer.submitTransformCopyingModel(contextModel, state, this.crownModel, state, true,
                     collector.order(1), poseStack, RenderTypes.armorEntityGlint(), light, OverlayTexture.NO_OVERLAY, 0, null);
         }
     }
 
     private static void draw(HumanoidModel<HumanoidRenderState> source, HumanoidRenderState state,
-                             HumanoidModel<HumanoidRenderState> model, SubmitNodeCollector collector,
+                             HatModel model, SubmitNodeCollector collector,
                              PoseStack poseStack, int light, int tint) {
-        ArmorRenderer.submitTransformCopyingModel(source, state, model, state, false, collector.order(0),
+        ArmorRenderer.submitTransformCopyingModel(source, state, model, state, true, collector.order(0),
                 poseStack, model.renderType(NoxisHatLayer.MASK), light, OverlayTexture.NO_OVERLAY, tint, null, 0, null);
     }
 

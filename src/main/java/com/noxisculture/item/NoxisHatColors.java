@@ -158,6 +158,21 @@ public final class NoxisHatColors {
         return (Math.min(255, ar) << 16) | (Math.min(255, ag) << 8) | Math.min(255, ab);
     }
 
+    /** Lava el sombrero: le quita los tintes de la copa/ala y del lazo (vuelve a negro y violeta). */
+    public static void wash(ItemStack hat) {
+        hat.remove(DataComponents.DYED_COLOR);
+        CustomModelData data = hat.get(DataComponents.CUSTOM_MODEL_DATA);
+        if (data != null && !data.colors().isEmpty()) {
+            List<Integer> rest = data.colors().subList(1, data.colors().size());
+            if (rest.isEmpty() && data.floats().isEmpty() && data.flags().isEmpty() && data.strings().isEmpty()) {
+                hat.remove(DataComponents.CUSTOM_MODEL_DATA);
+            } else {
+                hat.set(DataComponents.CUSTOM_MODEL_DATA, new CustomModelData(
+                        data.floats(), data.flags(), data.strings(), new ArrayList<>(rest)));
+            }
+        }
+    }
+
     // ------------------------------------------------------------------ gustos de los Noxis
 
     /** ¿Tiene algo violeta (copa o lazo)? Los Noxis lo prefieren, pero nunca rechazan otro color. */

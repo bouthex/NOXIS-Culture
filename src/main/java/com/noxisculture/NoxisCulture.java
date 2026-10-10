@@ -32,6 +32,7 @@ public final class NoxisCulture implements ModInitializer {
         ModBlockEntities.initialize();
         ModEntityTypes.initialize();
         ModCreativeTabs.initialize();
+        com.noxisculture.item.NoxisHatInteractions.register();
         ModWorldgen.initialize();
         LOGGER.info("Noxis Culture: los Noxis llegaron al mundo.");
     }
