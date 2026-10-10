@@ -69,6 +69,15 @@ public class NoxisVillagerRenderState extends LivingEntityRenderState {
     /** Saltito de la pecera (0 = ninguno) y su tiempo en ticks. */
     public byte bowlHop;
     public float bowlHopTime;
+    /** Aburrimiento: gesto (0 = ninguno), si usa el lado izquierdo, su tiempo y cuánto se ve (0..1). */
+    public byte boredType;
+    public boolean boredMirrored;
+    public float boredTime;
+    public float boredWeight;
+    /** Ojitos del aburrimiento: cerrados (satisfecho / parpadeo), pupilas grandes, entrecerrados. */
+    public boolean boredEyesClosed;
+    public boolean boredPupils;
+    public boolean boredTired;
     /** La flor que tiene en la mano (vacía si no tiene nada). */
     public final ItemStackRenderState heldFlower = new ItemStackRenderState();
     /** true mientras se está levantando (para no repetir el rebote del "plop" al revés). */

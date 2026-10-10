@@ -82,7 +82,7 @@ import org.jspecify.annotations.Nullable;
  * nos da gratis el menú de comercio vanilla, el guardado de ofertas y la
  * integración con TradeWithPlayerGoal, sin el sistema de profesiones/cerebro.
  */
-public class NoxisVillager extends AbstractVillager implements com.noxisculture.entity.NoxisSpecies, NoxisLightSource, NoxisRestful, NoxisWorker, NoxisFascinatable, NoxisNatureLover, NoxisSocial, NoxisBowlSleeper {
+public class NoxisVillager extends AbstractVillager implements com.noxisculture.entity.NoxisSpecies, NoxisLightSource, NoxisRestful, NoxisWorker, NoxisFascinatable, NoxisNatureLover, NoxisSocial, NoxisBowlSleeper, com.noxisculture.entity.ai.NoxisBored {
     /** Puede reponer en su mesa como mucho cada medio día (~2 veces por día, como vanilla). */
     private static final long RESTOCK_INTERVAL_TICKS = 12_000L;
     /** Espera tras cerrar el menú antes de subir de nivel (vanilla: 40 ticks = 2 s). */
@@ -131,6 +131,9 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
             SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BYTE);
     /** Saltito de la pecera (prepararse / entrar / salir): lo decide el servidor; no se guarda. */
     private static final EntityDataAccessor<Byte> BOWL_HOP =
+            SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BYTE);
+    /** Gesto de aburrimiento en curso (lo decide el servidor; el cliente lo anima; no se guarda). */
+    private static final EntityDataAccessor<Byte> BORED_ANIM =
             SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BYTE);
     /** Cada Noxis se duerme a su hora: entre 0 y 2 minutos después de que oscurece. */
     private static final int BEDTIME_RANDOM = 2400;
@@ -187,6 +190,10 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
     private final NoxisSocialAnimation socialAnimation = new NoxisSocialAnimation();
     private final com.noxisculture.entity.idle.NoxisHatAnimation hatAnimation =
             new com.noxisculture.entity.idle.NoxisHatAnimation();
+    private final com.noxisculture.entity.idle.NoxisBoredAnimation boredAnimation =
+            new com.noxisculture.entity.idle.NoxisBoredAnimation();
+    /** Cuánto lleva quieto y tranquilo sin hacer nada (servidor; para aburrirse). */
+    private int idleTicks;
     private @Nullable ItemEntity incomingGift;
     private @Nullable LivingEntity giftGiver;
     /** El primer descanso llega pronto (1-5 min) para poder verlo; después, ~1 por día. */
@@ -213,6 +220,7 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         builder.define(HAT_ITEM, com.noxisculture.item.NoxisHatColors.newHat());
         builder.define(HAT_ANIM, com.noxisculture.entity.idle.NoxisHatAnimation.NONE);
         builder.define(BOWL_HOP, com.noxisculture.entity.idle.NoxisBowlHop.NONE);
+        builder.define(BORED_ANIM, com.noxisculture.entity.idle.NoxisBoredAnimation.NONE);
     }
 
     public NoxisMood getMood() {
@@ -488,6 +496,47 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
                 && this.incomingGift == null && !this.socialLink.isBusy() && !this.isBaby();
     }
 
+    // ---------------- Aburrimiento (NoxisBored) ----------------
+
+    @Override
+    public boolean canBeBored() {
+        return !this.isInBowl() && !this.isBowlHopping() && this.getMood() == NoxisMood.NEUTRAL
+                && !this.isTrading() && !this.isResting() && !this.isFascinated()
+                && !this.isHoldingTorch() && !this.isHoldingUmbrella()
+                && this.getNatureAction() == NoxisNatureAction.NONE && !this.flowerCarry.isHolding()
+                && this.getHeldFlower().isEmpty() && this.incomingGift == null
+                && !this.socialLink.isBusy() && this.getSocialAnim() == NoxisSocialAction.NONE
+                && this.entityData.get(HAT_ANIM) == com.noxisculture.entity.idle.NoxisHatAnimation.NONE
+                && this.entityData.get(BOWL_HOP) == com.noxisculture.entity.idle.NoxisBowlHop.NONE
+                && this.hatSearchOrigin == null && this.hurtTime == 0
+                && this.onGround() && !this.isInWater() && !this.isPassenger();
+    }
+
+    @Override
+    public int getIdleTicks() {
+        return this.idleTicks;
+    }
+
+    @Override
+    public void resetIdleTicks() {
+        this.idleTicks = 0;
+    }
+
+    @Override
+    public byte getBoredAnim() {
+        return this.entityData.get(BORED_ANIM);
+    }
+
+    @Override
+    public void setBoredAnim(byte anim) {
+        this.entityData.set(BORED_ANIM, anim);
+    }
+
+    /** Gestos de aburrimiento (solo visual, cliente). */
+    public com.noxisculture.entity.idle.NoxisBoredAnimation getBoredAnimation() {
+        return this.boredAnimation;
+    }
+
     /** Animación de saludos y descansos en compañía (solo visual, cliente). */
     public NoxisSocialAnimation getSocialAnimation() {
         return this.socialAnimation;
@@ -670,6 +719,9 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         this.goalSelector.addGoal(4, new NoxisCrystalFascinationGoal<>(this));
         this.goalSelector.addGoal(4, new NoxisNatureGoal<>(this));
         this.goalSelector.addGoal(4, new NoxisGreetGoal<>(this));
+        // Aburrimiento: solo después de un rato quieto sin hacer nada (cualquier objetivo de
+        // prioridad 1-3 lo corta: comercio, miedo, sueño, descanso, regalos, buscar el sombrero).
+        this.goalSelector.addGoal(4, new com.noxisculture.entity.ai.NoxisBoredGoal<>(this));
         this.goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 0.35D));
         this.goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 6.0F));
         this.goalSelector.addGoal(9, new RandomLookAroundGoal(this));
@@ -812,6 +864,13 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
             this.syncHeldFlower();
             this.setNatureAction(NoxisNatureAction.NONE);
         }
+        // Rato sin hacer nada (para aburrirse): quieto, sin camino y tranquilo.
+        boolean still = this.getNavigation().isDone() && this.getDeltaMovement().horizontalDistanceSqr() < 1.0E-4D;
+        if (still && this.canBeBored()) {
+            this.idleTicks++;
+        } else {
+            this.idleTicks = 0;
+        }
         // Variante de ropa: se elige una sola vez, al aparecer.
         if (!this.variantChosen) {
             this.variantChosen = true;
@@ -876,6 +935,7 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
                 && !this.isHoldingUmbrella() && this.umbrellaAnim < 0.01F
                 && this.hatAnimation.getAnim() == com.noxisculture.entity.idle.NoxisHatAnimation.NONE
                 && this.bowlHopAnimation.getAnim() == com.noxisculture.entity.idle.NoxisBowlHop.NONE
+                && !this.boredAnimation.isBusy()
                 && dx * dx + dz * dz < 1.0E-4D;
         // Los dos gestos tranquilos nunca se pisan: el que empezó primero termina antes que el otro.
         boolean fascinated = this.isFascinated() || this.crystalFascination.isActive()
@@ -887,6 +947,7 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         this.socialAnimation.tick(this.getSocialAnim(), this.random);
         this.hatAnimation.tick(this.entityData.get(HAT_ANIM));
         this.bowlHopAnimation.tick(this.entityData.get(BOWL_HOP));
+        this.boredAnimation.tick(this.entityData.get(BORED_ANIM));
         boolean withSocial = this.socialAnimation.isBusy();
         this.curiosity.tick(calm && !fascinated && !withNature && !withSocial, this.random);
         // Fascinación: la señal llega del servidor; acá solo se corta si se ve algo prioritario.

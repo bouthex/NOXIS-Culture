@@ -89,6 +89,15 @@ public class NoxisVillagerRenderer extends MobRenderer<NoxisVillager, NoxisVilla
         state.hatAnimTime = entity.getHatAnimation().getTime(partialTick);
         state.bowlHop = entity.getBowlHopAnimation().getAnim();
         state.bowlHopTime = entity.getBowlHopAnimation().getTime(partialTick);
+        com.noxisculture.entity.idle.NoxisBoredAnimation bored = entity.getBoredAnimation();
+        state.boredType = bored.getType();
+        state.boredMirrored = bored.isMirrored();
+        state.boredTime = bored.getTime(partialTick);
+        state.boredWeight = bored.isBusy() ? bored.getWeight(partialTick) : 0.0F;
+        boolean boredShown = state.boredWeight > 0.5F;
+        state.boredEyesClosed = boredShown && com.noxisculture.entity.idle.NoxisBoredAnimation.eyesClosed(state.boredType, state.boredTime);
+        state.boredPupils = boredShown && com.noxisculture.entity.idle.NoxisBoredAnimation.bigPupils(state.boredType, state.boredTime);
+        state.boredTired = boredShown && com.noxisculture.entity.idle.NoxisBoredAnimation.tiredEyes(state.boredType, state.boredTime);
         ItemStack flower = entity.getHeldFlower();
         if (flower.isEmpty()) {
             state.heldFlower.clear();
