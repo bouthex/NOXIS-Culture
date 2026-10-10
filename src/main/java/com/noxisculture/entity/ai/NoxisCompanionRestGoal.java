@@ -224,6 +224,7 @@ public class NoxisCompanionRestGoal<T extends PathfinderMob & NoxisSocial & Noxi
         if (this.ticks >= this.restLength) {
             // Se despierta él solo: libera la pareja SIN despertar al otro.
             this.releasePartner();
+            if (this.mob.isSafeToRest() && this.mob.hurtTime == 0) this.mob.startWakeStretch(true);
             this.mob.setResting(false);
             this.mob.setSocialAnim(NoxisSocialAction.NONE);
             this.enter(Phase.WAKE);
@@ -294,6 +295,7 @@ public class NoxisCompanionRestGoal<T extends PathfinderMob & NoxisSocial & Noxi
 
     private void fallAsleep() {
         this.mob.setResting(true);
+        this.mob.startSettle();
         this.slept = true;
     }
 

@@ -98,6 +98,22 @@ public class NoxisVillagerRenderer extends MobRenderer<NoxisVillager, NoxisVilla
         state.boredEyesClosed = boredShown && com.noxisculture.entity.idle.NoxisBoredAnimation.eyesClosed(state.boredType, state.boredTime);
         state.boredPupils = boredShown && com.noxisculture.entity.idle.NoxisBoredAnimation.bigPupils(state.boredType, state.boredTime);
         state.boredTired = boredShown && com.noxisculture.entity.idle.NoxisBoredAnimation.tiredEyes(state.boredType, state.boredTime);
+        com.noxisculture.entity.idle.NoxisRestGesture rg = entity.getRestGesture();
+        state.restGesture = rg.getGesture();
+        state.restGestTime = rg.getTime(partialTick);
+        state.restGestWeight = rg.isBusy() ? rg.getWeight(partialTick) : 0.0F;
+        state.restEyes = state.restGestWeight > 0.5F
+                ? com.noxisculture.entity.idle.NoxisRestGesture.eyes(state.restGesture, state.restGestTime) : 0;
+        byte rgType = com.noxisculture.entity.idle.NoxisRestGesture.typeOf(state.restGesture);
+        float awake = 0.0F;
+        if (rgType == com.noxisculture.entity.idle.NoxisRestGesture.STRETCH_SEATED) {
+            awake = com.noxisculture.entity.idle.NoxisBoredAnimation.smooth(
+                    (state.restGestTime - com.noxisculture.entity.idle.NoxisRestGesture.lead(state.restGesture)) / 10.0F);
+        } else if (rgType == com.noxisculture.entity.idle.NoxisRestGesture.STRETCH_STAND) {
+            awake = 1.0F;
+        }
+        state.restAwake = awake * state.restGestWeight;
+        state.bubbleRest = rg.bubbleRest(partialTick);
         ItemStack flower = entity.getHeldFlower();
         if (flower.isEmpty()) {
             state.heldFlower.clear();

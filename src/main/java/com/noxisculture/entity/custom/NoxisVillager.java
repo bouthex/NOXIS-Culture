@@ -135,6 +135,9 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
     /** Gesto de aburrimiento en curso (lo decide el servidor; el cliente lo anima; no se guarda). */
     private static final EntityDataAccessor<Byte> BORED_ANIM =
             SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BYTE);
+    /** Acomodarse para descansar / estirarse al despertar (lo decide el servidor; no se guarda). */
+    private static final EntityDataAccessor<Byte> REST_GESTURE =
+            SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BYTE);
     /** Cada Noxis se duerme a su hora: entre 0 y 2 minutos después de que oscurece. */
     private static final int BEDTIME_RANDOM = 2400;
     /** ...y se despierta a su ritmo: entre 0 y 40 s después del amanecer. */
@@ -192,6 +195,13 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
             new com.noxisculture.entity.idle.NoxisHatAnimation();
     private final com.noxisculture.entity.idle.NoxisBoredAnimation boredAnimation =
             new com.noxisculture.entity.idle.NoxisBoredAnimation();
+    private final com.noxisculture.entity.idle.NoxisRestGesture restGesture =
+            new com.noxisculture.entity.idle.NoxisRestGesture();
+    /** Servidor: ticks del gesto de descanso en curso y su largo total. */
+    private int restGestureTick;
+    private int restGestureLength;
+    /** Cliente: el globito ya hizo ¡plop! al abrir los ojos (no se repite al pararse). */
+    private boolean bubblePoppedOnWake;
     /** Cuánto lleva quieto y tranquilo sin hacer nada (servidor; para aburrirse). */
     private int idleTicks;
     private @Nullable ItemEntity incomingGift;
@@ -221,6 +231,7 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         builder.define(HAT_ANIM, com.noxisculture.entity.idle.NoxisHatAnimation.NONE);
         builder.define(BOWL_HOP, com.noxisculture.entity.idle.NoxisBowlHop.NONE);
         builder.define(BORED_ANIM, com.noxisculture.entity.idle.NoxisBoredAnimation.NONE);
+        builder.define(REST_GESTURE, com.noxisculture.entity.idle.NoxisRestGesture.NONE);
     }
 
     public NoxisMood getMood() {
@@ -508,6 +519,7 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
                 && !this.socialLink.isBusy() && this.getSocialAnim() == NoxisSocialAction.NONE
                 && this.entityData.get(HAT_ANIM) == com.noxisculture.entity.idle.NoxisHatAnimation.NONE
                 && this.entityData.get(BOWL_HOP) == com.noxisculture.entity.idle.NoxisBowlHop.NONE
+                && this.entityData.get(REST_GESTURE) == com.noxisculture.entity.idle.NoxisRestGesture.NONE
                 && this.hatSearchOrigin == null && this.hurtTime == 0
                 && this.onGround() && !this.isInWater() && !this.isPassenger();
     }
@@ -673,6 +685,68 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         }
     }
 
+    // ---------------- Acomodarse y estirarse ----------------
+
+    @Override
+    public void startSettle() {
+        // Con un dato al azar (para qué lado se balancea), así no se acomodan todos iguales.
+        this.setRestGesture(com.noxisculture.entity.idle.NoxisRestGesture.encode(
+                com.noxisculture.entity.idle.NoxisRestGesture.SETTLE, false, this.random.nextInt(8)));
+        if (this.isInBowl()) {
+            this.restGestureTick = com.noxisculture.entity.idle.NoxisRestGesture.SETTLE_BOWL_START;
+        }
+    }
+
+    @Override
+    public void startWakeStretch(boolean seated) {
+        byte type = seated ? com.noxisculture.entity.idle.NoxisRestGesture.STRETCH_SEATED
+                : com.noxisculture.entity.idle.NoxisRestGesture.STRETCH_STAND;
+        // Desfase propio: cada uno abre los ojos a su ritmo (los compañeros nunca van sincronizados).
+        this.setRestGesture(com.noxisculture.entity.idle.NoxisRestGesture.encode(type, this.hasHat(), this.random.nextInt(8)));
+    }
+
+    @Override
+    public boolean isStretching() {
+        byte type = com.noxisculture.entity.idle.NoxisRestGesture.typeOf(this.entityData.get(REST_GESTURE));
+        return type == com.noxisculture.entity.idle.NoxisRestGesture.STRETCH_SEATED
+                || type == com.noxisculture.entity.idle.NoxisRestGesture.STRETCH_STAND;
+    }
+
+    private void setRestGesture(byte gesture) {
+        this.entityData.set(REST_GESTURE, gesture);
+        this.restGestureTick = 0;
+        this.restGestureLength = com.noxisculture.entity.idle.NoxisRestGesture.length(gesture);
+    }
+
+    /** Servidor: avanza el gesto de descanso y lo corta si pasa algo más importante. */
+    private void tickRestGesture() {
+        byte gesture = this.entityData.get(REST_GESTURE);
+        if (gesture == com.noxisculture.entity.idle.NoxisRestGesture.NONE) return;
+        byte type = com.noxisculture.entity.idle.NoxisRestGesture.typeOf(gesture);
+        boolean keep;
+        if (type == com.noxisculture.entity.idle.NoxisRestGesture.SETTLE) {
+            keep = this.isResting();                   // si se levanta antes, deja de acomodarse
+        } else {
+            keep = !this.isResting() && this.getMood() == NoxisMood.NEUTRAL && !this.isTrading()
+                    && this.hurtTime == 0 && !this.isHoldingTorch() && !this.isHoldingUmbrella()
+                    && !this.isInBowl() && !this.flowerCarry.isHolding()
+                    && this.getNatureAction() == NoxisNatureAction.NONE && this.incomingGift == null
+                    && this.entityData.get(HAT_ANIM) == com.noxisculture.entity.idle.NoxisHatAnimation.NONE;
+        }
+        if (!keep || ++this.restGestureTick >= this.restGestureLength) {
+            this.entityData.set(REST_GESTURE, com.noxisculture.entity.idle.NoxisRestGesture.NONE);
+            return;
+        }
+        if (this.restGestureTick == com.noxisculture.entity.idle.NoxisRestGesture.yawnTick(gesture)) {
+            this.playSound(ModSounds.NOXIS_YAWN, 0.55F, 1.08F + this.random.nextFloat() * 0.1F);
+        }
+    }
+
+    /** Acomodarse / estirarse (solo visual, cliente). */
+    public com.noxisculture.entity.idle.NoxisRestGesture getRestGesture() {
+        return this.restGesture;
+    }
+
     /** Hasta cuándo puede dormirse solo (después de buscar compañía sin encontrar). */
     private long restAloneUntil;
 
@@ -708,6 +782,8 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         // De noche: a dormir a la pecera. Misma prioridad que huir/asustarse: un monstruo cerca no la
         // saca de la pecera (solo la despierta un golpe), pero si ya estaba huyendo no se acuesta.
         this.goalSelector.addGoal(1, new NoxisBowlSleepGoal<>(this));
+        // Al despertarse se queda quieto mientras se estira (lo cortan comercio, miedo y sueño).
+        this.goalSelector.addGoal(2, new com.noxisculture.entity.ai.NoxisStretchGoal<>(this));
         // Descanso en compañía: va antes que el individual (a veces, si hay compañero, descansan juntos).
         this.goalSelector.addGoal(3, new NoxisCompanionRestGoal<>(this));
         this.goalSelector.addGoal(3, new NoxisSocialFollowGoal<>(this));
@@ -864,6 +940,7 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
             this.syncHeldFlower();
             this.setNatureAction(NoxisNatureAction.NONE);
         }
+        this.tickRestGesture();
         // Rato sin hacer nada (para aburrirse): quieto, sin camino y tranquilo.
         boolean still = this.getNavigation().isDone() && this.getDeltaMovement().horizontalDistanceSqr() < 1.0E-4D;
         if (still && this.canBeBored()) {
@@ -935,7 +1012,7 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
                 && !this.isHoldingUmbrella() && this.umbrellaAnim < 0.01F
                 && this.hatAnimation.getAnim() == com.noxisculture.entity.idle.NoxisHatAnimation.NONE
                 && this.bowlHopAnimation.getAnim() == com.noxisculture.entity.idle.NoxisBowlHop.NONE
-                && !this.boredAnimation.isBusy()
+                && !this.boredAnimation.isBusy() && !this.restGesture.isBusy()
                 && dx * dx + dz * dz < 1.0E-4D;
         // Los dos gestos tranquilos nunca se pisan: el que empezó primero termina antes que el otro.
         boolean fascinated = this.isFascinated() || this.crystalFascination.isActive()
@@ -948,6 +1025,11 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         this.hatAnimation.tick(this.entityData.get(HAT_ANIM));
         this.bowlHopAnimation.tick(this.entityData.get(BOWL_HOP));
         this.boredAnimation.tick(this.entityData.get(BORED_ANIM));
+        byte restG = this.entityData.get(REST_GESTURE);
+        // En la pecera, acomodarse arranca directo del balanceo (el saltito ya lo hizo).
+        this.restGesture.tick(restG, this.isInBowl()
+                && com.noxisculture.entity.idle.NoxisRestGesture.typeOf(restG) == com.noxisculture.entity.idle.NoxisRestGesture.SETTLE
+                ? com.noxisculture.entity.idle.NoxisRestGesture.SETTLE_BOWL_START : 0);
         boolean withSocial = this.socialAnimation.isBusy();
         this.curiosity.tick(calm && !fascinated && !withNature && !withSocial, this.random);
         // Fascinación: la señal llega del servidor; acá solo se corta si se ve algo prioritario.
@@ -973,10 +1055,17 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         this.umbrellaAnim = approach(this.umbrellaAnim, this.isHoldingUmbrella() ? 1.0F : 0.0F);
         // Sentarse es más lento y pesado que el resto de las transiciones.
         float restTarget = this.isResting() ? 1.0F : 0.0F;
+        // Acomodándose: primero se prepara de pie. Estirándose: sigue sentado hasta levantarse.
+        if (this.restGesture.holdsStanding()) restTarget = 0.0F;
+        if (this.restGesture.holdsSeated()) restTarget = 1.0F;
+        if (this.isResting()) this.bubblePoppedOnWake = false;
         float restBefore = this.restAnim;
         this.restAnim += Mth.clamp(restTarget - this.restAnim, -0.06F, 0.06F);
-        // Al despertarse, el globito de sueño hace ¡plop! (mismo momento en que desaparece del modelo).
-        if (!this.isResting() && restBefore >= 0.72F && this.restAnim < 0.72F) {
+        // Al despertarse, el globito de sueño hace ¡plop! (mismo momento en que desaparece del modelo):
+        // al abrir los ojos si se estira sentado, o al levantarse.
+        boolean popNow = this.restGesture.bubblePopsNow();
+        if (popNow) this.bubblePoppedOnWake = true;
+        if (popNow || (!this.isResting() && restBefore >= 0.72F && this.restAnim < 0.72F && !this.bubblePoppedOnWake)) {
             double yaw = this.yHeadRot * Mth.DEG_TO_RAD;
             this.level().addParticle(ParticleTypes.BUBBLE_POP,
                     this.getX() - Math.sin(yaw) * 0.45D, this.getY() + 0.55D, this.getZ() + Math.cos(yaw) * 0.45D,

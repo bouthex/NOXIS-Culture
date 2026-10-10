@@ -2,6 +2,7 @@ package com.noxisculture.client.entity;
 
 import com.noxisculture.entity.idle.NoxisBoredAnimation;
 import com.noxisculture.entity.idle.NoxisBowlHop;
+import com.noxisculture.entity.idle.NoxisRestGesture;
 import com.noxisculture.entity.idle.NoxisHatAnimation;
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.geom.ModelPart;
@@ -355,13 +356,15 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         float[] life = NoxisMoodAnimator.headLife(age, pos, amount, happy);
         int t = (int) age;
         boolean dozing = (t % 160) < 22;                            // cabeceo de sueño de vez en cuando
-        float doze = rest * (Mth.sin(age * 0.05F) * 0.06F + (dozing ? 0.22F : 0.0F));
+        // Al despertarse estirándose, la cabeza deja la postura de sueño (awake = 0 durmiendo).
+        float sleepLook = rest * (1.0F - state.restAwake);
+        float doze = sleepLook * (Mth.sin(age * 0.05F) * 0.06F + (dozing ? 0.22F : 0.0F));
         this.head.yRot = state.yRot * Mth.DEG_TO_RAD + 0.3F * torchAnim;   // mira hacia la luz
         this.head.xRot = state.xRot * Mth.DEG_TO_RAD + life[0] + 0.25F * scared + 0.1F * torchAnim
-                + 0.15F * rest + doze;
+                + 0.15F * sleepLook + doze;
         // Con la antorcha ladea la cabecita (como esforzándose por ver); cansado, la deja caer de lado.
         this.head.zRot = roll * 1.4F + life[1] + NoxisMoodAnimator.headTremble(age, scared)
-                + 0.2F * torchAnim + 0.12F * rest;
+                + 0.2F * torchAnim + 0.12F * sleepLook;
         this.head.x = -roll * 3.0F;
         this.head.z = -0.9F * torchAnim;                             // estira el cuello para ver mejor
         this.head.y = HEAD_Y - bounce - hop + 0.8F * scared + sitDrop;
@@ -372,9 +375,9 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         NoxisMoodAnimator.animateTail(this.tail, TAIL_BASE_ANGLE, age, happy, scared);
         // Cansado: orejitas caídas, sombrero que se resbala sobre los ojos, cola enroscada en el piso.
         float plopBounce = Mth.sin(Mth.clamp((rest - 0.2F) / 0.8F, 0.0F, 1.0F) * Mth.PI) * (this.restRising ? 0.0F : 1.0F);
-        this.rightEar.zRot -= 0.55F * rest - 0.35F * plopBounce;
-        this.leftEar.zRot += 0.55F * rest - 0.35F * plopBounce;
-        this.hat.xRot = -0.05F + 0.2F * rest;
+        this.rightEar.zRot -= 0.55F * sleepLook - 0.35F * plopBounce;
+        this.leftEar.zRot += 0.55F * sleepLook - 0.35F * plopBounce;
+        this.hat.xRot = -0.05F + 0.2F * sleepLook;
         this.tail.xRot = Mth.lerp(sit, this.tail.xRot, -0.15F);
         this.tail.yRot = Mth.lerp(sit, this.tail.yRot, 1.25F);
         // Curiosidad repentina (gesto compartido; solo aparece estando quieto y tranquilo).
@@ -408,6 +411,16 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
                 || state.socialYawn > 0.5F || Math.abs(state.socialLean) > 0.5F     // bostezo / dormidos juntos
                 || (state.socialDoze > 0.6F && (t % 30) < 12)
                 || state.boredEyesClosed;                     // cabeceo de sueño                    // disfrutando el aroma
+        // Ojitos al acomodarse / despertarse (abre despacito, bosteza con los ojos cerrados).
+        if (state.restEyes == NoxisRestGesture.EYES_CLOSED) {
+            closed = true;
+        } else if (state.restEyes == NoxisRestGesture.EYES_TIRED) {
+            closed = false;
+            sleepy = true;
+        } else if (state.restEyes == NoxisRestGesture.EYES_OPEN) {
+            sleepy = torchAnim > 0.5F;
+            closed = normalBlink && !sleepy;
+        }
         this.eyesClosed.visible = closed;
         this.eyesTired.visible = sleepy && !closed;
         boolean open = !closed && !sleepy;
@@ -605,6 +618,10 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         if (state.bowlHop != NoxisBowlHop.NONE) {
             this.applyBowlHop(state.bowlHop, state.bowlHopTime);
         }
+        // ---- Acomodarse para descansar / estirarse al despertar ----
+        if (state.restGesture != NoxisRestGesture.NONE && state.restGestWeight > 0.0F) {
+            this.applyRestGesture(state.restGesture, state.restGestTime, state.restGestWeight, state.inBowl);
+        }
         // ---- Sombrero o mechoncito ----
         this.hat.visible = state.hasHat;
         this.hairTuft.visible = !state.hasHat;
@@ -619,7 +636,7 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         }
 
         // ---- Globito de sueño: se infla y desinfla con la respiración mientras duerme ----
-        float bubble = sleepBubbleScale(rest, this.restRising, age);
+        float bubble = sleepBubbleScale(state.bubbleRest >= 0.0F ? state.bubbleRest : rest, this.restRising, age);
         this.sleepBubble.visible = this.pass == PASS_SLEEP_BUBBLE && bubble > 0.02F;
         this.sleepBubble.xScale = bubble;
         this.sleepBubble.yScale = bubble;
@@ -916,6 +933,171 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         this.leftEar.xRot -= w * 0.3F * inspect;
         this.rightEar.zRot += w * Mth.sin(t * 0.9F) * 0.12F * inspect;
         this.leftEar.zRot -= w * Mth.sin(t * 0.9F + 1.7F) * 0.12F * inspect;
+    }
+
+    // ================================================================== descanso: acomodarse y estirarse
+
+    private void applyRestGesture(byte gesture, float t, float w, boolean inBowl) {
+        switch (NoxisRestGesture.typeOf(gesture)) {
+            case NoxisRestGesture.SETTLE -> this.restSettle(t, w, inBowl, NoxisRestGesture.lead(gesture));
+            case NoxisRestGesture.STRETCH_SEATED -> this.restStretch(t - NoxisRestGesture.lead(gesture), w, true,
+                    NoxisRestGesture.hasHat(gesture));
+            case NoxisRestGesture.STRETCH_STAND -> this.restStretch(t, w, false, NoxisRestGesture.hasHat(gesture));
+            default -> { }
+        }
+    }
+
+    /**
+     * Acomodarse para descansar: mira el lugar (de pie, recorriéndolo con la vista), junta las
+     * patitas y los bracitos y baja suave el cuerpo; se sienta con la transición de siempre y,
+     * ya sentado, se acomoda con un balanceo de lado a lado que se va calmando (colita que se
+     * enrosca, orejitas que se relajan) y un suspiro final. En la pecera solo hace el balanceo.
+     */
+    private void restSettle(float t, float w, boolean inBowl, int seed) {
+        float side = (seed & 1) == 0 ? 1.0F : -1.0F;
+        float look = NoxisBoredAnimation.env(t, 0, 6, 12, 20);
+        float prep = NoxisBoredAnimation.env(t, 3, 10, 13, 24);
+        float wig = NoxisBoredAnimation.env(t, 28, 32, 48, 56);
+        float decay = 1.0F - Mth.clamp((t - 28.0F) / 30.0F, 0.0F, 1.0F);
+        float osc = Mth.sin((t - 28.0F) * 0.62F) * wig * decay * side;
+        float sigh = NoxisBoredAnimation.env(t, 48, 52, 54, 60);
+        float k = inBowl ? 0.55F : 1.0F;                 // en la pecera, más chiquito (no toca el vidrio)
+        // Mira el lugar donde se va a acomodar.
+        this.head.xRot += w * 0.32F * look;
+        this.head.yRot += w * 0.24F * Mth.sin(t * 0.38F) * look;
+        // Junta las patitas y los bracitos, y baja suave el cuerpo.
+        float p = w * prep;
+        this.rightLeg.x += 0.5F * p;
+        this.leftLeg.x -= 0.5F * p;
+        this.rightArm.xRot = Mth.lerp(p, this.rightArm.xRot, -0.45F);
+        this.leftArm.xRot = Mth.lerp(p, this.leftArm.xRot, -0.45F);
+        this.rightArm.zRot = Mth.lerp(p, this.rightArm.zRot, -0.12F);
+        this.leftArm.zRot = Mth.lerp(p, this.leftArm.zRot, 0.12F);
+        float lower = 0.9F * p;
+        this.head.y += lower;
+        this.body.y += lower;
+        this.rightArm.y += lower;
+        this.leftArm.y += lower;
+        this.tail.yRot += 0.6F * p * side;
+        // Ya sentado: se balancea buscando la postura cómoda.
+        float o = w * k * osc;
+        this.body.zRot += 0.11F * o;
+        this.head.zRot += 0.09F * o;
+        this.body.x += 0.35F * o;
+        this.head.x += 0.25F * o;
+        this.rightArm.x += 0.3F * o;
+        this.leftArm.x += 0.3F * o;
+        this.tail.yRot += 0.5F * o;
+        float flick = NoxisBoredAnimation.pulse(t, 31.0F, 2.0F) + NoxisBoredAnimation.pulse(t, 43.0F, 2.0F);
+        this.rightEar.zRot -= w * k * 0.2F * flick;
+        this.leftEar.zRot += w * k * 0.2F * flick;
+        // Suspiro final: baja apenas la cabecita y el cuerpo se afloja.
+        this.head.xRot += w * k * 0.08F * sigh;
+        this.body.y += w * k * 0.2F * sigh;
+        this.head.y += w * k * 0.25F * sigh;
+    }
+
+    /**
+     * Estirarse al despertar. Sentado: abre los ojitos despacio y levanta la cabeza; se encoge un
+     * poquito (anticipación); estira los dos bracitos arriba y un poco afuera, arquea el cuerpo,
+     * estira las patitas para adelante y para la colita (con un temblorcito en el punto máximo);
+     * bosteza con la cabeza para atrás; baja los brazos, se levanta, se sacude suave y, si tiene
+     * sombrero, le da un toquecito para dejarlo derecho. De pie (al salir de la pecera): lo mismo,
+     * pero estira una patita para atrás y después la otra, como un gatito.
+     */
+    private void restStretch(float u, float w, boolean seated, boolean hat) {
+        // Tiempos (sentado / de pie).
+        float antic = seated ? NoxisBoredAnimation.env(u, 10, 16, 18, 22) : NoxisBoredAnimation.env(u, 0, 5, 7, 10);
+        float big = seated ? NoxisBoredAnimation.env(u, 18, 26, 40, 50) : NoxisBoredAnimation.env(u, 7, 14, 28, 36);
+        float peak = seated ? NoxisBoredAnimation.env(u, 26, 29, 36, 40) : NoxisBoredAnimation.env(u, 14, 17, 24, 28);
+        float yawn = seated ? NoxisBoredAnimation.env(u, 32, 36, 42, 47) : NoxisBoredAnimation.env(u, 22, 26, 32, 37);
+        float shakeStart = seated ? 64.0F : 40.0F;
+        float shake = NoxisBoredAnimation.env(u, shakeStart, shakeStart + 3, shakeStart + 12, shakeStart + 16);
+        float shakeOsc = Mth.sin((u - shakeStart) * 1.7F) * shake;
+        float hatStart = seated ? 80.0F : 60.0F;
+        float hatTap = hat ? NoxisBoredAnimation.env(u, hatStart, hatStart + 4, hatStart + 8, hatStart + 13) : 0.0F;
+        float lift = seated ? NoxisBoredAnimation.smooth(u / 10.0F) * (1.0F - NoxisBoredAnimation.smooth((u - 50.0F) / 8.0F)) : 0.0F;
+
+        // Abre los ojitos y levanta la cabeza (sentado, recién despierto).
+        this.head.xRot -= w * 0.06F * lift;
+        // Anticipación: se encoge, manitos al pecho, orejitas para atrás.
+        float a = w * antic;
+        this.head.y += 0.6F * a;
+        this.body.y += 0.45F * a;
+        this.rightArm.y += 0.45F * a;
+        this.leftArm.y += 0.45F * a;
+        this.head.xRot += 0.15F * a;
+        this.rightEar.xRot += 0.4F * a;
+        this.leftEar.xRot += 0.4F * a;
+        this.rightArm.xRot = Mth.lerp(a, this.rightArm.xRot, -0.9F);
+        this.leftArm.xRot = Mth.lerp(a, this.leftArm.xRot, -0.9F);
+        this.rightArm.zRot = Mth.lerp(a, this.rightArm.zRot, -0.2F);
+        this.leftArm.zRot = Mth.lerp(a, this.leftArm.zRot, 0.2F);
+        // Estirón: bracitos arriba y un poco afuera (con temblorcito), cuerpo arqueado, más alto.
+        float b = w * big;
+        float tremble = Mth.sin(u * 2.3F) * 0.05F * peak;
+        this.rightArm.xRot = Mth.lerp(b, this.rightArm.xRot, -0.15F);
+        this.leftArm.xRot = Mth.lerp(b, this.leftArm.xRot, -0.15F);
+        this.rightArm.zRot = Mth.lerp(b, this.rightArm.zRot, 2.25F + tremble);
+        this.leftArm.zRot = Mth.lerp(b, this.leftArm.zRot, -2.25F + tremble);
+        this.rightArm.yScale *= 1.0F + 0.45F * b;
+        this.leftArm.yScale *= 1.0F + 0.45F * b;
+        this.body.xRot -= 0.22F * b;
+        this.head.xRot -= 0.3F * b + 0.18F * w * yawn;
+        this.head.y -= 0.9F * b;
+        this.body.y -= 0.5F * b;
+        this.rightArm.y -= 1.2F * b;
+        this.leftArm.y -= 1.2F * b;
+        // Orejitas bien paradas y colita estirada para arriba.
+        this.rightEar.zRot += 0.22F * b + 0.06F * Mth.sin(u * 2.0F) * peak;
+        this.leftEar.zRot -= 0.22F * b + 0.06F * Mth.sin(u * 2.0F + 1.3F) * peak;
+        this.tail.xRot -= 0.9F * b;
+        this.tail.yRot = Mth.lerp(b, this.tail.yRot, 0.0F);
+        if (seated) {
+            // Patitas estiradas para adelante, con las puntitas arriba.
+            this.rightLeg.xRot -= 0.35F * b;
+            this.leftLeg.xRot -= 0.35F * b;
+            this.rightLeg.z -= 0.4F * b;
+            this.leftLeg.z -= 0.4F * b;
+        } else {
+            // De pie: en puntitas y estira una patita para atrás, después la otra.
+            float legR = NoxisBoredAnimation.env(u, 12, 16, 19, 23);
+            float legL = NoxisBoredAnimation.env(u, 20, 24, 27, 31);
+            this.rightLeg.xRot += 0.75F * w * legR;
+            this.leftLeg.xRot += 0.75F * w * legL;
+            this.rightLeg.z += 0.6F * w * legR;
+            this.leftLeg.z += 0.6F * w * legL;
+            this.body.xRot += 0.12F * w * (legR + legL);
+        }
+        // Bostezo: cabeza atrás, ojitos apretados (los pone el modelo), cabecita estirada, orejas atrás.
+        float y = w * yawn;
+        this.head.yScale *= 1.0F + 0.07F * y;
+        this.head.xScale *= 1.0F - 0.03F * y;
+        this.rightEar.xRot += 0.35F * y;
+        this.leftEar.xRot += 0.35F * y;
+        // Sacudida suave al final (cuerpo, cabeza, orejas y colita).
+        float sh = w * shakeOsc;
+        this.body.zRot += 0.1F * sh;
+        this.head.zRot -= 0.13F * sh;
+        this.rightEar.zRot += 0.3F * sh;
+        this.leftEar.zRot += 0.3F * sh;
+        this.tail.yRot += 0.5F * sh;
+        this.rightArm.zRot += 0.18F * sh;
+        this.leftArm.zRot += 0.18F * sh;
+        // Toquecito al sombrero: una manito sube rápido al costado, el sombrero salta apenas y
+        // vuelve derecho; la cabeza acompaña con un cabeceo.
+        if (hatTap > 0.0F) {
+            float h = w * hatTap;
+            float pop = NoxisBoredAnimation.pulse(u, hatStart + 6.0F, 3.0F);
+            this.rightArm.xRot = Mth.lerp(h, this.rightArm.xRot, -0.7F);
+            this.rightArm.zRot = Mth.lerp(h, this.rightArm.zRot, 2.15F);
+            this.rightArm.yScale *= 1.0F + 0.3F * h;
+            this.rightArm.y -= 1.4F * h;
+            this.hat.y -= 1.2F * w * pop;
+            this.hat.yRot += 0.25F * w * pop;
+            this.head.xRot += 0.1F * w * pop;
+            this.head.zRot += 0.08F * h;
+        }
     }
 
     /** Escala de la cabeza y el cuerpo (1 = normal; el saltito de la pecera los aprieta). */

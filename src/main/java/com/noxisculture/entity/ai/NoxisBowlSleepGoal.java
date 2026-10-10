@@ -59,7 +59,7 @@ public class NoxisBowlSleepGoal<T extends PathfinderMob & NoxisBowlSleeper & Nox
     /** Si al despertarse no puede salir (tapada o sin lugar al costado), sigue adentro y reintenta. */
     private static final int EXIT_RETRY = 100;
 
-    private enum Phase { WALK, HAT_OFF, PREP, CLIMB_IN, SLEEP, CLIMB_OUT, HAT_ON, DONE }
+    private enum Phase { WALK, HAT_OFF, PREP, CLIMB_IN, SLEEP, CLIMB_OUT, STRETCH, HAT_ON, DONE }
 
     private final T mob;
     private final NoxisApproach approacher;
@@ -156,6 +156,12 @@ public class NoxisBowlSleepGoal<T extends PathfinderMob & NoxisBowlSleeper & Nox
             if (this.tickHop(NoxisBowlHop.OUT)) this.landOutside();
             return;
         }
+        if (this.phase == Phase.STRETCH) {
+            // Se despereza al lado de la pecera; después va por su sombrero.
+            this.mob.getNavigation().stop();
+            if (!this.mob.isStretching() || this.ticks > 200) this.afterLeaving();
+            return;
+        }
         BlockPos bowl = this.mob.getBowlPos();
         if (bowl == null || !level.getBlockState(bowl).is(ModBlocks.NOXIS_BOWL)) {
             // La pecera ya no está (la rompieron): se despierta / deja de ir.
@@ -206,6 +212,7 @@ public class NoxisBowlSleepGoal<T extends PathfinderMob & NoxisBowlSleeper & Nox
                     this.mob.setBowlHop(NoxisBowlHop.NONE);
                     this.mob.setInBowl(true);
                     this.mob.setResting(true);
+                    this.mob.startSettle();                                     // se acomoda adentro
                     this.mob.playSound(ModSounds.NOXIS_YAWN, 0.6F, 1.0F);
                     this.ticks = 0;
                     this.phase = Phase.SLEEP;
@@ -391,7 +398,13 @@ public class NoxisBowlSleepGoal<T extends PathfinderMob & NoxisBowlSleeper & Nox
     private void landOutside() {
         this.mob.setBowlHop(NoxisBowlHop.NONE);
         this.freeBowl();
-        this.afterLeaving();
+        if (this.mob.hurtTime == 0) {
+            this.mob.startWakeStretch(false);                 // se estira de pie antes de seguir
+            this.ticks = 0;
+            this.phase = Phase.STRETCH;
+        } else {
+            this.afterLeaving();
+        }
     }
 
     /** Después de salir: si su sombrero sigue al lado, va a ponérselo con su animación. */

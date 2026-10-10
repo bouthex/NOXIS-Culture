@@ -78,6 +78,13 @@ public class NoxisVillagerRenderState extends LivingEntityRenderState {
     public boolean boredEyesClosed;
     public boolean boredPupils;
     public boolean boredTired;
+    /** Acomodarse / estirarse: gesto (byte completo), tiempo, cuánto se ve, ojitos, despierto (0..1) y globito. */
+    public byte restGesture;
+    public float restGestTime;
+    public float restGestWeight;
+    public int restEyes;
+    public float restAwake;
+    public float bubbleRest = -1.0F;
     /** La flor que tiene en la mano (vacía si no tiene nada). */
     public final ItemStackRenderState heldFlower = new ItemStackRenderState();
     /** true mientras se está levantando (para no repetir el rebote del "plop" al revés). */

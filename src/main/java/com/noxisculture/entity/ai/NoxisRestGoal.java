@@ -33,6 +33,7 @@ public class NoxisRestGoal<T extends PathfinderMob & NoxisRestful> extends Goal 
         this.remaining = MIN_REST_TICKS + this.mob.getRandom().nextInt(MAX_REST_TICKS - MIN_REST_TICKS);
         this.mob.getNavigation().stop();
         this.mob.setResting(true);
+        this.mob.startSettle();
         this.mob.playSound(ModSounds.NOXIS_YAWN, 0.8F, 1.0F);
     }
 
@@ -51,6 +52,10 @@ public class NoxisRestGoal<T extends PathfinderMob & NoxisRestful> extends Goal 
 
     @Override
     public void stop() {
+        // Terminó su descanso tranquilo (no lo interrumpieron): se despereza.
+        if (this.remaining <= 0 && this.mob.isSafeToRest() && this.mob.hurtTime == 0) {
+            this.mob.startWakeStretch(true);
+        }
         this.mob.setResting(false);
         this.mob.onRestFinished();
     }

@@ -26,4 +26,20 @@ public interface NoxisRestful {
     }
 
     void onRestFinished();
+
+    /** Empieza a acomodarse para descansar (mira el lugar, se sienta y se acomoda con un balanceo). */
+    default void startSettle() {
+    }
+
+    /**
+     * Se despertó (terminó su descanso normalmente): se estira. {@code seated}: sigue sentado al
+     * empezar (descanso solo o en compañía); false: ya está de pie (al salir de la pecera).
+     */
+    default void startWakeStretch(boolean seated) {
+    }
+
+    /** ¿Se está estirando? (mientras tanto se queda quieto). */
+    default boolean isStretching() {
+        return false;
+    }
 }
