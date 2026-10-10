@@ -3,6 +3,7 @@ package com.noxisculture.entity.ai;
 import com.noxisculture.block.ModBlocks;
 import com.noxisculture.block.custom.NoxisBowlBlock;
 import com.noxisculture.block.custom.NoxisBowlClaims;
+import com.noxisculture.block.custom.NoxisHatBlock;
 import com.noxisculture.entity.idle.NoxisBowlHop;
 import com.noxisculture.entity.idle.NoxisHatAnimation;
 import com.noxisculture.sound.ModSounds;
@@ -276,10 +277,11 @@ public class NoxisBowlSleepGoal<T extends PathfinderMob & NoxisBowlSleeper & Nox
                 this.giveUp(level, bowl, false);
                 return;
             }
-            level.setBlock(spot, ModBlocks.NOXIS_HAT.defaultBlockState(), Block.UPDATE_ALL);
+            // Apoya ESE sombrero (con sus colores) y deja de tenerlo puesto: nunca hay dos.
+            NoxisHatBlock.placeHat(level, spot, this.mob.getHatItem());
             level.playSound(null, spot, ModBlocks.NOXIS_HAT.defaultBlockState().getSoundType().getPlaceSound(),
                     SoundSource.NEUTRAL, 0.6F, 1.1F);
-            this.mob.setHasHat(false);
+            this.mob.setHatItem(net.minecraft.world.item.ItemStack.EMPTY);
             this.mob.setHatPos(spot);
         } else if (this.ticks >= NoxisHatAnimation.OFF_LENGTH) {
             this.mob.setHatAnim(NoxisHatAnimation.NONE);
@@ -428,10 +430,10 @@ public class NoxisBowlSleepGoal<T extends PathfinderMob & NoxisBowlSleeper & Nox
         if (this.ticks == NoxisHatAnimation.ON_TAKE_TICK) {
             if (hat != null && level.getBlockState(hat).is(ModBlocks.NOXIS_HAT)) {
                 // Lo levanta: el bloque desaparece y lo tiene en las manitos (nunca hay dos).
-                level.removeBlock(hat, false);
+                // Lo levanta: el bloque desaparece y se pone ESE mismo sombrero (nunca hay dos).
+                this.mob.setHatItem(NoxisHatBlock.takeHat(level, hat));
                 level.playSound(null, hat, ModBlocks.NOXIS_HAT.defaultBlockState().getSoundType().getBreakSound(),
                         SoundSource.NEUTRAL, 0.5F, 1.2F);
-                this.mob.setHasHat(true);
             } else {
                 this.mob.setHatAnim(NoxisHatAnimation.NONE);  // justo se lo llevaron
                 this.mob.setHatPos(null);
@@ -608,8 +610,7 @@ public class NoxisBowlSleepGoal<T extends PathfinderMob & NoxisBowlSleeper & Nox
         if (!this.mob.hasHat() && hat != null && !this.mob.isInBowl()) {
             // Cortado mientras iba a ponérselo: si sigue ahí, se lo pone igual (nunca se duplica).
             if (level.getBlockState(hat).is(ModBlocks.NOXIS_HAT)) {
-                level.removeBlock(hat, false);
-                this.mob.setHasHat(true);
+                this.mob.setHatItem(NoxisHatBlock.takeHat(level, hat));
             }
             this.mob.setHatPos(null);
         }

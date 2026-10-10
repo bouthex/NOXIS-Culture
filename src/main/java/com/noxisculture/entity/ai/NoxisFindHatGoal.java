@@ -1,6 +1,9 @@
 package com.noxisculture.entity.ai;
 
 import com.noxisculture.block.ModBlocks;
+import com.noxisculture.block.custom.NoxisHatBlock;
+import com.noxisculture.item.NoxisHatColors;
+import net.minecraft.world.item.ItemStack;
 import com.noxisculture.entity.idle.NoxisHatAnimation;
 import java.util.EnumSet;
 import java.util.HashSet;
@@ -29,6 +32,8 @@ import org.jspecify.annotations.Nullable;
  */
 public class NoxisFindHatGoal<T extends PathfinderMob & NoxisBowlSleeper> extends Goal {
     private static final int RADIUS = 15;
+    /** Los violetas les gustan más: cuentan como si estuvieran más cerca (pero ninguno se rechaza). */
+    private static final double VIOLET_BONUS = 0.6D;
     /** En la búsqueda al despertarse: no se aleja más que esto del lugar donde se despertó. */
     private static final double SEARCH_LEASH = 15.0D;
     private static final int ROAM_RESCAN = 20;           // mientras recorre, mira cada 1 s
@@ -211,18 +216,19 @@ public class NoxisFindHatGoal<T extends PathfinderMob & NoxisBowlSleeper> extend
         }
     }
 
-    /** Lo agarra: el bloque desaparece o el ítem se descuenta, y queda puesto. */
+    /** Lo agarra (ese sombrero exacto, con sus colores): el bloque desaparece o el ítem se descuenta. */
     private void takeHat(Level level) {
         if (this.targetBlock != null) {
-            level.removeBlock(this.targetBlock, false);
+            this.mob.setHatItem(NoxisHatBlock.takeHat(level, this.targetBlock));
             level.playSound(null, this.targetBlock, ModBlocks.NOXIS_HAT.defaultBlockState().getSoundType().getBreakSound(),
                     SoundSource.NEUTRAL, 0.5F, 1.2F);
         } else if (this.targetItem != null) {
-            this.targetItem.getItem().shrink(1);
+            ItemStack hat = this.targetItem.getItem().split(1);
             if (this.targetItem.getItem().isEmpty()) this.targetItem.discard();
+            else this.targetItem.setItem(this.targetItem.getItem().copy());   // avisa a los jugadores
+            this.mob.setHatItem(hat);
             this.mob.playSound(ModBlocks.NOXIS_HAT.defaultBlockState().getSoundType().getBreakSound(), 0.5F, 1.2F);
         }
-        this.mob.setHasHat(true);
         this.mob.stopHatSearch();
     }
 
@@ -268,7 +274,7 @@ public class NoxisFindHatGoal<T extends PathfinderMob & NoxisBowlSleeper> extend
                 this.mob.getBoundingBox().inflate(RADIUS, HEIGHT, RADIUS),
                 e -> e.isAlive() && e.getItem().is(ModBlocks.NOXIS_HAT.asItem()));
         for (ItemEntity item : items) {
-            double d = this.mob.distanceToSqr(item);
+            double d = this.mob.distanceToSqr(item) * (NoxisHatColors.looksViolet(item.getItem()) ? VIOLET_BONUS : 1.0D);
             if (d >= best || this.isBlacklisted(item.getUUID())) continue;
             if (origin != null && origin.distToCenterSqr(item.position()) > leash) continue;
             if (d > 6.25D && this.mob.getNavigation().createPath(item, 1) == null) continue;   // de cerca va derecho
@@ -281,7 +287,8 @@ public class NoxisFindHatGoal<T extends PathfinderMob & NoxisBowlSleeper> extend
                 here.offset(RADIUS, HEIGHT, RADIUS))) {
             if (!level.getBlockState(pos).is(ModBlocks.NOXIS_HAT) || reserved.contains(pos)) continue;
             if (this.isBlacklisted(pos.immutable())) continue;
-            double d = pos.distToCenterSqr(this.mob.position());
+            double d = pos.distToCenterSqr(this.mob.position())
+                    * (NoxisHatColors.looksViolet(NoxisHatBlock.peekHat(level, pos)) ? VIOLET_BONUS : 1.0D);
             if (d >= best) continue;
             if (origin != null && pos.distSqr(origin) > leash) continue;
             if (d > 6.25D && this.mob.getNavigation().createPath(pos, 1) == null) continue;

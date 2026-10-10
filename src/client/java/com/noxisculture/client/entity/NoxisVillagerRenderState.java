@@ -58,6 +58,9 @@ public class NoxisVillagerRenderState extends LivingEntityRenderState {
     /** Duerme dentro de una pecera / tiene puesto el sombrero. */
     public boolean inBowl;
     public boolean hasHat = true;
+    /** Colores del sombrero que lleva puesto (RGB): copa/ala y lazo. */
+    public int hatCrownColor = com.noxisculture.item.NoxisHatColors.DEFAULT_CROWN;
+    public int hatBandColor = com.noxisculture.item.NoxisHatColors.DEFAULT_BAND;
     /** Durmiendo en una pecera tapada por otra (se acurruca un poquito más). */
     public boolean bowlCovered;
     /** Animación de sacarse/ponerse el sombrero (0 = ninguna) y su tiempo en ticks. */

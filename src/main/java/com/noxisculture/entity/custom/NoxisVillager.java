@@ -123,6 +123,9 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
             SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> HAS_HAT =
             SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BOOLEAN);
+    /** El sombrero EXACTO que lleva puesto (con sus colores de copa y lazo); vacío si no tiene. */
+    private static final EntityDataAccessor<ItemStack> HAT_ITEM =
+            SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.ITEM_STACK);
     /** Animación de sacarse/ponerse el sombrero (la decide el servidor; no se guarda). */
     private static final EntityDataAccessor<Byte> HAT_ANIM =
             SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BYTE);
@@ -207,6 +210,7 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
         builder.define(SOCIAL_ANIM, NoxisSocialAction.NONE);
         builder.define(IN_BOWL, false);
         builder.define(HAS_HAT, true);
+        builder.define(HAT_ITEM, com.noxisculture.item.NoxisHatColors.newHat());
         builder.define(HAT_ANIM, com.noxisculture.entity.idle.NoxisHatAnimation.NONE);
         builder.define(BOWL_HOP, com.noxisculture.entity.idle.NoxisBowlHop.NONE);
     }
@@ -346,7 +350,23 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
 
     @Override
     public void setHasHat(boolean hat) {
-        this.entityData.set(HAS_HAT, hat);
+        // Sin decir cuál: si se lo pone, uno con los colores originales (solo si no tenía ya uno).
+        if (hat && this.getHatItem().isEmpty()) {
+            this.setHatItem(com.noxisculture.item.NoxisHatColors.newHat());
+        } else if (!hat) {
+            this.setHatItem(ItemStack.EMPTY);
+        }
+    }
+
+    @Override
+    public ItemStack getHatItem() {
+        return this.entityData.get(HAT_ITEM);
+    }
+
+    @Override
+    public void setHatItem(ItemStack hat) {
+        this.entityData.set(HAT_ITEM, hat.isEmpty() ? ItemStack.EMPTY : hat.copyWithCount(1));
+        this.entityData.set(HAS_HAT, !hat.isEmpty());
     }
 
     @Override
@@ -405,7 +425,9 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
     protected EntityDimensions getDefaultDimensions(Pose pose) {
         EntityDimensions base = super.getDefaultDimensions(pose);
         if (this.isInBowl()) {
-            return base.scale(1.07F, 0.56F).withEyeHeight(base.eyeHeight() * 0.8F);
+            // Acurrucado y bien adentro: la caja termina por debajo del borde del bloque (15,6 px),
+            // así se puede colocar otra pecera (u otro bloque) encima aunque esté durmiendo.
+            return base.scale(1.07F, 0.5F).withEyeHeight(base.eyeHeight() * 0.75F);
         }
         if (!this.hasHat()) {
             return base.scale(1.0F, 0.68F).withEyeHeight(base.eyeHeight());
@@ -955,6 +977,7 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
         output.putInt("rest_cooldown", this.restCooldown);
         this.flowerCarry.save(output);
         output.putBoolean("has_hat", this.hasHat());
+        if (!this.getHatItem().isEmpty()) output.store("hat_item", ItemStack.CODEC, this.getHatItem());
         output.putBoolean("in_bowl", this.isInBowl());
         if (this.bowlPos != null) output.store("bowl_pos", BlockPos.CODEC, this.bowlPos);
         if (this.hatPos != null) output.store("hat_pos", BlockPos.CODEC, this.hatPos);
@@ -973,7 +996,13 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
         this.restCooldown = input.getInt("rest_cooldown").orElse(this.restCooldown);
         this.flowerCarry.load(input);
         this.syncHeldFlower();
-        this.setHasHat(input.getBooleanOr("has_hat", true));
+        // El sombrero exacto (con sus colores); los Noxis de antes tenían el original.
+        ItemStack savedHat = input.read("hat_item", ItemStack.CODEC).orElse(ItemStack.EMPTY);
+        if (!savedHat.isEmpty()) {
+            this.setHatItem(savedHat);
+        } else {
+            this.setHatItem(input.getBooleanOr("has_hat", true) ? com.noxisculture.item.NoxisHatColors.newHat() : ItemStack.EMPTY);
+        }
         this.setInBowl(input.getBooleanOr("in_bowl", false));
         this.bowlPos = input.read("bowl_pos", BlockPos.CODEC).orElse(null);
         this.hatPos = input.read("hat_pos", BlockPos.CODEC).orElse(null);

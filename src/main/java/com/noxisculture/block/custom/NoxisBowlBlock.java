@@ -39,7 +39,7 @@ public class NoxisBowlBlock extends Block {
     public static final MapCodec<NoxisBowlBlock> CODEC = simpleCodec(NoxisBowlBlock::new);
     public static final BooleanProperty OCCUPIED = BlockStateProperties.OCCUPIED;
     /**
-     * Tapada: hay otra pecera justo encima. La abertura queda cerrada (se ve tapada por la base
+     * Tapada: hay otra pecera (u otro bloque) justo encima. La abertura queda cerrada (se ve tapada por la base
      * de la de arriba) y ningún Noxis puede entrar ni salir hasta que la destapen.
      */
     public static final BooleanProperty COVERED = BooleanProperty.create("covered");
@@ -113,8 +113,15 @@ public class NoxisBowlBlock extends Block {
     /** Al colocarla: ¿ya tiene otra pecera encima? */
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
-        boolean covered = context.getLevel().getBlockState(context.getClickedPos().above()).is(this);
-        return this.defaultBlockState().setValue(COVERED, covered);
+        return this.defaultBlockState().setValue(COVERED, coversBowl(context.getLevel().getBlockState(context.getClickedPos().above())));
+    }
+
+    /**
+     * ¿El bloque de arriba tapa la abertura? Otra pecera o cualquier bloque de verdad sí; aire,
+     * pasto, flores, nieve finita y demás cosas que se reemplazan al construir, no.
+     */
+    private static boolean coversBowl(BlockState above) {
+        return !above.isAir() && !above.canBeReplaced();
     }
 
     /** Cuando cambia el bloque de arriba: se tapa o se destapa. */
@@ -123,7 +130,7 @@ public class NoxisBowlBlock extends Block {
                                      Direction direction, BlockPos neighborPos, BlockState neighborState,
                                      RandomSource random) {
         if (direction == Direction.UP) {
-            boolean covered = neighborState.is(this);
+            boolean covered = coversBowl(neighborState);
             if (covered != state.getValue(COVERED)) state = state.setValue(COVERED, covered);
         }
         return super.updateShape(state, level, ticks, pos, direction, neighborPos, neighborState, random);

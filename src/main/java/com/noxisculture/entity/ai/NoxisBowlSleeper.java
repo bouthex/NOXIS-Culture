@@ -20,6 +20,12 @@ public interface NoxisBowlSleeper {
 
     void setHasHat(boolean hat);
 
+    /** El sombrero exacto que lleva puesto (con sus colores), o vacío. */
+    net.minecraft.world.item.ItemStack getHatItem();
+
+    /** Se pone ese sombrero exacto (vacío = sin sombrero). */
+    void setHatItem(net.minecraft.world.item.ItemStack hat);
+
     /** Dónde dejó su sombrero al acostarse (o null). */
     @Nullable BlockPos getHatPos();
 

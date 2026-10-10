@@ -32,6 +32,8 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
     private static final String TAIL = "tail";
     private static final String TAIL_TIP = "tail_tip";
     private static final String HAT_SPRIG = "hat_sprig";
+    /** La gema del lazo: nunca se tiñe (se dibuja aparte, con sus colores originales). */
+    private static final String HAT_GEM = "hat_gem";
     private static final String PONCHO = "poncho";
     private static final String TORCH = "torch";
     private static final String EYES_TIRED = "eyes_tired";
@@ -47,6 +49,13 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
     public static final int PASS_GLOW_EYES = 1;
     /** Copia que solo dibuja el globito de sueño (con su propia textura). */
     public static final int PASS_SLEEP_BUBBLE = 2;
+    /**
+     * Copias que solo dibujan el sombrero, con la textura-máscara {@code noxis_hat_mask.png}:
+     * copa y ala (se tiñen con su color), lazo (con el suyo) y lo fijo (ramita y gema, sin teñir).
+     */
+    public static final int PASS_HAT_CROWN = 3;
+    public static final int PASS_HAT_BAND = 4;
+    public static final int PASS_HAT_FIXED = 5;
     /** Globito de sueño (solo lo dibuja la copia {@link #PASS_SLEEP_BUBBLE}). */
     private static final String SLEEP_BUBBLE = "sleep_bubble";
     /** Mechoncito de pelo verde (solo se ve cuando no tiene sombrero). */
@@ -63,6 +72,11 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
     private final ModelPart head;
     private final ModelPart body;
     private final ModelPart hat;
+    private final ModelPart hatBrim;
+    private final ModelPart hatCrown;
+    private final ModelPart hatBand;
+    private final ModelPart hatSprig;
+    private final ModelPart hatGem;
     private final ModelPart rightEar;
     private final ModelPart leftEar;
     private final ModelPart tail;
@@ -94,6 +108,11 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         this.head = root.getChild(PartNames.HEAD);
         this.body = root.getChild(PartNames.BODY);
         this.hat = this.head.getChild(HAT);
+        this.hatBrim = this.hat.getChild(HAT_BRIM);
+        this.hatCrown = this.hat.getChild(HAT_CROWN);
+        this.hatBand = this.hat.getChild(HAT_BAND);
+        this.hatSprig = this.hat.getChild(HAT_SPRIG);
+        this.hatGem = this.hat.getChild(HAT_GEM);
         this.rightEar = this.head.getChild(PartNames.RIGHT_EAR);
         this.leftEar = this.head.getChild(PartNames.LEFT_EAR);
         this.eyesTired = this.head.getChild(EYES_TIRED);
@@ -181,6 +200,10 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         hat.addOrReplaceChild(HAT_SPRIG,
                 CubeListBuilder.create().texOffs(48, 30).addBox(0.0F, -4.0F, -1.0F, 1.0F, 4.0F, 2.0F),
                 PartPose.offsetAndRotation(3.2F, -2.0F, 1.0F, 0.0F, 0.0F, 0.35F));
+        // Gema del lazo (al frente, en el centro): se dibuja sin teñir.
+        hat.addOrReplaceChild(HAT_GEM,
+                CubeListBuilder.create().texOffs(62, 62).addBox(-0.5F, -3.0F, -3.8F, 1.0F, 1.0F, 0.0F),
+                PartPose.ZERO);
 
         // ---- Cuerpo + colita ----
         PartDefinition body = root.addOrReplaceChild(PartNames.BODY,
@@ -608,6 +631,26 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
             this.hat.visible = false;
             this.rightEar.visible = false;
             this.leftEar.visible = false;
+        }
+
+        // ---- Sombrero: lo dibuja NoxisHatLayer con sus colores (copa, lazo y gema por separado) ----
+        boolean hatPass = this.pass >= PASS_HAT_CROWN;
+        this.head.skipDraw = hatPass;                         // de la cabeza, solo el sombrero
+        if (hatPass) {
+            this.eyesOpen.visible = false;
+            this.eyesTired.visible = false;
+            this.eyesClosed.visible = false;
+            this.eyesBig.visible = false;
+            this.sleepBubble.visible = false;
+            this.hairTuft.visible = false;
+            this.hat.visible = state.hasHat;
+            this.hatBrim.visible = this.pass == PASS_HAT_CROWN;
+            this.hatCrown.visible = this.pass == PASS_HAT_CROWN;
+            this.hatBand.visible = this.pass == PASS_HAT_BAND;
+            this.hatSprig.visible = this.pass == PASS_HAT_FIXED;
+            this.hatGem.visible = this.pass == PASS_HAT_FIXED;
+        } else if (this.pass == PASS_NORMAL) {
+            this.hat.visible = false;
         }
     }
 

@@ -11,7 +11,14 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.references.BlockItemId;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.valueproviders.UniformInt;
+import com.noxisculture.item.custom.NoxisHatItem;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.equipment.ArmorMaterials;
+import net.minecraft.world.item.equipment.ArmorType;
+import net.minecraft.world.item.equipment.Equippable;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -88,7 +95,7 @@ public final class ModBlocks {
                     .pushReaction(PushReaction.BLOCK));      // los pistones no la mueven (podría tener un Noxis adentro)
 
     /** Sombrero de Noxis apoyado en el suelo (mientras su dueño duerme). */
-    public static final Block NOXIS_HAT = register(
+    public static final Block NOXIS_HAT = registerHat(
             ModBlockItemIds.NOXIS_HAT, NoxisHatBlock::new,
             BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_BLACK)
@@ -141,6 +148,26 @@ public final class ModBlocks {
         BlockItem blockItem = new BlockItem(block,
                 new Item.Properties().useBlockDescriptionPrefix().setId(id.item()));
         Registry.register(BuiltInRegistries.ITEM, id.item(), blockItem);
+        return block;
+    }
+
+    /**
+     * El sombrero: su ítem se equipa como casco con la protección y durabilidad exactas de un
+     * casco de oro (mismas estadísticas, encantable y reparable como el oro), pero se dibuja con
+     * el sombrero de copa del Noxis (no con el casco de oro): por eso el "equipable" no lleva
+     * modelo de armadura vanilla. Se tiñe (ver NoxisHatItem / NoxisHatColors).
+     */
+    private static Block registerHat(BlockItemId id, Function<BlockBehaviour.Properties, Block> factory,
+                                     BlockBehaviour.Properties properties) {
+        Block block = register(id.block(), factory, properties);
+        Item.Properties itemProps = new Item.Properties()
+                .humanoidArmor(ArmorMaterials.GOLD, ArmorType.HELMET)
+                .component(DataComponents.EQUIPPABLE, Equippable.builder(EquipmentSlot.HEAD)
+                        .setEquipSound(SoundEvents.ARMOR_EQUIP_GOLD)
+                        .build())
+                .useBlockDescriptionPrefix()
+                .setId(id.item());
+        Registry.register(BuiltInRegistries.ITEM, id.item(), new NoxisHatItem(block, itemProps));
         return block;
     }
 

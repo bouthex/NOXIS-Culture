@@ -21,6 +21,11 @@ public class NoxisVillagerRenderer extends MobRenderer<NoxisVillager, NoxisVilla
                 new NoxisVillagerModel(context.bakeLayer(ModModelLayers.NOXIS_VILLAGER), NoxisVillagerModel.PASS_SLEEP_BUBBLE)));
         // La flor en la mano (interacciones con la naturaleza).
         this.addLayer(new NoxisHeldFlowerLayer(this));
+        // El sombrero con sus colores (copa/ala, lazo y lo fijo: ramita y gema).
+        this.addLayer(new NoxisHatLayer(this,
+                new NoxisVillagerModel(context.bakeLayer(ModModelLayers.NOXIS_VILLAGER), NoxisVillagerModel.PASS_HAT_CROWN),
+                new NoxisVillagerModel(context.bakeLayer(ModModelLayers.NOXIS_VILLAGER), NoxisVillagerModel.PASS_HAT_BAND),
+                new NoxisVillagerModel(context.bakeLayer(ModModelLayers.NOXIS_VILLAGER), NoxisVillagerModel.PASS_HAT_FIXED)));
         this.addLayer(new NoxisCrystalGlowLayer(this,
                 new NoxisVillagerModel(context.bakeLayer(ModModelLayers.NOXIS_VILLAGER), NoxisVillagerModel.PASS_GLOW_EYES)));
     }
@@ -77,6 +82,9 @@ public class NoxisVillagerRenderer extends MobRenderer<NoxisVillager, NoxisVilla
         state.bowlCovered = state.inBowl && bowlState.is(com.noxisculture.block.ModBlocks.NOXIS_BOWL)
                 && bowlState.getValue(com.noxisculture.block.custom.NoxisBowlBlock.COVERED);
         state.hasHat = entity.hasHat();
+        ItemStack hatItem = entity.getHatItem();
+        state.hatCrownColor = com.noxisculture.item.NoxisHatColors.crown(hatItem);
+        state.hatBandColor = com.noxisculture.item.NoxisHatColors.band(hatItem);
         state.hatAnim = entity.getHatAnimation().getAnim();
         state.hatAnimTime = entity.getHatAnimation().getTime(partialTick);
         state.bowlHop = entity.getBowlHopAnimation().getAnim();

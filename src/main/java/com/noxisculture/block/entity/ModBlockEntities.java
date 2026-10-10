@@ -15,6 +15,10 @@ public final class ModBlockEntities {
     public static final BlockEntityType<NoyuxCauldronBlockEntity> NOYUX_CAULDRON =
             register("noyux_cauldron", NoyuxCauldronBlockEntity::new, ModBlocks.NOYUX_CAULDRON);
 
+    /** El sombrero apoyado en el piso: guarda el sombrero exacto (colores, desgaste...). */
+    public static final BlockEntityType<NoxisHatBlockEntity> NOXIS_HAT =
+            register("noxis_hat", NoxisHatBlockEntity::new, ModBlocks.NOXIS_HAT);
+
     private static <T extends BlockEntity> BlockEntityType<T> register(
             String name, FabricBlockEntityTypeBuilder.Factory<? extends T> factory, Block... blocks) {
         return Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, NoxisCulture.id(name),
