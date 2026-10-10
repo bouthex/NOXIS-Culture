@@ -1,10 +1,16 @@
 {
   "variants": {
-    "occupied=false": {
+    "covered=false,occupied=false": {
       "model": "noxis_culture:block/noxis_bowl"
     },
-    "occupied=true": {
+    "covered=true,occupied=false": {
+      "model": "noxis_culture:block/noxis_bowl_covered"
+    },
+    "covered=false,occupied=true": {
       "model": "noxis_culture:block/noxis_bowl"
+    },
+    "covered=true,occupied=true": {
+      "model": "noxis_culture:block/noxis_bowl_covered"
     }
   }
 }
