@@ -38,6 +38,8 @@ public class NoxisHatArmorRenderer implements ArmorRenderer {
     private static final String BAND = "band";
     private static final String SPRIG = "sprig";
     private static final String GEM = "gem";
+    /** Tamaño del sombrero puesto en un jugador, respecto del sombrero del Noxis. */
+    private static final float WORN_SCALE = 1.15F;
 
     private final HumanoidModel<HumanoidRenderState> crownModel;
     private final HumanoidModel<HumanoidRenderState> bandModel;
@@ -76,7 +78,10 @@ public class NoxisHatArmorRenderer implements ArmorRenderer {
         root.addOrReplaceChild(PartNames.LEFT_LEG, CubeListBuilder.create(), PartPose.offset(1.9F, 12.0F, 0.0F));
 
         // Apoyado justo encima de la cabeza (y de la capa del pelo de la skin), derecho y centrado.
-        PartDefinition hat = head.addOrReplaceChild(HAT, CubeListBuilder.create(), PartPose.offset(0.0F, -8.5F, 0.0F));
+        // Un poco más grande que el original (x1.15) para acercarse a cómo le queda a un Noxis:
+        // la base del ala sigue apoyada en el mismo lugar (escala desde el pie del sombrero).
+        PartDefinition hat = head.addOrReplaceChild(HAT, CubeListBuilder.create(),
+                PartPose.offset(0.0F, -8.5F, 0.0F).scaled(WORN_SCALE));
         hat.addOrReplaceChild(BRIM,
                 CubeListBuilder.create().texOffs(0, 46).addBox(-6.0F, -1.0F, -6.0F, 12.0F, 1.0F, 12.0F), PartPose.ZERO);
         hat.addOrReplaceChild(CROWN,
