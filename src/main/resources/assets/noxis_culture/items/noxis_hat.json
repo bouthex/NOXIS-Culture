@@ -11,12 +11,12 @@
           "tints": [
             {
               "type": "minecraft:dye",
-              "default": 5918062
+              "default": -11648158
             },
             {
               "type": "minecraft:custom_model_data",
               "index": 0,
-              "default": 13715199
+              "default": -3062017
             }
           ]
         }
@@ -28,12 +28,12 @@
       "tints": [
         {
           "type": "minecraft:dye",
-          "default": 2300972
+          "default": -14476244
         },
         {
           "type": "minecraft:custom_model_data",
           "index": 0,
-          "default": 13715199
+          "default": -3062017
         }
       ]
     }
