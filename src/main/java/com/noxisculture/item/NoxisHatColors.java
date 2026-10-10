@@ -1,15 +1,16 @@
 package com.noxisculture.item;
 
 import com.noxisculture.block.ModBlocks;
+import net.fabricmc.fabric.api.tag.convention.v2.ConventionalItemTags;
 import java.util.ArrayList;
-import java.util.IdentityHashMap;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.component.CustomModelData;
 import net.minecraft.world.item.component.DyedItemColor;
 import org.jspecify.annotations.Nullable;
@@ -34,25 +35,29 @@ public final class NoxisHatColors {
     /** Color base del lazo sin teñir (con la máscara da el violeta original). */
     public static final int DEFAULT_BAND = 0xD146FF;
 
-    private static final Map<Item, DyeColor> DYES = new IdentityHashMap<>();
+    /**
+     * Cada tinte con su etiqueta convencional (c:white_dyes, c:red_dyes...): sirven los tintes
+     * vanilla y también los de otros mods que usen esas etiquetas.
+     */
+    private static final Map<DyeColor, TagKey<Item>> DYES = new EnumMap<>(DyeColor.class);
 
     static {
-        DYES.put(Items.WHITE_DYE, DyeColor.WHITE);
-        DYES.put(Items.ORANGE_DYE, DyeColor.ORANGE);
-        DYES.put(Items.MAGENTA_DYE, DyeColor.MAGENTA);
-        DYES.put(Items.LIGHT_BLUE_DYE, DyeColor.LIGHT_BLUE);
-        DYES.put(Items.YELLOW_DYE, DyeColor.YELLOW);
-        DYES.put(Items.LIME_DYE, DyeColor.LIME);
-        DYES.put(Items.PINK_DYE, DyeColor.PINK);
-        DYES.put(Items.GRAY_DYE, DyeColor.GRAY);
-        DYES.put(Items.LIGHT_GRAY_DYE, DyeColor.LIGHT_GRAY);
-        DYES.put(Items.CYAN_DYE, DyeColor.CYAN);
-        DYES.put(Items.PURPLE_DYE, DyeColor.PURPLE);
-        DYES.put(Items.BLUE_DYE, DyeColor.BLUE);
-        DYES.put(Items.BROWN_DYE, DyeColor.BROWN);
-        DYES.put(Items.GREEN_DYE, DyeColor.GREEN);
-        DYES.put(Items.RED_DYE, DyeColor.RED);
-        DYES.put(Items.BLACK_DYE, DyeColor.BLACK);
+        DYES.put(DyeColor.WHITE, ConventionalItemTags.WHITE_DYES);
+        DYES.put(DyeColor.ORANGE, ConventionalItemTags.ORANGE_DYES);
+        DYES.put(DyeColor.MAGENTA, ConventionalItemTags.MAGENTA_DYES);
+        DYES.put(DyeColor.LIGHT_BLUE, ConventionalItemTags.LIGHT_BLUE_DYES);
+        DYES.put(DyeColor.YELLOW, ConventionalItemTags.YELLOW_DYES);
+        DYES.put(DyeColor.LIME, ConventionalItemTags.LIME_DYES);
+        DYES.put(DyeColor.PINK, ConventionalItemTags.PINK_DYES);
+        DYES.put(DyeColor.GRAY, ConventionalItemTags.GRAY_DYES);
+        DYES.put(DyeColor.LIGHT_GRAY, ConventionalItemTags.LIGHT_GRAY_DYES);
+        DYES.put(DyeColor.CYAN, ConventionalItemTags.CYAN_DYES);
+        DYES.put(DyeColor.PURPLE, ConventionalItemTags.PURPLE_DYES);
+        DYES.put(DyeColor.BLUE, ConventionalItemTags.BLUE_DYES);
+        DYES.put(DyeColor.BROWN, ConventionalItemTags.BROWN_DYES);
+        DYES.put(DyeColor.GREEN, ConventionalItemTags.GREEN_DYES);
+        DYES.put(DyeColor.RED, ConventionalItemTags.RED_DYES);
+        DYES.put(DyeColor.BLACK, ConventionalItemTags.BLACK_DYES);
     }
 
     private NoxisHatColors() {
@@ -65,7 +70,11 @@ public final class NoxisHatColors {
 
     /** El tinte vanilla que es este objeto, o null si no es un tinte. */
     public static @Nullable DyeColor dyeOf(ItemStack stack) {
-        return stack.isEmpty() ? null : DYES.get(stack.getItem());
+        if (stack.isEmpty()) return null;
+        for (Map.Entry<DyeColor, TagKey<Item>> e : DYES.entrySet()) {
+            if (stack.is(e.getValue())) return e.getKey();
+        }
+        return null;
     }
 
     // ------------------------------------------------------------------ leer
