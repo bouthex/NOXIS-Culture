@@ -1,6 +1,19 @@
 {
   "model": {
-    "type": "minecraft:model",
-    "model": "noxis_culture:block/noxis_bowl"
+    "type": "minecraft:select",
+    "property": "minecraft:display_context",
+    "cases": [
+      {
+        "when": "gui",
+        "model": {
+          "type": "minecraft:model",
+          "model": "noxis_culture:item/noxis_bowl"
+        }
+      }
+    ],
+    "fallback": {
+      "type": "minecraft:model",
+      "model": "noxis_culture:block/noxis_bowl"
+    }
   }
 }
