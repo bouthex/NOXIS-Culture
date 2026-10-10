@@ -158,6 +158,14 @@ public final class NoxisHatColors {
         return (Math.min(255, ar) << 16) | (Math.min(255, ag) << 8) | Math.min(255, ab);
     }
 
+    /**
+     * ¿Es el blanco del tinte blanco (o casi)? Ese color se dibuja con una máscara más clara para
+     * que se vea blanco de verdad y no gris (los demás colores no cambian).
+     */
+    public static boolean isWhite(int rgb) {
+        return ((rgb >> 16) & 0xFF) >= 0xF0 && ((rgb >> 8) & 0xFF) >= 0xF0 && (rgb & 0xFF) >= 0xF0;
+    }
+
     /** Lava el sombrero: le quita los tintes de la copa/ala y del lazo (vuelve a negro y violeta). */
     public static void wash(ItemStack hat) {
         hat.remove(DataComponents.DYED_COLOR);

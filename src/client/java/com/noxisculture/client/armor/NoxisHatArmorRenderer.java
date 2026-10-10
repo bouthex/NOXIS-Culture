@@ -134,6 +134,7 @@ public class NoxisHatArmorRenderer implements ArmorRenderer {
         int band = 0xFF000000 | NoxisHatColors.band(stack);
         draw(contextModel, state, this.crownModel, collector, poseStack, light, crown);
         draw(contextModel, state, this.bandModel, collector, poseStack, light, band);
+        // (dentro de draw: el blanco usa la máscara clara)
         draw(contextModel, state, this.fixedModel, collector, poseStack, light, -1);
         ArmorRenderer.submitTransformCopyingModel(contextModel, state, this.fixedModel, state, true, collector.order(1),
                 poseStack, NoxisHatLayer.GEM_GLOW, 0xF000F0, OverlayTexture.NO_OVERLAY, -1, null, 0, null);
@@ -147,7 +148,9 @@ public class NoxisHatArmorRenderer implements ArmorRenderer {
                              HatModel model, SubmitNodeCollector collector,
                              PoseStack poseStack, int light, int tint) {
         ArmorRenderer.submitTransformCopyingModel(source, state, model, state, true, collector.order(0),
-                poseStack, model.renderType(NoxisHatLayer.MASK), light, OverlayTexture.NO_OVERLAY, tint, null, 0, null);
+                poseStack, model.renderType(tint != -1 && NoxisHatColors.isWhite(tint & 0xFFFFFF)
+                        ? NoxisHatLayer.MASK_WHITE : NoxisHatLayer.MASK),
+                light, OverlayTexture.NO_OVERLAY, tint, null, 0, null);
     }
 
     /** No dibujar además el objeto (el bloque) sobre la cabeza: el sombrero ya está puesto. */

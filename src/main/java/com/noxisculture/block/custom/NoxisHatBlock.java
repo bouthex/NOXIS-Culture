@@ -13,6 +13,8 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jspecify.annotations.Nullable;
@@ -26,9 +28,28 @@ import org.jspecify.annotations.Nullable;
 public class NoxisHatBlock extends Block implements EntityBlock {
     public static final MapCodec<NoxisHatBlock> CODEC = simpleCodec(NoxisHatBlock::new);
     private static final VoxelShape SHAPE = Block.box(2, 0, 2, 14, 13, 14);
+    /**
+     * Copa/ala o lazo teñidos de blanco: el modelo usa una máscara más clara para que el blanco
+     * se vea blanco y no gris. Lo actualiza el propio bloque según el sombrero que guarda.
+     */
+    public static final BooleanProperty WHITE_CROWN = BooleanProperty.create("white_crown");
+    public static final BooleanProperty WHITE_BAND = BooleanProperty.create("white_band");
 
     public NoxisHatBlock(Properties properties) {
         super(properties);
+        this.registerDefaultState(this.stateDefinition.any().setValue(WHITE_CROWN, false).setValue(WHITE_BAND, false));
+    }
+
+    @Override
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        builder.add(WHITE_CROWN, WHITE_BAND);
+    }
+
+    /** El estado que corresponde a los colores de ese sombrero (blanco o no, en copa y lazo). */
+    public static BlockState withColors(BlockState state, ItemStack hat) {
+        if (!state.hasProperty(WHITE_CROWN)) return state;
+        return state.setValue(WHITE_CROWN, NoxisHatColors.isWhite(NoxisHatColors.crown(hat)))
+                .setValue(WHITE_BAND, NoxisHatColors.isWhite(NoxisHatColors.band(hat)));
     }
 
     @Override

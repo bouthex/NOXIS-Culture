@@ -1,5 +1,6 @@
 package com.noxisculture.block.entity;
 
+import com.noxisculture.block.custom.NoxisHatBlock;
 import com.noxisculture.item.NoxisHatColors;
 import net.fabricmc.fabric.api.blockgetter.v2.RenderDataBlockEntity;
 import net.minecraft.core.BlockPos;
@@ -40,7 +41,13 @@ public class NoxisHatBlockEntity extends BlockEntity implements RenderDataBlockE
         this.taken = false;
         this.setChanged();
         if (this.level != null && !this.level.isClientSide()) {
-            this.level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), Block.UPDATE_CLIENTS);
+            // El modelo con la máscara clara si alguna parte quedó blanca.
+            BlockState now = this.getBlockState();
+            BlockState wanted = NoxisHatBlock.withColors(now, this.getHat());
+            if (wanted != now) {
+                this.level.setBlock(this.worldPosition, wanted, Block.UPDATE_ALL);
+            }
+            this.level.sendBlockUpdated(this.worldPosition, wanted, wanted, Block.UPDATE_CLIENTS);
         }
     }
 
