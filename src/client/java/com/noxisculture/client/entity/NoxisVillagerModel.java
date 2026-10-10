@@ -552,6 +552,12 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
             this.head.xRot = 0.15F + 0.03F * Mth.sin(age * 0.05F);
             this.head.x = 0.0F;
             this.head.z = 0.0F;
+            if (state.bowlCovered) {
+                // Tapada: baja la cabecita y pliega más las orejitas (no toca la base de arriba).
+                this.head.y += 2.0F;
+                this.rightEar.xRot += 0.3F;
+                this.leftEar.xRot += 0.3F;
+            }
         }
         // ---- Sacarse / ponerse el sombrero (gesto compartido por todas las especies) ----
         if (state.hatAnim != NoxisHatAnimation.NONE) {

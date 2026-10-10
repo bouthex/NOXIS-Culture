@@ -3,6 +3,7 @@ package com.noxisculture.block.custom;
 import com.mojang.serialization.MapCodec;
 import com.noxisculture.entity.ai.NoxisBowlSleeper;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
@@ -11,7 +12,10 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import org.jspecify.annotations.Nullable;
+import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.ScheduledTickAccess;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
@@ -34,6 +38,11 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 public class NoxisBowlBlock extends Block {
     public static final MapCodec<NoxisBowlBlock> CODEC = simpleCodec(NoxisBowlBlock::new);
     public static final BooleanProperty OCCUPIED = BlockStateProperties.OCCUPIED;
+    /**
+     * Tapada: hay otra pecera justo encima. La abertura queda cerrada (se ve tapada por la base
+     * de la de arriba) y ningún Noxis puede entrar ni salir hasta que la destapen.
+     */
+    public static final BooleanProperty COVERED = BooleanProperty.create("covered");
 
     /**
      * Contorno vacía (como un caldero): el vidrio con su forma real y el hueco del medio libre,
@@ -63,6 +72,11 @@ public class NoxisBowlBlock extends Block {
     private static final VoxelShape WALLS = Shapes.or(
             Block.box(0, 0, 0, 16, 2, 16),
             ring(2, 18, 0, 16, 1.25));
+    /** Tapada por otra pecera: el vidrio llega solo hasta la base de la de arriba. */
+    private static final VoxelShape WALLS_COVERED = Shapes.or(
+            Block.box(0, 0, 0, 16, 2, 16),
+            ring(2, 16, 0, 16, 1.25));
+    private static final VoxelShape OUTLINE_COVERED = Block.box(0, 0, 0, 16, 16, 16);
 
     /** Marco cuadrado de vidrio: cuatro paredes de espesor {@code t} entre {@code o0} y {@code o1}. */
     private static VoxelShape ring(double y0, double y1, double o0, double o1, double t) {
@@ -75,7 +89,7 @@ public class NoxisBowlBlock extends Block {
 
     public NoxisBowlBlock(Properties properties) {
         super(properties);
-        this.registerDefaultState(this.stateDefinition.any().setValue(OCCUPIED, false));
+        this.registerDefaultState(this.stateDefinition.any().setValue(OCCUPIED, false).setValue(COVERED, false));
     }
 
     @Override
@@ -85,17 +99,39 @@ public class NoxisBowlBlock extends Block {
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(OCCUPIED);
+        builder.add(OCCUPIED, COVERED);
     }
 
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        if (state.getValue(COVERED)) return OUTLINE_COVERED;
         return state.getValue(OCCUPIED) ? OUTLINE : OUTLINE_HOLLOW;
+    }
+
+    // ------------------------------------------------------------------ peceras apiladas
+
+    /** Al colocarla: ¿ya tiene otra pecera encima? */
+    @Override
+    public BlockState getStateForPlacement(BlockPlaceContext context) {
+        boolean covered = context.getLevel().getBlockState(context.getClickedPos().above()).is(this);
+        return this.defaultBlockState().setValue(COVERED, covered);
+    }
+
+    /** Cuando cambia el bloque de arriba: se tapa o se destapa. */
+    @Override
+    protected BlockState updateShape(BlockState state, LevelReader level, ScheduledTickAccess ticks, BlockPos pos,
+                                     Direction direction, BlockPos neighborPos, BlockState neighborState,
+                                     RandomSource random) {
+        if (direction == Direction.UP) {
+            boolean covered = neighborState.is(this);
+            if (covered != state.getValue(COVERED)) state = state.setValue(COVERED, covered);
+        }
+        return super.updateShape(state, level, ticks, pos, direction, neighborPos, neighborState, random);
     }
 
     @Override
     protected VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return WALLS;
+        return state.getValue(COVERED) ? WALLS_COVERED : WALLS;
     }
 
     // ------------------------------------------------------------------ llevarse la pecera con el Noxis
@@ -139,7 +175,7 @@ public class NoxisBowlBlock extends Block {
         if (!state.getValue(OCCUPIED)) return;
         boolean owned = !level.getEntities((Entity) null, new AABB(pos).inflate(32.0D),
                 e -> e instanceof NoxisBowlSleeper s && pos.equals(s.getBowlPos())).isEmpty();
-        if (!owned) {
+        if (!owned && NoxisBowlClaims.owner(level, pos) == null) {
             level.setBlock(pos, state.setValue(OCCUPIED, false), Block.UPDATE_ALL);
         }
     }

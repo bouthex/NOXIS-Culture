@@ -985,12 +985,12 @@ public class NoxisVillager extends AbstractVillager implements NoxisLightSource,
     public void remove(Entity.RemovalReason reason) {
         this.lightController.clear(this.level());
         // Si muere (o lo eliminan) con una pecera reservada o ocupada, la pecera queda libre.
-        if (!this.level().isClientSide() && this.bowlPos != null
-                && (reason == Entity.RemovalReason.KILLED || reason == Entity.RemovalReason.DISCARDED)) {
-            net.minecraft.world.level.block.state.BlockState bowl = this.level().getBlockState(this.bowlPos);
-            if (bowl.is(com.noxisculture.block.ModBlocks.NOXIS_BOWL)) {
-                this.level().setBlock(this.bowlPos,
-                        bowl.setValue(com.noxisculture.block.custom.NoxisBowlBlock.OCCUPIED, false), 3);
+        // Si solo se descarga con el chunk, la reserva sigue en el bloque y la retoma al volver.
+        if (this.level() instanceof ServerLevel server && this.bowlPos != null) {
+            if (reason == Entity.RemovalReason.KILLED || reason == Entity.RemovalReason.DISCARDED) {
+                com.noxisculture.block.custom.NoxisBowlClaims.release(server, this.bowlPos, this);
+            } else {
+                com.noxisculture.block.custom.NoxisBowlClaims.forget(server, this.bowlPos, this);
             }
         }
         // Si muere (o lo eliminan) con una flor en la mano, la flor queda en el piso.

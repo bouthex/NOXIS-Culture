@@ -58,6 +58,7 @@ public final class NoxisBowlStorage {
         sleeper.setHatPos(null);
         sleeper.setHatAnim(NoxisHatAnimation.NONE);
         sleeper.setBowlHop(com.noxisculture.entity.idle.NoxisBowlHop.NONE);
+        NoxisBowlClaims.release(level, pos, mob);      // la pecera se va con él
         sleeper.setBowlPos(null);                     // así al quitarlo no toca el bloque
 
         TagValueOutput output = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, level.registryAccess());
@@ -109,6 +110,7 @@ public final class NoxisBowlStorage {
             level.setBlock(pos, state.setValue(NoxisBowlBlock.OCCUPIED, true), Block.UPDATE_ALL);
         }
         level.addFreshEntity(mob);
+        NoxisBowlClaims.reclaim(level, pos, mob);       // es su pecera: nadie más puede entrar
     }
 
     /** ¿Este ítem de pecera trae un Noxis adentro? */

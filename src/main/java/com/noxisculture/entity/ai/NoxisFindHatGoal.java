@@ -13,7 +13,6 @@ import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.ai.util.LandRandomPos;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
@@ -49,9 +48,14 @@ public class NoxisFindHatGoal<T extends PathfinderMob & NoxisBowlSleeper> extend
     private @Nullable BlockPos targetBlock;
     private @Nullable ItemEntity targetItem;
     private int roamLegTicks;
+    private final NoxisApproach approacher;
+    /** Sombreros a los que no pudo llegar: no los vuelve a intentar por un rato (30 s). */
+    private final java.util.Map<Object, Integer> blacklist = new java.util.HashMap<>();
+    private static final int BLACKLIST_TICKS = 600;
 
     public NoxisFindHatGoal(T mob) {
         this.mob = mob;
+        this.approacher = new NoxisApproach(mob);
         this.setFlags(EnumSet.of(Flag.MOVE, Flag.LOOK));
     }
 
@@ -76,6 +80,7 @@ public class NoxisFindHatGoal<T extends PathfinderMob & NoxisBowlSleeper> extend
     @Override
     public void start() {
         this.ticks = 0;
+        this.approacher.reset();
         if (this.targetBlock != null || this.targetItem != null) {
             this.phase = Phase.WALK;
         } else {
@@ -125,21 +130,22 @@ public class NoxisFindHatGoal<T extends PathfinderMob & NoxisBowlSleeper> extend
                 double dx = tx - this.mob.getX();
                 double dz = tz - this.mob.getZ();
                 double reach = this.targetBlock != null ? REACH_BLOCK : REACH_ITEM;
-                if (dx * dx + dz * dz < reach * reach && Math.abs(ty - this.mob.getY()) < 1.5D) {
-                    this.mob.getNavigation().stop();
-                    this.ticks = 0;
-                    this.phase = Phase.PUT_ON;
-                    this.mob.setHatAnim(NoxisHatAnimation.ON);
-                } else if (this.ticks >= WALK_TIMEOUT) {
-                    this.phase = Phase.DONE;
-                } else if (this.ticks % 20 == 1 || this.mob.getNavigation().isDone()) {
-                    if (this.targetBlock != null) {
-                        Path path = this.mob.getNavigation().createPath(this.targetBlock, 1);
-                        if (path == null) { this.phase = Phase.DONE; return; }
-                        this.mob.getNavigation().moveTo(path, 0.5D);
-                    } else {
-                        this.mob.getNavigation().moveTo(tx, ty, tz, 0.5D);
+                boolean arrived = dx * dx + dz * dz < reach * reach && Math.abs(ty - this.mob.getY()) < 1.5D;
+                NoxisApproach.Result r = this.ticks >= WALK_TIMEOUT ? NoxisApproach.Result.FAILED
+                        : this.approacher.tick(new Vec3(tx, ty, tz), this.targetBlock, 1, arrived, 0.5D);
+                switch (r) {
+                    case ARRIVED -> {
+                        this.ticks = 0;
+                        this.phase = Phase.PUT_ON;
+                        this.mob.setHatAnim(NoxisHatAnimation.ON);
                     }
+                    case REPLAN -> { }                          // sigue intentando (recalcula el camino)
+                    case FAILED -> {
+                        // No hay forma de llegar: ese sombrero queda descartado un rato.
+                        this.blacklist(this.targetBlock != null ? this.targetBlock : this.targetItem.getUUID());
+                        this.phase = Phase.DONE;
+                    }
+                    default -> { }
                 }
             }
             case PUT_ON -> {
@@ -188,6 +194,7 @@ public class NoxisFindHatGoal<T extends PathfinderMob & NoxisBowlSleeper> extend
             this.findHat();
             if (this.targetBlock != null || this.targetItem != null) {
                 this.mob.getNavigation().stop();
+                this.approacher.reset();
                 this.ticks = 0;
                 this.phase = Phase.WALK;                        // ¡vio uno!
                 return;
@@ -225,6 +232,20 @@ public class NoxisFindHatGoal<T extends PathfinderMob & NoxisBowlSleeper> extend
         return this.targetItem != null && this.targetItem.isAlive() && !this.targetItem.getItem().isEmpty();
     }
 
+    private void blacklist(Object key) {
+        this.blacklist.put(key, this.mob.tickCount + BLACKLIST_TICKS);
+    }
+
+    private boolean isBlacklisted(Object key) {
+        Integer until = this.blacklist.get(key);
+        if (until == null) return false;
+        if (this.mob.tickCount > until) {
+            this.blacklist.remove(key);
+            return false;
+        }
+        return true;
+    }
+
     /** El sombrero más cercano (bloque o ítem) al que pueda llegar. */
     private void findHat() {
         this.targetBlock = null;
@@ -248,9 +269,9 @@ public class NoxisFindHatGoal<T extends PathfinderMob & NoxisBowlSleeper> extend
                 e -> e.isAlive() && e.getItem().is(ModBlocks.NOXIS_HAT.asItem()));
         for (ItemEntity item : items) {
             double d = this.mob.distanceToSqr(item);
-            if (d >= best) continue;
+            if (d >= best || this.isBlacklisted(item.getUUID())) continue;
             if (origin != null && origin.distToCenterSqr(item.position()) > leash) continue;
-            if (this.mob.getNavigation().createPath(item, 1) == null) continue;
+            if (d > 6.25D && this.mob.getNavigation().createPath(item, 1) == null) continue;   // de cerca va derecho
             best = d;
             this.targetItem = item;
         }
@@ -259,10 +280,11 @@ public class NoxisFindHatGoal<T extends PathfinderMob & NoxisBowlSleeper> extend
         for (BlockPos pos : BlockPos.betweenClosed(here.offset(-RADIUS, -HEIGHT, -RADIUS),
                 here.offset(RADIUS, HEIGHT, RADIUS))) {
             if (!level.getBlockState(pos).is(ModBlocks.NOXIS_HAT) || reserved.contains(pos)) continue;
+            if (this.isBlacklisted(pos.immutable())) continue;
             double d = pos.distToCenterSqr(this.mob.position());
             if (d >= best) continue;
             if (origin != null && pos.distSqr(origin) > leash) continue;
-            if (this.mob.getNavigation().createPath(pos, 1) == null) continue;
+            if (d > 6.25D && this.mob.getNavigation().createPath(pos, 1) == null) continue;
             best = d;
             this.targetBlock = pos.immutable();
             this.targetItem = null;

@@ -58,6 +58,8 @@ public class NoxisVillagerRenderState extends LivingEntityRenderState {
     /** Duerme dentro de una pecera / tiene puesto el sombrero. */
     public boolean inBowl;
     public boolean hasHat = true;
+    /** Durmiendo en una pecera tapada por otra (se acurruca un poquito más). */
+    public boolean bowlCovered;
     /** Animación de sacarse/ponerse el sombrero (0 = ninguna) y su tiempo en ticks. */
     public byte hatAnim;
     public float hatAnimTime;

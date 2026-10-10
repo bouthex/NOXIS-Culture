@@ -72,6 +72,10 @@ public class NoxisVillagerRenderer extends MobRenderer<NoxisVillager, NoxisVilla
         state.socialYawn = entity.getSocialAnimation().getYawn(partialTick);
         state.socialLean = entity.getSocialAnimation().getLean(partialTick);
         state.inBowl = entity.isInBowl();
+        // Pecera tapada por otra encima: se acurruca un poquito más (nada toca la base de arriba).
+        net.minecraft.world.level.block.state.BlockState bowlState = entity.level().getBlockState(entity.blockPosition());
+        state.bowlCovered = state.inBowl && bowlState.is(com.noxisculture.block.ModBlocks.NOXIS_BOWL)
+                && bowlState.getValue(com.noxisculture.block.custom.NoxisBowlBlock.COVERED);
         state.hasHat = entity.hasHat();
         state.hatAnim = entity.getHatAnimation().getAnim();
         state.hatAnimTime = entity.getHatAnimation().getTime(partialTick);

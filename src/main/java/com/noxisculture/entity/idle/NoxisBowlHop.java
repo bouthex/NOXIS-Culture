@@ -6,9 +6,9 @@ import net.minecraft.util.Mth;
  * Saltito para entrar y salir de la pecera: la trayectoria (servidor) y la pose (cliente).
  *
  * <p>El servidor mueve al Noxis tick a tick por un camino simple y controlado (sin física):
- * <b>entrar</b> = sube derecho al lado de la pecera hasta pasar el borde, avanza por encima de
- * la abertura y cae adentro; <b>salir</b> = se agacha, sube derecho por la abertura, pasa por
- * encima del borde y baja afuera. Con el byte {@link #PREP}/{@link #IN}/{@link #OUT} el cliente
+ * una parábola de salto (sube, frena arriba y cae, sin quedarse flotando). <b>Entrar</b> = salta
+ * desde el lado de la pecera, pasa por encima del borde y cae adentro; <b>salir</b> = se agacha,
+ * salta por la abertura, pasa por encima del borde y baja afuera. Con el byte {@link #PREP}/{@link #IN}/{@link #OUT} el cliente
  * arma la pose: se agacha preparándose, recoge las patitas en el aire, levanta los bracitos, se
  * "aprieta" (más angostito) al pasar por el cuellito de la pecera y aterriza con un rebotito.</p>
  *
@@ -22,34 +22,39 @@ public final class NoxisBowlHop {
 
     /** Se agacha preparándose antes de saltar adentro. */
     public static final int PREP_TICKS = 8;
-    /** Duración de cada saltito (entrar o salir). */
-    public static final int HOP_TICKS = 18;
+    /** Duración de cada saltito (entrar o salir): corto, como un salto de verdad. */
+    public static final int HOP_TICKS = 14;
     /** Punto más alto: los pies pasan por encima del borde de vidrio (21 px). */
-    public static final double APEX = 24.0D / 16.0D;
+    public static final double APEX = 25.0D / 16.0D;
+    /** Momento del punto más alto (entrar); al salir es el espejo. */
+    private static final float PEAK_IN = 0.42F;
 
     private byte anim = NONE;
     private int t;
 
     // ------------------------------------------------------------------ servidor: trayectoria
 
-    /** Avance horizontal (0 = donde empezó, 1 = destino) en la fracción {@code f} del saltito. */
+    /**
+     * Avance horizontal (0 = donde empezó, 1 = destino) en la fracción {@code f} del saltito.
+     * Entrando, empieza a avanzar recién cuando ya subió lo suficiente para pasar el borde;
+     * saliendo, termina de avanzar antes de bajar del borde (nunca cruza el vidrio).
+     */
     public static float horizontal(byte type, float f) {
-        return type == IN ? NoxisHatAnimation.smooth((f - 0.25F) / 0.35F)
-                : NoxisHatAnimation.smooth((f - 0.45F) / 0.3F);
+        return type == IN ? NoxisHatAnimation.smooth((f - 0.25F) / 0.4F)
+                : NoxisHatAnimation.smooth((f - 0.35F) / 0.4F);
     }
 
-    /** Altura en la fracción {@code f}: sube derecho, se mantiene arriba del borde y cae. */
+    /**
+     * Altura en la fracción {@code f}: una parábola de salto de verdad (sube rápido, frena
+     * arriba sin quedarse flotando y cae acelerando), con el punto más alto por encima del borde.
+     */
     public static double height(byte type, float f, double fromY, double apexY, double toY) {
-        float riseStart = type == IN ? 0.0F : 0.12F;      // al salir, primero se agacha adentro
-        float riseEnd = type == IN ? 0.35F : 0.45F;
-        float fallStart = type == IN ? 0.6F : 0.72F;
-        if (f < riseStart) return fromY;
-        if (f < riseEnd) {
-            float x = (f - riseStart) / (riseEnd - riseStart);
-            return Mth.lerp(1.0F - (1.0F - x) * (1.0F - x), fromY, apexY);
+        float peak = type == IN ? PEAK_IN : 1.0F - PEAK_IN;
+        if (f < peak) {
+            float x = 1.0F - f / peak;
+            return Mth.lerp(1.0F - x * x, fromY, apexY);
         }
-        if (f < fallStart) return apexY;
-        float d = Math.min(1.0F, (f - fallStart) / (1.0F - fallStart));
+        float d = Math.min(1.0F, (f - peak) / (1.0F - peak));
         return Mth.lerp(d * d, apexY, toY);
     }
 
@@ -85,13 +90,13 @@ public final class NoxisBowlHop {
             if (type == IN) {
                 crouch = 1.0F - NoxisHatAnimation.smooth(f / 0.12F);           // ¡boing! se suelta
                 tuck = window(f, 0.08F, 0.9F);
-                arms = window(f, 0.05F, 0.55F);
-                squeeze = window(f, 0.55F, 0.97F);                             // pasa por el cuellito
+                arms = window(f, 0.06F, 0.5F);
+                squeeze = window(f, 0.58F, 0.97F);                             // pasa por el cuellito
             } else {
-                crouch = window(f, 0.0F, 0.14F);
-                tuck = window(f, 0.16F, 0.92F);
-                arms = window(f, 0.12F, 0.6F);
-                squeeze = window(f, 0.1F, 0.5F);
+                crouch = window(f, 0.0F, 0.1F);
+                tuck = window(f, 0.12F, 0.92F);
+                arms = window(f, 0.08F, 0.55F);
+                squeeze = window(f, 0.04F, 0.42F);
             }
             if (f > 0.9F) land = Mth.sin((f - 0.9F) / 0.1F * Mth.PI);
         }
