@@ -1,0 +1,7 @@
+{
+  "parent": "noxis_culture:block/noxis_hat",
+  "textures": {
+    "crown": "noxis_culture:block/noxis_hat_white",
+    "band": "noxis_culture:block/noxis_hat"
+  }
+}

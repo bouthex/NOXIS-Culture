@@ -1,7 +1,16 @@
 {
   "variants": {
-    "": {
+    "white_band=false,white_crown=false": {
       "model": "noxis_culture:block/noxis_hat"
+    },
+    "white_band=true,white_crown=false": {
+      "model": "noxis_culture:block/noxis_hat_wb"
+    },
+    "white_band=false,white_crown=true": {
+      "model": "noxis_culture:block/noxis_hat_wc"
+    },
+    "white_band=true,white_crown=true": {
+      "model": "noxis_culture:block/noxis_hat_wcb"
     }
   }
 }

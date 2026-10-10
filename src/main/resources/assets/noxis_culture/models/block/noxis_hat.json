@@ -2,7 +2,9 @@
  "parent": "minecraft:block/block",
  "textures": {
   "particle": "noxis_culture:block/noxis_hat",
-  "hat": "noxis_culture:block/noxis_hat"
+  "hat": "noxis_culture:block/noxis_hat",
+  "crown": "noxis_culture:block/noxis_hat",
+  "band": "noxis_culture:block/noxis_hat"
  },
  "elements": [
   {
@@ -18,7 +20,7 @@
    ],
    "faces": {
     "north": {
-     "texture": "#hat",
+     "texture": "#crown",
      "uv": [
       3.0,
       14.5,
@@ -28,7 +30,7 @@
      "tintindex": 0
     },
     "south": {
-     "texture": "#hat",
+     "texture": "#crown",
      "uv": [
       9.0,
       14.5,
@@ -38,7 +40,7 @@
      "tintindex": 0
     },
     "west": {
-     "texture": "#hat",
+     "texture": "#crown",
      "uv": [
       0.0,
       14.5,
@@ -48,7 +50,7 @@
      "tintindex": 0
     },
     "east": {
-     "texture": "#hat",
+     "texture": "#crown",
      "uv": [
       6.0,
       14.5,
@@ -58,7 +60,7 @@
      "tintindex": 0
     },
     "up": {
-     "texture": "#hat",
+     "texture": "#crown",
      "uv": [
       3.0,
       11.5,
@@ -68,7 +70,7 @@
      "tintindex": 0
     },
     "down": {
-     "texture": "#hat",
+     "texture": "#crown",
      "uv": [
       6.0,
       11.5,
@@ -92,7 +94,7 @@
    ],
    "faces": {
     "north": {
-     "texture": "#hat",
+     "texture": "#crown",
      "uv": [
       10.75,
       1.75,
@@ -102,7 +104,7 @@
      "tintindex": 0
     },
     "south": {
-     "texture": "#hat",
+     "texture": "#crown",
      "uv": [
       14.25,
       1.75,
@@ -112,7 +114,7 @@
      "tintindex": 0
     },
     "west": {
-     "texture": "#hat",
+     "texture": "#crown",
      "uv": [
       9.0,
       1.75,
@@ -122,7 +124,7 @@
      "tintindex": 0
     },
     "east": {
-     "texture": "#hat",
+     "texture": "#crown",
      "uv": [
       12.5,
       1.75,
@@ -132,7 +134,7 @@
      "tintindex": 0
     },
     "up": {
-     "texture": "#hat",
+     "texture": "#crown",
      "uv": [
       10.75,
       0.0,
@@ -142,7 +144,7 @@
      "tintindex": 0
     },
     "down": {
-     "texture": "#hat",
+     "texture": "#crown",
      "uv": [
       12.5,
       0.0,
@@ -166,7 +168,7 @@
    ],
    "faces": {
     "north": {
-     "texture": "#hat",
+     "texture": "#band",
      "uv": [
       10.75,
       6.5,
@@ -176,7 +178,7 @@
      "tintindex": 1
     },
     "south": {
-     "texture": "#hat",
+     "texture": "#band",
      "uv": [
       14.25,
       6.5,
@@ -186,7 +188,7 @@
      "tintindex": 1
     },
     "west": {
-     "texture": "#hat",
+     "texture": "#band",
      "uv": [
       9.0,
       6.5,
@@ -196,7 +198,7 @@
      "tintindex": 1
     },
     "east": {
-     "texture": "#hat",
+     "texture": "#band",
      "uv": [
       12.5,
       6.5,
@@ -206,7 +208,7 @@
      "tintindex": 1
     },
     "up": {
-     "texture": "#hat",
+     "texture": "#band",
      "uv": [
       10.75,
       4.75,
@@ -216,7 +218,7 @@
      "tintindex": 1
     },
     "down": {
-     "texture": "#hat",
+     "texture": "#band",
      "uv": [
       12.5,
       4.75,
