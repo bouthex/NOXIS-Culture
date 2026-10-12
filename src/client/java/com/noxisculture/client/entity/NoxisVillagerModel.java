@@ -3,6 +3,7 @@ package com.noxisculture.client.entity;
 import com.noxisculture.entity.idle.NoxisAffectionAnimation;
 import com.noxisculture.entity.idle.NoxisBoredAnimation;
 import com.noxisculture.entity.idle.NoxisBowlHop;
+import com.noxisculture.entity.idle.NoxisPlayAnimation;
 import com.noxisculture.entity.idle.NoxisRestGesture;
 import com.noxisculture.entity.idle.NoxisHatAnimation;
 import net.minecraft.client.model.EntityModel;
@@ -402,7 +403,7 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         //  · Antorcha de noche: ojitos cansados pero vigilando (2 px amarillos + pupila bizca).
         //  · Sentado: los mismos ojitos de sueño, que se cierran al cabecear.
         //  · Siempre: parpadeo normal cada tanto; cansado, parpadeo LENTO con cabeceo.
-        boolean sleepy = torchAnim > 0.5F || rest > 0.5F || state.boredTired;
+        boolean sleepy = torchAnim > 0.5F || rest > 0.5F || state.boredTired || state.playSly;
         boolean slowBlink = sleepy && (t % 110) < 8;
         boolean normalBlink = (t % 83) < 3;
         // Fascinado con un cristal no parpadea: lo mira con los ojos bien abiertos.
@@ -411,7 +412,7 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
                 || state.natureEyesClosed > 0.5F
                 || state.socialYawn > 0.5F || Math.abs(state.socialLean) > 0.5F     // bostezo / dormidos juntos
                 || (state.socialDoze > 0.6F && (t % 30) < 12)
-                || state.boredEyesClosed || state.affectionEyesClosed;                     // cabeceo de sueño                    // disfrutando el aroma
+                || state.boredEyesClosed || state.affectionEyesClosed || state.playLaugh;                     // cabeceo de sueño                    // disfrutando el aroma
         // Ojitos al acomodarse / despertarse (abre despacito, bosteza con los ojos cerrados).
         if (state.restEyes == NoxisRestGesture.EYES_CLOSED) {
             closed = true;
@@ -427,7 +428,7 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         boolean open = !closed && !sleepy;
         // Pupilas agrandadas, fascinado con la flor: los ojos grandes reemplazan a los normales.
         // También al fascinarse con un cristal (mismas pupilas grandes, mismo plano que el ojo).
-        boolean bigPupils = open && (state.naturePupils > 0.5F || state.crystalAmount > 0.35F || state.boredPupils || state.affectionPupils);
+        boolean bigPupils = open && (state.naturePupils > 0.5F || state.crystalAmount > 0.35F || state.boredPupils || state.affectionPupils || state.playPupils);
         this.eyesOpen.visible = open && !bigPupils;
         this.eyesBig.visible = bigPupils;
         // Con el parpadeo lento, la cabecita se le cae un poquito (cabeceo de sueño).
@@ -581,6 +582,8 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         if (state.boredType != NoxisBoredAnimation.NONE && state.boredWeight > 0.0F) {
             this.applyBoredom(state.boredType, state.boredMirrored, state.boredTime, state.boredWeight);
         }
+        // ---- Curiosidad y travesuras (seguir, observar, acercarse agachadito, ¡salto!, susto y juego) ----
+        this.applyPlay(state.playWeight, state.playTime);
         // ---- Cariño con su amigo especial (coreografía compartida por los dos) ----
         if (state.affection != NoxisAffectionAnimation.NONE && state.affectionWeight > 0.0F) {
             this.applyAffection(state.affection, state.affectionTime, state.affectionWeight);
@@ -938,6 +941,148 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         this.leftEar.xRot -= w * 0.3F * inspect;
         this.rightEar.zRot += w * Mth.sin(t * 0.9F) * 0.12F * inspect;
         this.leftEar.zRot -= w * Mth.sin(t * 0.9F + 1.7F) * 0.12F * inspect;
+    }
+
+    // ================================================================== curiosidad y travesuras
+
+    private void applyPlay(float[] w, float[] t) {
+        if (w[NoxisPlayAnimation.FOLLOW] > 0.0F) this.playFollow(t[NoxisPlayAnimation.FOLLOW], w[NoxisPlayAnimation.FOLLOW]);
+        if (w[NoxisPlayAnimation.WATCH] > 0.0F) this.playWatch(t[NoxisPlayAnimation.WATCH], w[NoxisPlayAnimation.WATCH]);
+        if (w[NoxisPlayAnimation.SNEAK] > 0.0F) this.playCrouch(t[NoxisPlayAnimation.SNEAK], w[NoxisPlayAnimation.SNEAK], false);
+        if (w[NoxisPlayAnimation.CROUCH] > 0.0F) this.playCrouch(t[NoxisPlayAnimation.CROUCH], w[NoxisPlayAnimation.CROUCH], true);
+        if (w[NoxisPlayAnimation.POUNCE] > 0.0F) this.playPounce(t[NoxisPlayAnimation.POUNCE], w[NoxisPlayAnimation.POUNCE]);
+        if (w[NoxisPlayAnimation.CHEER] > 0.0F) this.playCheer(t[NoxisPlayAnimation.CHEER], w[NoxisPlayAnimation.CHEER]);
+        if (w[NoxisPlayAnimation.STARTLED] > 0.0F) this.playStartled(t[NoxisPlayAnimation.STARTLED], w[NoxisPlayAnimation.STARTLED]);
+        if (w[NoxisPlayAnimation.PLAYFUL] > 0.0F) this.playPlayful(t[NoxisPlayAnimation.PLAYFUL], w[NoxisPlayAnimation.PLAYFUL]);
+    }
+
+    private void playLift(float amount) {
+        this.head.y -= amount;
+        this.body.y -= amount;
+        this.rightArm.y -= amount;
+        this.leftArm.y -= amount;
+    }
+
+    /** Siguiéndolo: cada tanto ladea la cabecita (a un lado y después al otro) y mueve una orejita. */
+    private void playFollow(float t, float w) {
+        float ph = t % 70.0F;
+        float tilt = NoxisBoredAnimation.env(ph, 0, 6, 16, 24);
+        float dir = ((int) (t / 70.0F)) % 2 == 0 ? 1.0F : -1.0F;
+        this.head.zRot += w * 0.22F * dir * tilt;
+        float flick = NoxisBoredAnimation.pulse(ph, 40.0F, 2.0F);
+        if (dir > 0) this.rightEar.zRot -= w * 0.3F * flick;
+        else this.leftEar.zRot += w * 0.3F * flick;
+    }
+
+    /** Observándolo (el otro se frenó): se inclina apenas, patita en el pecho, cabeza que va y viene, orejitas atentas. */
+    private void playWatch(float t, float w) {
+        this.body.xRot += 0.08F * w;
+        this.head.z -= 0.5F * w;
+        this.head.zRot += w * 0.26F * Mth.sin(t * 0.09F);
+        this.rightEar.xRot -= 0.3F * w;
+        this.leftEar.xRot -= 0.3F * w;
+        float ph = t % 40.0F;
+        this.rightEar.zRot += w * 0.25F * NoxisBoredAnimation.pulse(ph, 10.0F, 2.0F);
+        this.leftEar.zRot -= w * 0.25F * NoxisBoredAnimation.pulse(ph, 25.0F, 2.0F);
+        this.rightArm.xRot = Mth.lerp(w, this.rightArm.xRot, -0.75F);
+        this.rightArm.zRot = Mth.lerp(w, this.rightArm.zRot, -0.25F);
+        this.tail.yRot += w * Mth.sin(t * 0.08F) * 0.3F;
+    }
+
+    /**
+     * Agachadito: el cuerpo bajo, la cabeza baja y adelantada, las manitos adelante (en puntitas),
+     * las orejitas planas para atrás y la colita estirada y quieta. Esperando (crouch): todavía más
+     * abajo, moviendo la colita y la cola del cuerpo como gatito a punto de saltar.
+     */
+    private void playCrouch(float t, float w, boolean waiting) {
+        float low = waiting ? 1.9F : 1.4F;
+        this.body.y += low * w;
+        this.head.y += (low + 0.2F) * w;
+        this.rightArm.y += (low - 0.2F) * w;
+        this.leftArm.y += (low - 0.2F) * w;
+        this.head.z -= 0.5F * w;
+        this.head.xRot += 0.08F * w;
+        float step = waiting ? 0.0F : Mth.sin(t * 0.35F) * 0.15F;
+        this.rightArm.xRot = Mth.lerp(w, this.rightArm.xRot, -0.85F + step);
+        this.leftArm.xRot = Mth.lerp(w, this.leftArm.xRot, -0.85F - step);
+        this.rightArm.zRot = Mth.lerp(w, this.rightArm.zRot, -0.1F);
+        this.leftArm.zRot = Mth.lerp(w, this.leftArm.zRot, 0.1F);
+        this.rightEar.xRot += 0.55F * w;
+        this.leftEar.xRot += 0.55F * w;
+        this.rightEar.zRot -= 0.25F * w;
+        this.leftEar.zRot += 0.25F * w;
+        this.tail.xRot = Mth.lerp(w, this.tail.xRot, 1.45F);
+        this.tail.yRot = Mth.lerp(w, this.tail.yRot, 0.0F);
+        if (waiting) {
+            // Se prepara: meneíto de colita (como gatito antes de saltar).
+            float wig = NoxisBoredAnimation.env(t, 4, 7, 30, 34);
+            this.body.zRot += w * Mth.sin(t * 1.5F) * 0.09F * wig;
+            this.tail.yRot += w * Mth.sin(t * 1.8F) * 0.35F * wig;
+        } else {
+            this.body.y += w * 0.25F * Math.abs(Mth.sin(t * 0.3F));       // pasitos en puntitas
+        }
+    }
+
+    /** ¡Salta! Se aplasta, se estira para arriba con los bracitos bien abiertos y aterriza con un rebote. */
+    private void playPounce(float t, float w) {
+        float squash = NoxisBoredAnimation.env(t, 0, 2, 3, 5);
+        float spring = NoxisBoredAnimation.env(t, 3, 5, 8, 11);
+        float land = NoxisBoredAnimation.pulse(t, 12.0F, 2.5F);
+        this.playLift(w * (-1.2F * squash + 2.4F * spring - 1.0F * land));
+        this.rightArm.zRot = Mth.lerp(w * spring, this.rightArm.zRot, 2.3F);
+        this.leftArm.zRot = Mth.lerp(w * spring, this.leftArm.zRot, -2.3F);
+        this.rightArm.xRot = Mth.lerp(w * spring, this.rightArm.xRot, -0.3F);
+        this.leftArm.xRot = Mth.lerp(w * spring, this.leftArm.xRot, -0.3F);
+        this.rightEar.zRot += 0.22F * w * spring;
+        this.leftEar.zRot -= 0.22F * w * spring;
+        this.rightEar.xRot -= 0.3F * w * spring;
+        this.leftEar.xRot -= 0.3F * w * spring;
+        this.head.xRot -= 0.2F * w * spring;
+        this.tail.xRot -= 0.8F * w * spring;
+        this.rightLeg.xRot -= 0.4F * w * spring;
+        this.leftLeg.xRot += 0.4F * w * spring;
+    }
+
+    /** Festeja la travesura: rebota riéndose, saluda con los bracitos arriba y mueve la colita. */
+    private void playCheer(float t, float w) {
+        float bounce = NoxisBoredAnimation.pulse(t, 4.0F, 3.0F) + NoxisBoredAnimation.pulse(t, 14.0F, 3.0F)
+                + NoxisBoredAnimation.pulse(t, 24.0F, 3.0F);
+        this.playLift(w * 1.2F * bounce);
+        this.rightArm.zRot = Mth.lerp(w, this.rightArm.zRot, 1.9F + Mth.sin(t * 0.6F) * 0.35F);
+        this.leftArm.zRot = Mth.lerp(w, this.leftArm.zRot, -1.9F + Mth.sin(t * 0.6F + Mth.PI) * 0.35F);
+        this.rightArm.xRot = Mth.lerp(w, this.rightArm.xRot, -0.2F);
+        this.leftArm.xRot = Mth.lerp(w, this.leftArm.xRot, -0.2F);
+        this.head.zRot += w * Mth.sin(t * 0.5F) * 0.15F;
+        this.head.xRot -= w * 0.12F;
+        this.tail.yRot += w * Mth.sin(t * 0.9F) * 0.6F;
+    }
+
+    /** ¡Susto! Pega un saltito con las manitos arriba, la cabeza para atrás y la colita tiesa (después, el miedo de siempre). */
+    private void playStartled(float t, float w) {
+        float jolt = NoxisBoredAnimation.env(t, 0, 2, 6, 12);
+        this.playLift(w * 2.0F * NoxisBoredAnimation.pulse(t, 3.0F, 3.0F));
+        float j = w * jolt;
+        this.rightArm.xRot = Mth.lerp(j, this.rightArm.xRot, -2.4F);
+        this.leftArm.xRot = Mth.lerp(j, this.leftArm.xRot, -2.4F);
+        this.rightArm.zRot = Mth.lerp(j, this.rightArm.zRot, 0.35F);
+        this.leftArm.zRot = Mth.lerp(j, this.leftArm.zRot, -0.35F);
+        this.head.xRot -= 0.25F * j;
+        this.body.xRot -= 0.15F * j;
+        this.rightEar.zRot += 0.22F * j;
+        this.leftEar.zRot -= 0.22F * j;
+        this.tail.xRot -= 0.9F * j;
+    }
+
+    /** Se recupera y juega: dos manotazos juguetones con la patita, cabeza ladeada, saltito y colita contenta. */
+    private void playPlayful(float t, float w) {
+        float on = NoxisBoredAnimation.env(t, 2, 6, 22, 28);
+        float swat = NoxisBoredAnimation.pulse(t, 8.0F, 4.0F) + NoxisBoredAnimation.pulse(t, 18.0F, 4.0F);
+        this.rightArm.xRot = Mth.lerp(w * on, this.rightArm.xRot, -1.3F - 0.45F * swat);
+        this.rightArm.zRot = Mth.lerp(w * on, this.rightArm.zRot, -0.15F);
+        this.leftArm.xRot = Mth.lerp(w * on, this.leftArm.xRot, -0.6F);
+        this.head.zRot += w * 0.2F * on;
+        this.playLift(w * 1.0F * NoxisBoredAnimation.pulse(t, 24.0F, 3.0F));
+        this.tail.yRot += w * Mth.sin(t * 0.8F) * 0.55F;
     }
 
     // ================================================================== cariño entre amigos

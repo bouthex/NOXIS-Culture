@@ -91,6 +91,12 @@ public class NoxisVillagerRenderState extends LivingEntityRenderState {
     public float affectionWeight;
     public boolean affectionEyesClosed;
     public boolean affectionPupils;
+    /** Curiosidad / travesura: peso y tiempo de cada estado (índice = NoxisPlayAnimation) y ojitos. */
+    public final float[] playWeight = new float[9];
+    public final float[] playTime = new float[9];
+    public boolean playSly;
+    public boolean playPupils;
+    public boolean playLaugh;
     /** La flor que tiene en la mano (vacía si no tiene nada). */
     public final ItemStackRenderState heldFlower = new ItemStackRenderState();
     /** true mientras se está levantando (para no repetir el rebote del "plop" al revés). */
