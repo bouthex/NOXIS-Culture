@@ -98,6 +98,13 @@ public class NoxisVillagerRenderer extends MobRenderer<NoxisVillager, NoxisVilla
         state.boredEyesClosed = boredShown && com.noxisculture.entity.idle.NoxisBoredAnimation.eyesClosed(state.boredType, state.boredTime);
         state.boredPupils = boredShown && com.noxisculture.entity.idle.NoxisBoredAnimation.bigPupils(state.boredType, state.boredTime);
         state.boredTired = boredShown && com.noxisculture.entity.idle.NoxisBoredAnimation.tiredEyes(state.boredType, state.boredTime);
+        com.noxisculture.entity.idle.NoxisAffectionAnimation aff = entity.getAffectionAnimation();
+        state.affection = aff.getAnim();
+        state.affectionTime = aff.getTime(partialTick);
+        state.affectionWeight = aff.isBusy() ? aff.getWeight(partialTick) : 0.0F;
+        boolean affShown = state.affectionWeight > 0.5F;
+        state.affectionEyesClosed = affShown && com.noxisculture.entity.idle.NoxisAffectionAnimation.eyesClosed(state.affection, state.affectionTime);
+        state.affectionPupils = affShown && com.noxisculture.entity.idle.NoxisAffectionAnimation.bigPupils(state.affection, state.affectionTime);
         com.noxisculture.entity.idle.NoxisRestGesture rg = entity.getRestGesture();
         state.restGesture = rg.getGesture();
         state.restGestTime = rg.getTime(partialTick);

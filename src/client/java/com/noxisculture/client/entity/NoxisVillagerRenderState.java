@@ -85,6 +85,12 @@ public class NoxisVillagerRenderState extends LivingEntityRenderState {
     public int restEyes;
     public float restAwake;
     public float bubbleRest = -1.0F;
+    /** Cariño con su amigo: gesto (papel + lado), tiempo, cuánto se ve, ojitos cerrados y pupilas grandes. */
+    public byte affection;
+    public float affectionTime;
+    public float affectionWeight;
+    public boolean affectionEyesClosed;
+    public boolean affectionPupils;
     /** La flor que tiene en la mano (vacía si no tiene nada). */
     public final ItemStackRenderState heldFlower = new ItemStackRenderState();
     /** true mientras se está levantando (para no repetir el rebote del "plop" al revés). */

@@ -1,5 +1,6 @@
 package com.noxisculture.client.entity;
 
+import com.noxisculture.entity.idle.NoxisAffectionAnimation;
 import com.noxisculture.entity.idle.NoxisBoredAnimation;
 import com.noxisculture.entity.idle.NoxisBowlHop;
 import com.noxisculture.entity.idle.NoxisRestGesture;
@@ -410,7 +411,7 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
                 || state.natureEyesClosed > 0.5F
                 || state.socialYawn > 0.5F || Math.abs(state.socialLean) > 0.5F     // bostezo / dormidos juntos
                 || (state.socialDoze > 0.6F && (t % 30) < 12)
-                || state.boredEyesClosed;                     // cabeceo de sueño                    // disfrutando el aroma
+                || state.boredEyesClosed || state.affectionEyesClosed;                     // cabeceo de sueño                    // disfrutando el aroma
         // Ojitos al acomodarse / despertarse (abre despacito, bosteza con los ojos cerrados).
         if (state.restEyes == NoxisRestGesture.EYES_CLOSED) {
             closed = true;
@@ -426,7 +427,7 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         boolean open = !closed && !sleepy;
         // Pupilas agrandadas, fascinado con la flor: los ojos grandes reemplazan a los normales.
         // También al fascinarse con un cristal (mismas pupilas grandes, mismo plano que el ojo).
-        boolean bigPupils = open && (state.naturePupils > 0.5F || state.crystalAmount > 0.35F || state.boredPupils);
+        boolean bigPupils = open && (state.naturePupils > 0.5F || state.crystalAmount > 0.35F || state.boredPupils || state.affectionPupils);
         this.eyesOpen.visible = open && !bigPupils;
         this.eyesBig.visible = bigPupils;
         // Con el parpadeo lento, la cabecita se le cae un poquito (cabeceo de sueño).
@@ -579,6 +580,10 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         this.leftArm.z = 0.0F;
         if (state.boredType != NoxisBoredAnimation.NONE && state.boredWeight > 0.0F) {
             this.applyBoredom(state.boredType, state.boredMirrored, state.boredTime, state.boredWeight);
+        }
+        // ---- Cariño con su amigo especial (coreografía compartida por los dos) ----
+        if (state.affection != NoxisAffectionAnimation.NONE && state.affectionWeight > 0.0F) {
+            this.applyAffection(state.affection, state.affectionTime, state.affectionWeight);
         }
 
         // ---- Variante de ropa: capa de espalda (componente reutilizable por todas las especies Noxis) ----
@@ -933,6 +938,166 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         this.leftEar.xRot -= w * 0.3F * inspect;
         this.rightEar.zRot += w * Mth.sin(t * 0.9F) * 0.12F * inspect;
         this.leftEar.zRot -= w * Mth.sin(t * 0.9F + 1.7F) * 0.12F * inspect;
+    }
+
+    // ================================================================== cariño entre amigos
+
+    /**
+     * Gestos de cariño entre amigos: tiernos e inocentes, siempre uno AL LADO del otro mirando
+     * para adelante (nunca cara a cara). Los dos lo hacen a la vez, cada uno con su papel.
+     * {@code f} = +1 si el amigo está a su derecha, -1 si está a su izquierda.
+     */
+    private void applyAffection(byte anim, float t, float w) {
+        boolean lead = NoxisAffectionAnimation.roleOf(anim) == NoxisAffectionAnimation.LEAD;
+        float f = NoxisAffectionAnimation.friendOnRight(anim) ? 1.0F : -1.0F;
+        switch (NoxisAffectionAnimation.gestureOf(anim)) {
+            case NoxisAffectionAnimation.HANDS -> this.affectionHands(f, t, w);
+            case NoxisAffectionAnimation.CHEEK -> this.affectionCheek(lead, f, t, w);
+            case NoxisAffectionAnimation.HUG -> {
+                if (lead) this.affectionHug(f, t, w);
+                else this.affectionHugBack(f, t, w);
+            }
+            default -> { }
+        }
+    }
+
+    private void affectionHop(float amount) {
+        this.head.y -= amount;
+        this.body.y -= amount;
+        this.rightArm.y -= amount;
+        this.leftArm.y -= amount;
+    }
+
+    /** Toda la parte de arriba se corre un poquito hacia el amigo. */
+    private void affectionShift(float dx, float headExtra) {
+        this.body.x += dx;
+        this.rightArm.x += dx;
+        this.leftArm.x += dx;
+        this.head.x += dx + headExtra;
+    }
+
+    /**
+     * Agarrarse de las manitos: se miran, estiran el bracito de adentro y se dan la mano;
+     * balancean las manitos juntas (con un saltito contento), se sueltan y se miran contentos.
+     */
+    private void affectionHands(float f, float t, float w) {
+        float look = NoxisBoredAnimation.env(t, 0, 8, 20, 28) + NoxisBoredAnimation.env(t, 62, 68, 86, 94);
+        float reach = NoxisBoredAnimation.env(t, 8, 20, 58, 68);
+        float hold = NoxisBoredAnimation.env(t, 20, 24, 56, 60);
+        float sw = Mth.sin((t - 22.0F) * 0.24F) * hold;
+        ModelPart inner = f > 0 ? this.rightArm : this.leftArm;
+        ModelPart outer = f > 0 ? this.leftArm : this.rightArm;
+        this.head.yRot += w * (f * 0.22F * look + f * 0.08F * hold);
+        this.head.zRot += w * -f * 0.1F * look;
+        float k = w * reach;
+        inner.zRot = Mth.lerp(k, inner.zRot, f * 1.15F);
+        inner.xRot = Mth.lerp(k, inner.xRot, -0.15F + 0.3F * sw);
+        inner.yScale *= 1.0F + 0.15F * k;
+        outer.xRot += w * 0.25F * sw;
+        this.body.zRot += w * -f * 0.03F * sw;
+        this.tail.yRot += w * Mth.sin(t * 0.5F) * 0.4F * (hold + look);
+        this.rightEar.xRot -= w * 0.2F * look;
+        this.leftEar.xRot -= w * 0.2F * look;
+        this.affectionHop(w * 0.7F * (NoxisBoredAnimation.pulse(t, 42.0F, 3.0F) + NoxisBoredAnimation.pulse(t, 82.0F, 3.0F)));
+    }
+
+    /**
+     * Cabecitas de costado: se miran, se inclinan apenas hacia el otro y apoyan un costado de la
+     * cabeza contra el del otro un instante (las caras siguen mirando adelante), con un
+     * frotadito suave; los sombreros se ladean para afuera con el empujoncito. Se separan, se
+     * miran y uno da un saltito.
+     */
+    private void affectionCheek(boolean lead, float f, float t, float w) {
+        float look = NoxisBoredAnimation.env(t, 0, 6, 12, 18) + NoxisBoredAnimation.env(t, 66, 72, 84, 90);
+        float lean = NoxisBoredAnimation.env(t, 12, 26, 60, 72);
+        float rub = NoxisBoredAnimation.env(t, 28, 34, 54, 60);
+        float ro = Mth.sin((t - 28.0F) * 0.4F) * rub;
+        ModelPart innerEar = f > 0 ? this.rightEar : this.leftEar;
+        ModelPart outerEar = f > 0 ? this.leftEar : this.rightEar;
+        this.head.yRot += w * f * 0.2F * look;
+        float l = w * lean;
+        this.affectionShift(-f * 0.5F * l, -f * 0.4F * l);
+        this.head.zRot += -f * 0.12F * l + w * 0.04F * ro * -f;
+        this.head.y += (lead ? 0.9F : -0.3F) * l;
+        this.body.zRot += -f * 0.05F * l;
+        this.hat.zRot += f * 0.3F * l;
+        this.hat.x += f * 0.8F * l;
+        this.hat.y += (lead ? 0.2F : -0.4F) * l;
+        innerEar.xRot += 0.5F * l;
+        outerEar.zRot += (f > 0 ? 0.15F : -0.15F) * l * Mth.sin(t * 0.4F);
+        this.rightArm.xRot = Mth.lerp(l, this.rightArm.xRot, -0.35F);
+        this.leftArm.xRot = Mth.lerp(l, this.leftArm.xRot, -0.35F);
+        this.tail.yRot += w * Mth.sin(t * 0.35F) * 0.5F * lean;
+        if (!lead) this.affectionHop(w * 0.6F * NoxisBoredAnimation.pulse(t, 78.0F, 3.0F));
+    }
+
+    /**
+     * Abrazo (el que vino): lo mira, abre bien los bracitos con un saltito, y lo abraza por el
+     * costado (un bracito por la espalda del amigo y el otro por delante), con apretoncitos
+     * suaves; después lo suelta y lo mira contento.
+     */
+    private void affectionHug(float f, float t, float w) {
+        float look = NoxisBoredAnimation.env(t, 0, 6, 12, 20) + NoxisBoredAnimation.env(t, 66, 72, 86, 94);
+        float open = NoxisBoredAnimation.env(t, 8, 16, 20, 28);
+        float hug = NoxisBoredAnimation.env(t, 22, 30, 60, 70);
+        float sq = Mth.sin((t - 30.0F) * 0.3F) * NoxisBoredAnimation.env(t, 30, 34, 56, 60);
+        ModelPart inner = f > 0 ? this.rightArm : this.leftArm;
+        ModelPart outer = f > 0 ? this.leftArm : this.rightArm;
+        this.head.yRot += w * f * 0.25F * look;
+        // Abre los bracitos.
+        float o = w * open;
+        this.rightArm.zRot = Mth.lerp(o, this.rightArm.zRot, 2.0F);
+        this.leftArm.zRot = Mth.lerp(o, this.leftArm.zRot, -2.0F);
+        this.rightArm.xRot = Mth.lerp(o, this.rightArm.xRot, -0.25F);
+        this.leftArm.xRot = Mth.lerp(o, this.leftArm.xRot, -0.25F);
+        this.rightArm.yScale *= 1.0F + 0.2F * o;
+        this.leftArm.yScale *= 1.0F + 0.2F * o;
+        this.rightEar.xRot -= 0.3F * o;
+        this.leftEar.xRot -= 0.3F * o;
+        this.affectionHop(w * 0.6F * NoxisBoredAnimation.pulse(t, 14.0F, 3.0F));
+        // Lo abraza por el costado.
+        float h = w * hug;
+        inner.zRot = Mth.lerp(h, inner.zRot, f * 1.25F);
+        inner.xRot = Mth.lerp(h, inner.xRot, 0.75F);
+        inner.yScale *= 1.0F + 0.45F * h;
+        outer.zRot = Mth.lerp(h, outer.zRot, -f * 0.55F);
+        outer.xRot = Mth.lerp(h, outer.xRot, -1.25F);
+        outer.yRot = Mth.lerp(h, outer.yRot, f * 0.5F);
+        outer.yScale *= 1.0F + 0.45F * h;
+        outer.z -= 0.6F * h;
+        this.affectionShift(-f * 1.0F * h, -f * 0.1F * h);
+        this.head.zRot += -f * 0.1F * h;
+        this.head.y += 0.8F * h + 0.2F * sq * h;
+        this.body.y += 0.15F * sq * h;
+        this.hat.zRot += f * 0.28F * h;
+        this.hat.x += f * 0.7F * h;
+        this.tail.yRot += w * Mth.sin(t * 0.5F) * 0.45F * (hug + look);
+    }
+
+    /**
+     * Abrazo (el que lo recibe): para las orejitas al sentirlo, le devuelve el abrazo con el
+     * bracito de su lado, mueve la colita y, al final, da un saltito contento.
+     */
+    private void affectionHugBack(float f, float t, float w) {
+        float notice = NoxisBoredAnimation.env(t, 18, 24, 62, 70);
+        float ret = NoxisBoredAnimation.env(t, 34, 42, 58, 66);
+        float look = NoxisBoredAnimation.env(t, 66, 72, 86, 94);
+        ModelPart inner = f > 0 ? this.rightArm : this.leftArm;
+        float n = w * notice;
+        this.rightEar.xRot -= 0.45F * n;
+        this.leftEar.xRot -= 0.45F * n;
+        this.rightEar.zRot += 0.2F * n;
+        this.leftEar.zRot -= 0.2F * n;
+        this.head.yRot += w * f * 0.2F * (look + 0.5F * notice);
+        this.hat.zRot += f * 0.15F * n;
+        this.hat.y -= 0.4F * n;
+        this.hat.x += f * 0.3F * n;
+        float k = w * ret;
+        inner.zRot = Mth.lerp(k, inner.zRot, f * 1.2F);
+        inner.xRot = Mth.lerp(k, inner.xRot, 0.6F);
+        inner.yScale *= 1.0F + 0.35F * k;
+        this.tail.yRot += w * Mth.sin(t * 0.6F) * 0.5F * (ret + look);
+        this.affectionHop(w * 0.6F * NoxisBoredAnimation.pulse(t, 80.0F, 3.0F));
     }
 
     // ================================================================== descanso: acomodarse y estirarse
