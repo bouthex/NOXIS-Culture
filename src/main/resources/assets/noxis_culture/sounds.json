@@ -76,5 +76,40 @@
         "volume": 0.8
       }
     ]
+  },
+  "entity.noxis.persona_curious": {
+    "subtitle": "subtitles.noxis_culture.noxis.persona_curious",
+    "sounds": [
+      "noxis_culture:noxis/curious1",
+      "noxis_culture:noxis/curious2"
+    ]
+  },
+  "entity.noxis.persona_mischief": {
+    "subtitle": "subtitles.noxis_culture.noxis.persona_mischief",
+    "sounds": [
+      "noxis_culture:noxis/mischief1",
+      "noxis_culture:noxis/mischief2"
+    ]
+  },
+  "entity.noxis.persona_artist": {
+    "subtitle": "subtitles.noxis_culture.noxis.persona_artist",
+    "sounds": [
+      "noxis_culture:noxis/artist1",
+      "noxis_culture:noxis/artist2"
+    ]
+  },
+  "entity.noxis.persona_affection": {
+    "subtitle": "subtitles.noxis_culture.noxis.persona_affection",
+    "sounds": [
+      "noxis_culture:noxis/affection1",
+      "noxis_culture:noxis/affection2"
+    ]
+  },
+  "entity.noxis.persona_calm": {
+    "subtitle": "subtitles.noxis_culture.noxis.persona_calm",
+    "sounds": [
+      "noxis_culture:noxis/calm1",
+      "noxis_culture:noxis/calm2"
+    ]
   }
 }
