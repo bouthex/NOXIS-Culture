@@ -423,6 +423,9 @@ public class NoxisNatureGoal<T extends PathfinderMob & NoxisNatureLover> extends
             // Otro Noxis: la espera y la atrapa. Mientras vuela, nadie más puede levantarla.
             item.setPickUpDelay(60);
             lover.expectGift(item, this.mob);
+        } else {
+            // Para un jugador o un animal: los demás Noxis la respetan un rato (después queda libre).
+            com.noxisculture.entity.nature.NoxisItemClaims.claimGift(item, to);
         }
         this.mob.playSound(ModSounds.NOXIS_HAPPY, 0.55F, 1.25F);
         server.sendParticles(ParticleTypes.HEART, this.mob.getX(), this.mob.getEyeY() + 0.4D, this.mob.getZ(),

@@ -82,7 +82,7 @@ import org.jspecify.annotations.Nullable;
  * nos da gratis el menú de comercio vanilla, el guardado de ofertas y la
  * integración con TradeWithPlayerGoal, sin el sistema de profesiones/cerebro.
  */
-public class NoxisVillager extends AbstractVillager implements com.noxisculture.entity.NoxisSpecies, NoxisLightSource, NoxisRestful, NoxisWorker, NoxisFascinatable, NoxisNatureLover, NoxisSocial, NoxisBowlSleeper, com.noxisculture.entity.ai.NoxisBored {
+public class NoxisVillager extends AbstractVillager implements com.noxisculture.entity.NoxisSpecies, NoxisLightSource, NoxisRestful, NoxisWorker, NoxisFascinatable, NoxisNatureLover, NoxisSocial, NoxisBowlSleeper, com.noxisculture.entity.ai.NoxisBored, com.noxisculture.entity.ai.NoxisFriend {
     /** Puede reponer en su mesa como mucho cada medio día (~2 veces por día, como vanilla). */
     private static final long RESTOCK_INTERVAL_TICKS = 12_000L;
     /** Espera tras cerrar el menú antes de subir de nivel (vanilla: 40 ticks = 2 s). */
@@ -137,6 +137,9 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
             SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BYTE);
     /** Acomodarse para descansar / estirarse al despertar (lo decide el servidor; no se guarda). */
     private static final EntityDataAccessor<Byte> REST_GESTURE =
+            SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BYTE);
+    /** Gesto de cariño con su amigo especial (lo decide el servidor; no se guarda). */
+    private static final EntityDataAccessor<Byte> AFFECTION_ANIM =
             SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BYTE);
     /** Cada Noxis se duerme a su hora: entre 0 y 2 minutos después de que oscurece. */
     private static final int BEDTIME_RANDOM = 2400;
@@ -202,6 +205,14 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
     private int restGestureLength;
     /** Cliente: el globito ya hizo ¡plop! al abrir los ojos (no se repite al pararse). */
     private boolean bubblePoppedOnWake;
+    // Amistad especial (servidor; se guarda con el Noxis).
+    private java.util.@Nullable UUID friendId;
+    /** 0 = sin decidir, 1 = sociable, 2 = independiente (nunca forma vínculos). */
+    private byte friendTrait;
+    private long friendLastSeen;
+    private long nextAffectionTime;
+    private final com.noxisculture.entity.idle.NoxisAffectionAnimation affectionAnimation =
+            new com.noxisculture.entity.idle.NoxisAffectionAnimation();
     /** Cuánto lleva quieto y tranquilo sin hacer nada (servidor; para aburrirse). */
     private int idleTicks;
     private @Nullable ItemEntity incomingGift;
@@ -232,6 +243,7 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         builder.define(BOWL_HOP, com.noxisculture.entity.idle.NoxisBowlHop.NONE);
         builder.define(BORED_ANIM, com.noxisculture.entity.idle.NoxisBoredAnimation.NONE);
         builder.define(REST_GESTURE, com.noxisculture.entity.idle.NoxisRestGesture.NONE);
+        builder.define(AFFECTION_ANIM, com.noxisculture.entity.idle.NoxisAffectionAnimation.NONE);
     }
 
     public NoxisMood getMood() {
@@ -564,8 +576,13 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
 
     @Override
     public void expectGift(ItemEntity gift, LivingEntity giver) {
+        if (this.incomingGift != null && this.incomingGift != gift) {
+            com.noxisculture.entity.nature.NoxisItemClaims.release(this.incomingGift, this);
+        }
         this.incomingGift = gift;
         this.giftGiver = giver;
+        // La flor queda reservada para él: ningún otro Noxis la levanta.
+        com.noxisculture.entity.nature.NoxisItemClaims.claimGift(gift, this);
     }
 
     @Override
@@ -580,6 +597,8 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
 
     @Override
     public void clearIncomingGift() {
+        // La reserva se termina: si la flor sigue en el piso, queda libre para cualquiera.
+        if (this.incomingGift != null) com.noxisculture.entity.nature.NoxisItemClaims.release(this.incomingGift, this);
         this.incomingGift = null;
         this.giftGiver = null;
     }
@@ -591,6 +610,24 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         } else {
             this.entityData.set(HELD_FLOWER, stack.copy());
         }
+    }
+
+    @Override
+    public boolean hasRoomFor(ItemStack stack) {
+        return this.getInventory().canAddItem(stack);
+    }
+
+    @Override
+    public ItemStack storeCollected(ItemStack stack) {
+        return this.getInventory().addItem(stack);
+    }
+
+    @Override
+    public boolean canCollectFlowers() {
+        return com.noxisculture.entity.ai.NoxisNatureLover.super.canCollectFlowers()
+                && this.getNatureAction() == NoxisNatureAction.NONE && this.getHeldFlower().isEmpty()
+                && this.getBoredAnim() == com.noxisculture.entity.idle.NoxisBoredAnimation.NONE
+                && !this.isStretching() && !this.isInBowl();
     }
 
     @Override
@@ -747,6 +784,77 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         return this.restGesture;
     }
 
+    // ---------------- Amistad especial (NoxisFriend) ----------------
+
+    @Override
+    public java.util.@Nullable UUID getFriendId() {
+        return this.friendId;
+    }
+
+    @Override
+    public void setFriendId(java.util.@Nullable UUID friend) {
+        this.friendId = friend;
+        this.friendLastSeen = this.level().getGameTime();
+    }
+
+    @Override
+    public boolean isIndependent() {
+        if (this.friendTrait == 0) {
+            this.friendTrait = this.random.nextFloat() < com.noxisculture.entity.social.NoxisFriendship.INDEPENDENT_CHANCE
+                    ? (byte) 2 : (byte) 1;
+        }
+        return this.friendTrait == 2;
+    }
+
+    @Override
+    public void setAffectionAnim(byte anim) {
+        this.entityData.set(AFFECTION_ANIM, anim);
+    }
+
+    @Override
+    public long getNextAffectionTime() {
+        return this.nextAffectionTime;
+    }
+
+    @Override
+    public void setNextAffectionTime(long time) {
+        this.nextAffectionTime = time;
+    }
+
+    @Override
+    public boolean canShowAffection() {
+        return this.canSocialize() && !this.isStretching()
+                && this.getBoredAnim() == com.noxisculture.entity.idle.NoxisBoredAnimation.NONE
+                && this.entityData.get(REST_GESTURE) == com.noxisculture.entity.idle.NoxisRestGesture.NONE
+                && !this.isBaby();
+    }
+
+    /** Gesto de cariño (solo visual, cliente). */
+    public com.noxisculture.entity.idle.NoxisAffectionAnimation getAffectionAnimation() {
+        return this.affectionAnimation;
+    }
+
+    /** Servidor: nace (a veces) un vínculo, y se olvida el de un amigo que ya no existe. */
+    private void tickFriendship() {
+        if ((this.tickCount + this.getId()) % com.noxisculture.entity.social.NoxisFriendship.BOND_INTERVAL != 0) return;
+        if (this.friendId == null) {
+            com.noxisculture.entity.social.NoxisFriendship.tryBond(this);
+            return;
+        }
+        long now = this.level().getGameTime();
+        if (this.friendLastSeen <= 0L) this.friendLastSeen = now;      // recién cargado: le da tiempo
+        if (com.noxisculture.entity.social.NoxisFriendship.findFriend(this) != null) {
+            this.friendLastSeen = now;
+        } else if (this.level() instanceof ServerLevel server) {
+            Entity e = server.getEntity(this.friendId);
+            boolean notMutual = e instanceof com.noxisculture.entity.ai.NoxisFriend f && !this.getUUID().equals(f.getFriendId());
+            if (notMutual || (e != null && !e.isAlive())
+                    || now - this.friendLastSeen > com.noxisculture.entity.social.NoxisFriendship.FORGET_TICKS) {
+                this.friendId = null;          // ya no existe (o ya no es su amigo): queda libre
+            }
+        }
+    }
+
     /** Hasta cuándo puede dormirse solo (después de buscar compañía sin encontrar). */
     private long restAloneUntil;
 
@@ -794,10 +902,16 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         this.goalSelector.addGoal(4, new NoxisWorkAtTableGoal<>(this, 0.45D));
         this.goalSelector.addGoal(4, new NoxisCrystalFascinationGoal<>(this));
         this.goalSelector.addGoal(4, new NoxisNatureGoal<>(this));
+        // De vez en cuando, levanta una flor suelta del piso (nunca un regalo reservado para otro).
+        this.goalSelector.addGoal(4, new com.noxisculture.entity.ai.NoxisCollectFlowerGoal<>(this));
         this.goalSelector.addGoal(4, new NoxisGreetGoal<>(this));
+        // Amigo especial: gesto de cariño compartido (el amigo lo acompaña con NoxisSocialFollowGoal).
+        this.goalSelector.addGoal(4, new com.noxisculture.entity.ai.NoxisAffectionGoal<>(this));
         // Aburrimiento: solo después de un rato quieto sin hacer nada (cualquier objetivo de
         // prioridad 1-3 lo corta: comercio, miedo, sueño, descanso, regalos, buscar el sombrero).
         this.goalSelector.addGoal(4, new com.noxisculture.entity.ai.NoxisBoredGoal<>(this));
+        // A veces, en vez de pasear al azar, va hacia donde está su amigo (sin pegarse).
+        this.goalSelector.addGoal(5, new com.noxisculture.entity.ai.NoxisSeekFriendGoal<>(this));
         this.goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 0.35D));
         this.goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 6.0F));
         this.goalSelector.addGoal(9, new RandomLookAroundGoal(this));
@@ -934,6 +1048,11 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
                 this.setSocialAnim(NoxisSocialAction.NONE);
             }
         }
+        // Regalo pendiente que ya no es suyo (se lo llevaron, venció la reserva): lo suelta.
+        if (this.incomingGift != null && this.tickCount % 20 == 0 && (this.incomingGift.isRemoved()
+                || !com.noxisculture.entity.nature.NoxisItemClaims.isClaimedBy(this.incomingGift, this))) {
+            this.clearIncomingGift();
+        }
         // Si se guardó el mundo con una flor en la mano, la devuelve a su lugar (o la suelta).
         if (this.flowerCarry.isOrphan() && this.tickCount > 20) {
             this.flowerCarry.returnOrDrop(this.level(), this);
@@ -941,6 +1060,7 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
             this.setNatureAction(NoxisNatureAction.NONE);
         }
         this.tickRestGesture();
+        this.tickFriendship();
         // Rato sin hacer nada (para aburrirse): quieto, sin camino y tranquilo.
         boolean still = this.getNavigation().isDone() && this.getDeltaMovement().horizontalDistanceSqr() < 1.0E-4D;
         if (still && this.canBeBored()) {
@@ -1012,7 +1132,7 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
                 && !this.isHoldingUmbrella() && this.umbrellaAnim < 0.01F
                 && this.hatAnimation.getAnim() == com.noxisculture.entity.idle.NoxisHatAnimation.NONE
                 && this.bowlHopAnimation.getAnim() == com.noxisculture.entity.idle.NoxisBowlHop.NONE
-                && !this.boredAnimation.isBusy() && !this.restGesture.isBusy()
+                && !this.boredAnimation.isBusy() && !this.restGesture.isBusy() && !this.affectionAnimation.isBusy()
                 && dx * dx + dz * dz < 1.0E-4D;
         // Los dos gestos tranquilos nunca se pisan: el que empezó primero termina antes que el otro.
         boolean fascinated = this.isFascinated() || this.crystalFascination.isActive()
@@ -1025,6 +1145,7 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         this.hatAnimation.tick(this.entityData.get(HAT_ANIM));
         this.bowlHopAnimation.tick(this.entityData.get(BOWL_HOP));
         this.boredAnimation.tick(this.entityData.get(BORED_ANIM));
+        this.affectionAnimation.tick(this.entityData.get(AFFECTION_ANIM));
         byte restG = this.entityData.get(REST_GESTURE);
         // En la pecera, acomodarse arranca directo del balanceo (el saltito ya lo hizo).
         this.restGesture.tick(restG, this.isInBowl()
@@ -1131,6 +1252,8 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         output.putBoolean("in_bowl", this.isInBowl());
         if (this.bowlPos != null) output.store("bowl_pos", BlockPos.CODEC, this.bowlPos);
         if (this.hatPos != null) output.store("hat_pos", BlockPos.CODEC, this.hatPos);
+        if (this.friendId != null) output.store("friend_id", net.minecraft.core.UUIDUtil.CODEC, this.friendId);
+        output.putInt("friend_trait", this.friendTrait);
     }
 
     @Override
@@ -1157,12 +1280,21 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         this.bowlPos = input.read("bowl_pos", BlockPos.CODEC).orElse(null);
         this.hatPos = input.read("hat_pos", BlockPos.CODEC).orElse(null);
         if (this.bowlPos == null) this.setInBowl(false);
+        this.friendId = input.read("friend_id", net.minecraft.core.UUIDUtil.CODEC).orElse(null);
+        this.friendTrait = (byte) input.getInt("friend_trait").orElse(0);
+        this.friendLastSeen = 0L;              // se pone al día al verlo (ver tickFriendship)
     }
 
     /** Al desaparecer (muerte, descarga del chunk...), se lleva su luz. */
     @Override
     public void remove(Entity.RemovalReason reason) {
         this.lightController.clear(this.level());
+        // Si muere, su amigo queda libre para hacer otro amigo algún día.
+        if (!this.level().isClientSide() && reason == Entity.RemovalReason.KILLED) {
+            com.noxisculture.entity.social.NoxisFriendship.onDeath(this);
+        }
+        // Lo que tenía reservado (regalo pendiente, flor que iba a buscar) queda libre.
+        if (!this.level().isClientSide()) com.noxisculture.entity.nature.NoxisItemClaims.releaseAll(this);
         // Si muere (o lo eliminan) con una pecera reservada o ocupada, la pecera queda libre.
         // Si solo se descarga con el chunk, la reserva sigue en el bloque y la retoma al volver.
         if (this.level() instanceof ServerLevel server && this.bowlPos != null) {

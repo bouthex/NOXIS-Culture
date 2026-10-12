@@ -15,7 +15,7 @@ import org.jspecify.annotations.Nullable;
  * la acompaña, así nunca arrancan dos interacciones distintas a la vez.
  */
 public final class NoxisSocialLink {
-    public enum Kind { GREET, REST }
+    public enum Kind { GREET, REST, AFFECTION }
 
     private @Nullable PathfinderMob partner;
     private @Nullable Kind kind;

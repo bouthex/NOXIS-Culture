@@ -40,4 +40,17 @@ public interface NoxisNatureLover {
 
     /** Guarda la flor recibida en su inventario (persistente). Lo que no entre queda en el piso. */
     void storeGift(net.minecraft.world.item.ItemStack stack);
+
+    // ---- Recoger flores sueltas del piso ----
+
+    /** ¿Puede ir a buscar una flor suelta ahora? (tranquilo, manos libres, sin regalo pendiente). */
+    default boolean canCollectFlowers() {
+        return this.canEnjoyNature() && !this.getFlowerCarry().isHolding() && this.getIncomingGift() == null;
+    }
+
+    /** ¿Le entra (al menos una) en el inventario? */
+    boolean hasRoomFor(net.minecraft.world.item.ItemStack stack);
+
+    /** Guarda en su inventario lo que entre y devuelve lo que no entró (no tira nada al piso). */
+    net.minecraft.world.item.ItemStack storeCollected(net.minecraft.world.item.ItemStack stack);
 }
