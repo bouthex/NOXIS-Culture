@@ -82,7 +82,7 @@ import org.jspecify.annotations.Nullable;
  * nos da gratis el menú de comercio vanilla, el guardado de ofertas y la
  * integración con TradeWithPlayerGoal, sin el sistema de profesiones/cerebro.
  */
-public class NoxisVillager extends AbstractVillager implements com.noxisculture.entity.NoxisSpecies, NoxisLightSource, NoxisRestful, NoxisWorker, NoxisFascinatable, NoxisNatureLover, NoxisSocial, NoxisBowlSleeper, com.noxisculture.entity.ai.NoxisBored, com.noxisculture.entity.ai.NoxisFriend {
+public class NoxisVillager extends AbstractVillager implements com.noxisculture.entity.NoxisSpecies, NoxisLightSource, NoxisRestful, NoxisWorker, NoxisFascinatable, NoxisNatureLover, NoxisSocial, NoxisBowlSleeper, com.noxisculture.entity.ai.NoxisBored, com.noxisculture.entity.ai.NoxisFriend, com.noxisculture.entity.ai.NoxisCurious {
     /** Puede reponer en su mesa como mucho cada medio día (~2 veces por día, como vanilla). */
     private static final long RESTOCK_INTERVAL_TICKS = 12_000L;
     /** Espera tras cerrar el menú antes de subir de nivel (vanilla: 40 ticks = 2 s). */
@@ -140,6 +140,9 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
             SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BYTE);
     /** Gesto de cariño con su amigo especial (lo decide el servidor; no se guarda). */
     private static final EntityDataAccessor<Byte> AFFECTION_ANIM =
+            SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BYTE);
+    /** Curiosidad / travesura en curso (lo decide el servidor; no se guarda). */
+    private static final EntityDataAccessor<Byte> PLAY_ANIM =
             SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BYTE);
     /** Cada Noxis se duerme a su hora: entre 0 y 2 minutos después de que oscurece. */
     private static final int BEDTIME_RANDOM = 2400;
@@ -213,6 +216,11 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
     private long nextAffectionTime;
     private final com.noxisculture.entity.idle.NoxisAffectionAnimation affectionAnimation =
             new com.noxisculture.entity.idle.NoxisAffectionAnimation();
+    // Curiosidad (servidor): quién lo está siguiendo y hasta cuándo.
+    private int followerId = -1;
+    private long followedUntil;
+    private final com.noxisculture.entity.idle.NoxisPlayAnimation playAnimation =
+            new com.noxisculture.entity.idle.NoxisPlayAnimation();
     /** Cuánto lleva quieto y tranquilo sin hacer nada (servidor; para aburrirse). */
     private int idleTicks;
     private @Nullable ItemEntity incomingGift;
@@ -244,6 +252,7 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         builder.define(BORED_ANIM, com.noxisculture.entity.idle.NoxisBoredAnimation.NONE);
         builder.define(REST_GESTURE, com.noxisculture.entity.idle.NoxisRestGesture.NONE);
         builder.define(AFFECTION_ANIM, com.noxisculture.entity.idle.NoxisAffectionAnimation.NONE);
+        builder.define(PLAY_ANIM, com.noxisculture.entity.idle.NoxisPlayAnimation.NONE);
     }
 
     public NoxisMood getMood() {
@@ -532,6 +541,7 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
                 && this.entityData.get(HAT_ANIM) == com.noxisculture.entity.idle.NoxisHatAnimation.NONE
                 && this.entityData.get(BOWL_HOP) == com.noxisculture.entity.idle.NoxisBowlHop.NONE
                 && this.entityData.get(REST_GESTURE) == com.noxisculture.entity.idle.NoxisRestGesture.NONE
+                && this.entityData.get(PLAY_ANIM) == com.noxisculture.entity.idle.NoxisPlayAnimation.NONE
                 && this.hatSearchOrigin == null && this.hurtTime == 0
                 && this.onGround() && !this.isInWater() && !this.isPassenger();
     }
@@ -627,7 +637,8 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         return com.noxisculture.entity.ai.NoxisNatureLover.super.canCollectFlowers()
                 && this.getNatureAction() == NoxisNatureAction.NONE && this.getHeldFlower().isEmpty()
                 && this.getBoredAnim() == com.noxisculture.entity.idle.NoxisBoredAnimation.NONE
-                && !this.isStretching() && !this.isInBowl();
+                && !this.isStretching() && !this.isInBowl()
+                && this.getPlayAnim() == com.noxisculture.entity.idle.NoxisPlayAnimation.NONE;
     }
 
     @Override
@@ -826,7 +837,87 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         return this.canSocialize() && !this.isStretching()
                 && this.getBoredAnim() == com.noxisculture.entity.idle.NoxisBoredAnimation.NONE
                 && this.entityData.get(REST_GESTURE) == com.noxisculture.entity.idle.NoxisRestGesture.NONE
+                && this.entityData.get(PLAY_ANIM) == com.noxisculture.entity.idle.NoxisPlayAnimation.NONE
                 && !this.isBaby();
+    }
+
+    // ---------------- Curiosidad y travesuras (NoxisCurious) ----------------
+
+    /** ~6 de cada 10 Noxis son curiosos (fijo para cada uno: sale de su identidad, no cambia nunca). */
+    @Override
+    public boolean isCuriousType() {
+        return Math.floorMod(this.getUUID().getLeastSignificantBits() >>> 8, 100L) < 60L;
+    }
+
+    /** Pocos curiosos son traviesos (~1 de cada 3 curiosos). */
+    @Override
+    public boolean isPrankster() {
+        return this.isCuriousType() && Math.floorMod(this.getUUID().getMostSignificantBits() >>> 16, 100L) < 35L;
+    }
+
+    /** Sin ninguna otra actividad ni gesto en curso (para seguir a alguien o que le hagan una broma). */
+    private boolean isFreeForPlay() {
+        return this.canSocialize() && !this.isStretching() && !this.isInBowl()
+                && this.getBoredAnim() == com.noxisculture.entity.idle.NoxisBoredAnimation.NONE
+                && this.entityData.get(REST_GESTURE) == com.noxisculture.entity.idle.NoxisRestGesture.NONE
+                && this.entityData.get(AFFECTION_ANIM) == com.noxisculture.entity.idle.NoxisAffectionAnimation.NONE
+                && this.hatSearchOrigin == null;
+    }
+
+    @Override
+    public boolean canFollowCuriously() {
+        return this.isFreeForPlay();
+    }
+
+    @Override
+    public boolean isDoingSomethingInteresting() {
+        if (this.isResting() || this.isInBowl() || this.isTrading() || this.getMood() == NoxisMood.SCARED) return false;
+        boolean moving = !this.getNavigation().isDone() || this.getDeltaMovement().horizontalDistanceSqr() > 1.0E-4D;
+        return moving || this.getNatureAction() != NoxisNatureAction.NONE || this.isFascinated()
+                || this.flowerCarry.isHolding()
+                || this.getBoredAnim() != com.noxisculture.entity.idle.NoxisBoredAnimation.NONE;
+    }
+
+    @Override
+    public boolean canBePranked() {
+        return this.isFreeForPlay() && this.getPlayAnim() == com.noxisculture.entity.idle.NoxisPlayAnimation.NONE
+                && this.getNavigation().isDone() && this.getDeltaMovement().horizontalDistanceSqr() < 1.0E-4D;
+    }
+
+    @Override
+    public byte getPlayAnim() {
+        return this.entityData.get(PLAY_ANIM);
+    }
+
+    @Override
+    public void setPlayAnim(byte anim) {
+        this.entityData.set(PLAY_ANIM, anim);
+    }
+
+    @Override
+    public void markFollowedBy(int follower, long until) {
+        this.followerId = follower;
+        this.followedUntil = until;
+    }
+
+    @Override
+    public boolean isFollowedByOther(int follower, long now) {
+        return this.followerId != follower && now < this.followedUntil;
+    }
+
+    @Override
+    public void startle(int ticks) {
+        this.moodController.makeScared(ticks);       // el miedo de siempre, apenas un momento
+    }
+
+    @Override
+    public void cheerUp(int ticks) {
+        this.moodController.makeHappy(ticks);
+    }
+
+    /** Curiosidad y travesuras (solo visual, cliente). */
+    public com.noxisculture.entity.idle.NoxisPlayAnimation getPlayAnimation() {
+        return this.playAnimation;
     }
 
     /** Gesto de cariño (solo visual, cliente). */
@@ -904,6 +995,8 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         this.goalSelector.addGoal(4, new NoxisNatureGoal<>(this));
         // De vez en cuando, levanta una flor suelta del piso (nunca un regalo reservado para otro).
         this.goalSelector.addGoal(4, new com.noxisculture.entity.ai.NoxisCollectFlowerGoal<>(this));
+        // Seguir a un compañero por curiosidad (y, rarísima vez, una travesura).
+        this.goalSelector.addGoal(4, new com.noxisculture.entity.ai.NoxisCuriousFollowGoal<>(this));
         this.goalSelector.addGoal(4, new NoxisGreetGoal<>(this));
         // Amigo especial: gesto de cariño compartido (el amigo lo acompaña con NoxisSocialFollowGoal).
         this.goalSelector.addGoal(4, new com.noxisculture.entity.ai.NoxisAffectionGoal<>(this));
@@ -1133,6 +1226,7 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
                 && this.hatAnimation.getAnim() == com.noxisculture.entity.idle.NoxisHatAnimation.NONE
                 && this.bowlHopAnimation.getAnim() == com.noxisculture.entity.idle.NoxisBowlHop.NONE
                 && !this.boredAnimation.isBusy() && !this.restGesture.isBusy() && !this.affectionAnimation.isBusy()
+                && !this.playAnimation.isBusy()
                 && dx * dx + dz * dz < 1.0E-4D;
         // Los dos gestos tranquilos nunca se pisan: el que empezó primero termina antes que el otro.
         boolean fascinated = this.isFascinated() || this.crystalFascination.isActive()
@@ -1146,6 +1240,7 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         this.bowlHopAnimation.tick(this.entityData.get(BOWL_HOP));
         this.boredAnimation.tick(this.entityData.get(BORED_ANIM));
         this.affectionAnimation.tick(this.entityData.get(AFFECTION_ANIM));
+        this.playAnimation.tick(this.entityData.get(PLAY_ANIM));
         byte restG = this.entityData.get(REST_GESTURE);
         // En la pecera, acomodarse arranca directo del balanceo (el saltito ya lo hizo).
         this.restGesture.tick(restG, this.isInBowl()
