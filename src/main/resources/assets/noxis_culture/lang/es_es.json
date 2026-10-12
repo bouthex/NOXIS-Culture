@@ -31,5 +31,10 @@
   "subtitles.noxis_culture.noxis.sniff": "Noxis olfatea una flor",
   "block.noxis_culture.noxis_bowl": "Pecera Noxis",
   "block.noxis_culture.noxis_hat": "Sombrero de Noxis",
-  "block.noxis_culture.noxis_bowl.occupied": "Pecera Noxis (con un Noxis durmiendo)"
+  "block.noxis_culture.noxis_bowl.occupied": "Pecera Noxis (con un Noxis durmiendo)",
+  "subtitles.noxis_culture.noxis.persona_curious": "Noxis se pregunta, curioso",
+  "subtitles.noxis_culture.noxis.persona_mischief": "Noxis se ríe pícaro",
+  "subtitles.noxis_culture.noxis.persona_artist": "Noxis tararea suave",
+  "subtitles.noxis_culture.noxis.persona_affection": "Noxis llama alegre",
+  "subtitles.noxis_culture.noxis.persona_calm": "Noxis ronronea contento"
 }
