@@ -4,12 +4,7 @@ package com.noxisculture.entity.ai;
  * Noxis que siguen a sus compañeros por curiosidad y, muy de vez en cuando, les hacen una
  * travesura (todas las especies, actuales y futuras: aldeano, guerrero, sabio...).
  */
-public interface NoxisCurious extends NoxisSocial {
-    /** ¿Es de los curiosos? (no todos lo son; fijo para cada Noxis). */
-    boolean isCuriousType();
-
-    /** ¿Es de los traviesos? (pocos; fijo para cada Noxis). */
-    boolean isPrankster();
+public interface NoxisCurious extends NoxisSocial, com.noxisculture.entity.personality.NoxisPersonable {
 
     /** ¿Está libre para ponerse a seguir a alguien? (tranquilo, manos libres, sin otra actividad). */
     boolean canFollowCuriously();

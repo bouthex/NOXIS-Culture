@@ -144,6 +144,9 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
     /** Curiosidad / travesura en curso (lo decide el servidor; no se guarda). */
     private static final EntityDataAccessor<Byte> PLAY_ANIM =
             SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BYTE);
+    /** Gesto propio de la personalidad (lo decide el servidor; no se guarda). */
+    private static final EntityDataAccessor<Byte> PERSONA_GESTURE =
+            SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BYTE);
     /** Cada Noxis se duerme a su hora: entre 0 y 2 minutos después de que oscurece. */
     private static final int BEDTIME_RANDOM = 2400;
     /** ...y se despierta a su ritmo: entre 0 y 40 s después del amanecer. */
@@ -216,6 +219,10 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
     private long nextAffectionTime;
     private final com.noxisculture.entity.idle.NoxisAffectionAnimation affectionAnimation =
             new com.noxisculture.entity.idle.NoxisAffectionAnimation();
+    /** Personalidad (servidor; se guarda). null = todavía sin elegir. */
+    private com.noxisculture.entity.personality.@Nullable NoxisPersonality personality;
+    private final com.noxisculture.entity.idle.NoxisPersonaAnimation personaAnimation =
+            new com.noxisculture.entity.idle.NoxisPersonaAnimation();
     // Curiosidad (servidor): quién lo está siguiendo y hasta cuándo.
     private int followerId = -1;
     private long followedUntil;
@@ -253,6 +260,7 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         builder.define(REST_GESTURE, com.noxisculture.entity.idle.NoxisRestGesture.NONE);
         builder.define(AFFECTION_ANIM, com.noxisculture.entity.idle.NoxisAffectionAnimation.NONE);
         builder.define(PLAY_ANIM, com.noxisculture.entity.idle.NoxisPlayAnimation.NONE);
+        builder.define(PERSONA_GESTURE, com.noxisculture.entity.idle.NoxisPersonaAnimation.NONE);
     }
 
     public NoxisMood getMood() {
@@ -542,6 +550,7 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
                 && this.entityData.get(BOWL_HOP) == com.noxisculture.entity.idle.NoxisBowlHop.NONE
                 && this.entityData.get(REST_GESTURE) == com.noxisculture.entity.idle.NoxisRestGesture.NONE
                 && this.entityData.get(PLAY_ANIM) == com.noxisculture.entity.idle.NoxisPlayAnimation.NONE
+                && this.entityData.get(PERSONA_GESTURE) == com.noxisculture.entity.idle.NoxisPersonaAnimation.NONE
                 && this.hatSearchOrigin == null && this.hurtTime == 0
                 && this.onGround() && !this.isInWater() && !this.isPassenger();
     }
@@ -638,7 +647,8 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
                 && this.getNatureAction() == NoxisNatureAction.NONE && this.getHeldFlower().isEmpty()
                 && this.getBoredAnim() == com.noxisculture.entity.idle.NoxisBoredAnimation.NONE
                 && !this.isStretching() && !this.isInBowl()
-                && this.getPlayAnim() == com.noxisculture.entity.idle.NoxisPlayAnimation.NONE;
+                && this.getPlayAnim() == com.noxisculture.entity.idle.NoxisPlayAnimation.NONE
+                && this.getPersonaGesture() == com.noxisculture.entity.idle.NoxisPersonaAnimation.NONE;
     }
 
     @Override
@@ -838,21 +848,42 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
                 && this.getBoredAnim() == com.noxisculture.entity.idle.NoxisBoredAnimation.NONE
                 && this.entityData.get(REST_GESTURE) == com.noxisculture.entity.idle.NoxisRestGesture.NONE
                 && this.entityData.get(PLAY_ANIM) == com.noxisculture.entity.idle.NoxisPlayAnimation.NONE
+                && this.entityData.get(PERSONA_GESTURE) == com.noxisculture.entity.idle.NoxisPersonaAnimation.NONE
                 && !this.isBaby();
     }
 
     // ---------------- Curiosidad y travesuras (NoxisCurious) ----------------
 
-    /** ~6 de cada 10 Noxis son curiosos (fijo para cada uno: sale de su identidad, no cambia nunca). */
+    // ---------------- Personalidad (NoxisPersonable) ----------------
+
+    /** Se elige una sola vez (al aparecer, o al cargar un Noxis de antes) y se guarda. */
     @Override
-    public boolean isCuriousType() {
-        return Math.floorMod(this.getUUID().getLeastSignificantBits() >>> 8, 100L) < 60L;
+    public com.noxisculture.entity.personality.NoxisPersonality getPersonality() {
+        if (this.personality == null) {
+            this.personality = com.noxisculture.entity.personality.NoxisPersonality.random(this.random);
+        }
+        return this.personality;
     }
 
-    /** Pocos curiosos son traviesos (~1 de cada 3 curiosos). */
     @Override
-    public boolean isPrankster() {
-        return this.isCuriousType() && Math.floorMod(this.getUUID().getMostSignificantBits() >>> 16, 100L) < 35L;
+    public boolean canDoPersonaGesture() {
+        return this.isFreeForPlay() && this.getPlayAnim() == com.noxisculture.entity.idle.NoxisPlayAnimation.NONE
+                && !this.isBaby();
+    }
+
+    @Override
+    public byte getPersonaGesture() {
+        return this.entityData.get(PERSONA_GESTURE);
+    }
+
+    @Override
+    public void setPersonaGesture(byte gesture) {
+        this.entityData.set(PERSONA_GESTURE, gesture);
+    }
+
+    /** Gesto de la personalidad (solo visual, cliente). */
+    public com.noxisculture.entity.idle.NoxisPersonaAnimation getPersonaAnimation() {
+        return this.personaAnimation;
     }
 
     /** Sin ninguna otra actividad ni gesto en curso (para seguir a alguien o que le hagan una broma). */
@@ -864,9 +895,14 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
                 && this.hatSearchOrigin == null;
     }
 
+    /** Libre y además sin su gesto de personalidad en curso. */
+    private boolean noPersonaGesture() {
+        return this.entityData.get(PERSONA_GESTURE) == com.noxisculture.entity.idle.NoxisPersonaAnimation.NONE;
+    }
+
     @Override
     public boolean canFollowCuriously() {
-        return this.isFreeForPlay();
+        return this.isFreeForPlay() && this.noPersonaGesture();
     }
 
     @Override
@@ -880,7 +916,8 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
 
     @Override
     public boolean canBePranked() {
-        return this.isFreeForPlay() && this.getPlayAnim() == com.noxisculture.entity.idle.NoxisPlayAnimation.NONE
+        return this.isFreeForPlay() && this.noPersonaGesture()
+                && this.getPlayAnim() == com.noxisculture.entity.idle.NoxisPlayAnimation.NONE
                 && this.getNavigation().isDone() && this.getDeltaMovement().horizontalDistanceSqr() < 1.0E-4D;
     }
 
@@ -1003,6 +1040,8 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         // Aburrimiento: solo después de un rato quieto sin hacer nada (cualquier objetivo de
         // prioridad 1-3 lo corta: comercio, miedo, sueño, descanso, regalos, buscar el sombrero).
         this.goalSelector.addGoal(4, new com.noxisculture.entity.ai.NoxisBoredGoal<>(this));
+        // Gesto propio de su personalidad, con su vocalización (de vez en cuando, estando tranquilo).
+        this.goalSelector.addGoal(5, new com.noxisculture.entity.ai.NoxisPersonaGestureGoal<>(this));
         // A veces, en vez de pasear al azar, va hacia donde está su amigo (sin pegarse).
         this.goalSelector.addGoal(5, new com.noxisculture.entity.ai.NoxisSeekFriendGoal<>(this));
         this.goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 0.35D));
@@ -1226,7 +1265,7 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
                 && this.hatAnimation.getAnim() == com.noxisculture.entity.idle.NoxisHatAnimation.NONE
                 && this.bowlHopAnimation.getAnim() == com.noxisculture.entity.idle.NoxisBowlHop.NONE
                 && !this.boredAnimation.isBusy() && !this.restGesture.isBusy() && !this.affectionAnimation.isBusy()
-                && !this.playAnimation.isBusy()
+                && !this.playAnimation.isBusy() && !this.personaAnimation.isBusy()
                 && dx * dx + dz * dz < 1.0E-4D;
         // Los dos gestos tranquilos nunca se pisan: el que empezó primero termina antes que el otro.
         boolean fascinated = this.isFascinated() || this.crystalFascination.isActive()
@@ -1241,6 +1280,7 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         this.boredAnimation.tick(this.entityData.get(BORED_ANIM));
         this.affectionAnimation.tick(this.entityData.get(AFFECTION_ANIM));
         this.playAnimation.tick(this.entityData.get(PLAY_ANIM));
+        this.personaAnimation.tick(this.entityData.get(PERSONA_GESTURE));
         byte restG = this.entityData.get(REST_GESTURE);
         // En la pecera, acomodarse arranca directo del balanceo (el saltito ya lo hizo).
         this.restGesture.tick(restG, this.isInBowl()
@@ -1349,6 +1389,7 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         if (this.hatPos != null) output.store("hat_pos", BlockPos.CODEC, this.hatPos);
         if (this.friendId != null) output.store("friend_id", net.minecraft.core.UUIDUtil.CODEC, this.friendId);
         output.putInt("friend_trait", this.friendTrait);
+        output.putString("personality", this.getPersonality().id());
     }
 
     @Override
@@ -1378,6 +1419,8 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         this.friendId = input.read("friend_id", net.minecraft.core.UUIDUtil.CODEC).orElse(null);
         this.friendTrait = (byte) Mth.clamp(input.getInt("friend_trait").orElse(0).intValue(), 0, 2);
         this.friendLastSeen = 0L;              // se pone al día al verlo (ver tickFriendship)
+        // Personalidad guardada; los Noxis de antes reciben una ahora (y queda guardada).
+        this.personality = com.noxisculture.entity.personality.NoxisPersonality.byId(input.getStringOr("personality", ""));
     }
 
     /** Al desaparecer (muerte, descarga del chunk...), se lleva su luz. */

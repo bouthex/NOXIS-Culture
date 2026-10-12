@@ -26,6 +26,12 @@ public final class ModSounds {
     public static final SoundEvent NOXIS_CELEBRATE = register("entity.noxis.celebrate");
     /** Olfateo curioso al acercar una flor a la naricita. */
     public static final SoundEvent NOXIS_SNIFF = register("entity.noxis.sniff");
+    /** Voces de cada personalidad (gesto propio): curioso "¿mrr?", travieso "jejeje", artista tarareo, cariñoso "¡eeey!", tranquilo ronroneo. */
+    public static final SoundEvent NOXIS_PERSONA_CURIOUS = register("entity.noxis.persona_curious");
+    public static final SoundEvent NOXIS_PERSONA_MISCHIEF = register("entity.noxis.persona_mischief");
+    public static final SoundEvent NOXIS_PERSONA_ARTIST = register("entity.noxis.persona_artist");
+    public static final SoundEvent NOXIS_PERSONA_AFFECTION = register("entity.noxis.persona_affection");
+    public static final SoundEvent NOXIS_PERSONA_CALM = register("entity.noxis.persona_calm");
 
     private static SoundEvent register(String name) {
         Identifier id = NoxisCulture.id(name);

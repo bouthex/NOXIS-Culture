@@ -188,6 +188,13 @@ public class NoxisAffectionGoal<T extends PathfinderMob & NoxisFriend> extends G
         mob.setXRot(0.0F);
     }
 
+    /** Espera hasta el próximo gesto: los cariñosos, más cortita; los tranquilos, un poco más larga. */
+    private static long cooldown(PathfinderMob mob) {
+        float factor = mob instanceof com.noxisculture.entity.personality.NoxisPersonable p
+                ? p.getPersonality().affectionCooldown() : 1.0F;
+        return (long) ((COOLDOWN + mob.getRandom().nextInt(COOLDOWN_RANDOM)) * factor);
+    }
+
     @Override
     public void stop() {
         long now = this.mob.level().getGameTime();
@@ -195,11 +202,11 @@ public class NoxisAffectionGoal<T extends PathfinderMob & NoxisFriend> extends G
         this.mob.getSocialLink().clear();
         this.mob.setAffectionAnim(NoxisAffectionAnimation.NONE);
         // Cada uno vuelve a su vida; los dos esperan un rato antes de la próxima vez.
-        this.mob.setNextAffectionTime(now + COOLDOWN + this.mob.getRandom().nextInt(COOLDOWN_RANDOM));
+        this.mob.setNextAffectionTime(now + cooldown(this.mob));
         if (other instanceof NoxisFriend f) {
             if (f.getSocialLink().isLinkedWith(this.mob)) f.getSocialLink().clear();
             f.setAffectionAnim(NoxisAffectionAnimation.NONE);
-            f.setNextAffectionTime(now + COOLDOWN + other.getRandom().nextInt(COOLDOWN_RANDOM));
+            f.setNextAffectionTime(now + cooldown(other));
         }
         this.friend = null;
         this.spot = null;

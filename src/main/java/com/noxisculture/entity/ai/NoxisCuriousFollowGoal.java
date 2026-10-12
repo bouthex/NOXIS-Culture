@@ -21,7 +21,9 @@ import org.jspecify.annotations.Nullable;
  * 15 a 30 s (o si el otro se aleja mucho, se va a descansar o no puede seguirlo) pierde el
  * interés y vuelve a lo suyo. El seguido no se entera ni cambia nada de lo que hace.</p>
  *
- * <p><b>Travesura</b> (muy rara: solo los traviesos, pocas veces, con espera de 20-30 min): si el
+ * <p>Cualquier personalidad puede seguir a otro; los curiosos y los cariñosos, más seguido.</p>
+ *
+ * <p><b>Travesura</b> (muy rara, sobre todo los traviesos; los demás casi nunca; espera de 20-30 min): si el
  * otro se queda quieto, se acerca agachadito por detrás o por un costado, espera un instante
  * moviendo la colita y ¡salta! El otro pega un saltito de susto (el miedo de siempre, apenas un
  * segundo) y retrocede un poquito; el travieso festeja, el otro se recupera enseguida y le
@@ -46,7 +48,6 @@ public class NoxisCuriousFollowGoal<T extends PathfinderMob & NoxisCurious> exte
     private static final int SAME_TARGET_COOLDOWN = 6000;
     private static final int MAX_PATH_FAILS = 4;
     // Travesura
-    private static final int PRANK_CHANCE = 6;      // 1 de cada 6 seguimientos de un travieso (si ya pasó su espera)
     private static final int PRANK_COOLDOWN = 24000;     // 20 min ...
     private static final int PRANK_COOLDOWN_RANDOM = 12000; // ... a 30 min
     private static final int STILL_BEFORE_PRANK = 40;
@@ -88,8 +89,9 @@ public class NoxisCuriousFollowGoal<T extends PathfinderMob & NoxisCurious> exte
         long now = this.mob.level().getGameTime();
         if (this.nextAllowedTime < 0L) this.nextAllowedTime = now + 600 + random.nextInt(1800);
         if (this.nextPrankTime < 0L) this.nextPrankTime = now + 3600 + random.nextInt(6000);   // 3 a 8 min
-        if (now < this.nextAllowedTime || !this.mob.isCuriousType() || !this.mob.canFollowCuriously()) return false;
-        if (random.nextInt(4) != 0) return false;
+        if (now < this.nextAllowedTime || !this.mob.canFollowCuriously()) return false;
+        // Todos pueden; la personalidad cambia las ganas (curiosos y cariñosos, más; tranquilos, menos).
+        if (random.nextFloat() >= 0.25F * this.mob.getPersonality().followWeight()) return false;
         // Que no haya ya muchos siguiendo a otros por la zona.
         if (countFollowersNear(this.mob, ZONE) >= MAX_FOLLOWERS_IN_ZONE) return false;
         List<PathfinderMob> found = this.mob.level().getEntitiesOfClass(PathfinderMob.class,
@@ -125,8 +127,9 @@ public class NoxisCuriousFollowGoal<T extends PathfinderMob & NoxisCurious> exte
         this.targetStill = 0;
         this.done = false;
         this.followLength = MIN_FOLLOW + random.nextInt(EXTRA_FOLLOW);
-        // Travesura: rarísima (solo traviesos, pasada su larga espera, y aun así pocas veces).
-        this.prankPlanned = this.mob.isPrankster() && now >= this.nextPrankTime && random.nextInt(PRANK_CHANCE) == 0;
+        // Travesura: rarísima (los traviesos 1 de cada 5 seguimientos; los demás, casi nunca),
+        // y solo pasada su larga espera.
+        this.prankPlanned = now >= this.nextPrankTime && random.nextInt(this.mob.getPersonality().prankOneIn()) == 0;
         this.mob.setPlayAnim(NoxisPlayAnimation.FOLLOW);
     }
 
@@ -273,9 +276,9 @@ public class NoxisCuriousFollowGoal<T extends PathfinderMob & NoxisCurious> exte
             other.playSound(ModSounds.NOXIS_SCARED, 0.55F, 1.35F);
         }
         if (this.ticks == NoxisPlayAnimation.POUNCE_LENGTH) {
-            this.mob.setPlayAnim(NoxisPlayAnimation.CHEER);       // festeja la travesura
+            this.mob.setPlayAnim(NoxisPlayAnimation.CHEER);       // festeja la travesura con su risita
             this.mob.cheerUp(36);
-            this.mob.playSound(ModSounds.NOXIS_CELEBRATE, 0.45F, 1.3F);
+            this.mob.playSound(ModSounds.NOXIS_PERSONA_MISCHIEF, 0.6F, 1.05F);
         }
         if (this.ticks > 8 && this.ticks < 30) other.getLookControl().setLookAt(this.mob, 30.0F, 30.0F);
         if (this.ticks == 30 && c != null) {
