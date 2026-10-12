@@ -32,6 +32,9 @@ public interface NoxisKeeper extends NoxisCurious {
     /** Lo que se ve en sus manitos mientras contempla (solo una imagen: el objeto sigue guardado). */
     void showKeepsake(ItemStack stack);
 
+    /** ¿Es de los poquitos Noxis lectores y escritores? (se decide una vez y se guarda). */
+    boolean isScholar();
+
     /** Reacción de fascinación (la de los cristales) mientras mira algo cristalino. */
     void setFascinated(boolean fascinated);
 }

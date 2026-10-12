@@ -55,7 +55,7 @@ public class NoxisKeepsakeGoal<T extends PathfinderMob & NoxisKeeper> extends Go
         List<Integer> others = new ArrayList<>();
         for (int i = 0; i < inv.getContainerSize(); i++) {
             ItemStack s = inv.getItem(i);
-            if (s.isEmpty() || !this.mob.appreciates(s)) continue;
+            if (s.isEmpty() || !this.mob.appreciates(s) || s.is(net.minecraft.world.item.Items.BOOK)) continue;   // el libro es para leer
             (this.mob.isGiftedItem(s.getItem()) ? gifts : others).add(i);
         }
         List<Integer> pool = !gifts.isEmpty() && (others.isEmpty() || random.nextFloat() < 0.7F) ? gifts : others;
