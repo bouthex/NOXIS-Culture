@@ -1281,7 +1281,7 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         this.hatPos = input.read("hat_pos", BlockPos.CODEC).orElse(null);
         if (this.bowlPos == null) this.setInBowl(false);
         this.friendId = input.read("friend_id", net.minecraft.core.UUIDUtil.CODEC).orElse(null);
-        this.friendTrait = (byte) input.getInt("friend_trait").orElse(0);
+        this.friendTrait = (byte) Mth.clamp(input.getInt("friend_trait").orElse(0).intValue(), 0, 2);
         this.friendLastSeen = 0L;              // se pone al día al verlo (ver tickFriendship)
     }
 
