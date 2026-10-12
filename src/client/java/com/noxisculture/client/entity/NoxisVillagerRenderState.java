@@ -104,6 +104,13 @@ public class NoxisVillagerRenderState extends LivingEntityRenderState {
     public boolean personaPupils;
     public boolean personaHalf;
     public boolean personaClosed;
+    /** Objetos: gesto (mirar / contemplar), tiempo, cuánto se ve, ojitos y si tiene el tesoro en las manitos. */
+    public byte keepsake;
+    public float keepsakeTime;
+    public float keepsakeWeight;
+    public boolean keepsakePupils;
+    public boolean keepsakeClosed;
+    public boolean keepsakeHolding;
     /** La flor que tiene en la mano (vacía si no tiene nada). */
     public final ItemStackRenderState heldFlower = new ItemStackRenderState();
     /** true mientras se está levantando (para no repetir el rebote del "plop" al revés). */

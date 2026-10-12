@@ -3,6 +3,7 @@ package com.noxisculture.client.entity;
 import com.noxisculture.entity.idle.NoxisAffectionAnimation;
 import com.noxisculture.entity.idle.NoxisBoredAnimation;
 import com.noxisculture.entity.idle.NoxisBowlHop;
+import com.noxisculture.entity.idle.NoxisKeepsakeAnimation;
 import com.noxisculture.entity.idle.NoxisPersonaAnimation;
 import com.noxisculture.entity.idle.NoxisPlayAnimation;
 import com.noxisculture.entity.idle.NoxisRestGesture;
@@ -413,7 +414,7 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
                 || state.natureEyesClosed > 0.5F
                 || state.socialYawn > 0.5F || Math.abs(state.socialLean) > 0.5F     // bostezo / dormidos juntos
                 || (state.socialDoze > 0.6F && (t % 30) < 12)
-                || state.boredEyesClosed || state.affectionEyesClosed || state.playLaugh || state.personaClosed;                     // cabeceo de sueño                    // disfrutando el aroma
+                || state.boredEyesClosed || state.affectionEyesClosed || state.playLaugh || state.personaClosed || state.keepsakeClosed;                     // cabeceo de sueño                    // disfrutando el aroma
         // Ojitos al acomodarse / despertarse (abre despacito, bosteza con los ojos cerrados).
         if (state.restEyes == NoxisRestGesture.EYES_CLOSED) {
             closed = true;
@@ -429,7 +430,7 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         boolean open = !closed && !sleepy;
         // Pupilas agrandadas, fascinado con la flor: los ojos grandes reemplazan a los normales.
         // También al fascinarse con un cristal (mismas pupilas grandes, mismo plano que el ojo).
-        boolean bigPupils = open && (state.naturePupils > 0.5F || state.crystalAmount > 0.35F || state.boredPupils || state.affectionPupils || state.playPupils || state.personaPupils);
+        boolean bigPupils = open && (state.naturePupils > 0.5F || state.crystalAmount > 0.35F || state.boredPupils || state.affectionPupils || state.playPupils || state.personaPupils || state.keepsakePupils);
         this.eyesOpen.visible = open && !bigPupils;
         this.eyesBig.visible = bigPupils;
         // Con el parpadeo lento, la cabecita se le cae un poquito (cabeceo de sueño).
@@ -582,6 +583,10 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         this.leftArm.z = 0.0F;
         if (state.boredType != NoxisBoredAnimation.NONE && state.boredWeight > 0.0F) {
             this.applyBoredom(state.boredType, state.boredMirrored, state.boredTime, state.boredWeight);
+        }
+        // ---- Objetos: mirar algo con curiosidad / sacar, contemplar y guardar un tesoro ----
+        if (state.keepsake != NoxisKeepsakeAnimation.NONE && state.keepsakeWeight > 0.0F) {
+            this.applyKeepsake(state.keepsake, state.keepsakeTime, state.keepsakeWeight, state.keepsakeHolding);
         }
         // ---- Gesto propio de la personalidad ----
         if (state.persona != NoxisPersonaAnimation.NONE && state.personaWeight > 0.0F) {
@@ -946,6 +951,94 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         this.leftEar.xRot -= w * 0.3F * inspect;
         this.rightEar.zRot += w * Mth.sin(t * 0.9F) * 0.12F * inspect;
         this.leftEar.zRot -= w * Mth.sin(t * 0.9F + 1.7F) * 0.12F * inspect;
+    }
+
+    // ================================================================== objetos personales
+
+    private void applyKeepsake(byte a, float t, float w, boolean holding) {
+        if (a == NoxisKeepsakeAnimation.INSPECT) {
+            this.keepsakeInspect(t, w);
+        } else if (a == NoxisKeepsakeAnimation.CONTEMPLATE) {
+            this.keepsakeContemplate(t, w, holding);
+        }
+    }
+
+    /**
+     * Mirar un objeto: se inclina hacia él estirando el cuello, ladea la cabeza de un lado al otro,
+     * lo olfatea (la naricita se mueve rápido), para las orejitas hacia adelante y levanta apenas
+     * una patita, curioso.
+     */
+    private void keepsakeInspect(float t, float w) {
+        float on = w * NoxisBoredAnimation.smooth(t / 8.0F);
+        this.body.xRot += 0.15F * on;
+        this.head.z -= 1.0F * on;
+        this.head.y += 0.4F * on;
+        this.head.xRot += 0.18F * on;
+        this.head.zRot += on * 0.25F * Mth.sin(t * 0.1F);
+        float sniff = NoxisBoredAnimation.env(t, 14, 17, 28, 32);
+        this.head.xRot += on * 0.05F * Mth.sin(t * 1.8F) * sniff;
+        this.rightEar.xRot -= 0.35F * on;
+        this.leftEar.xRot -= 0.35F * on;
+        this.rightArm.xRot = Mth.lerp(on, this.rightArm.xRot, -0.6F);
+        this.rightArm.zRot = Mth.lerp(on, this.rightArm.zRot, -0.1F);
+        this.tail.yRot = Mth.lerp(on, this.tail.yRot, 0.3F);
+    }
+
+    /**
+     * Contemplar un tesoro: busca en su costadito (como en un bolsillo), lo saca y lo acuna con las
+     * dos patitas delante del pecho; lo mira feliz meciéndose (con un saltito de alegría), lo acerca
+     * a la carita con los ojitos cerrados, lo guarda con cuidado en el costadito y le da una
+     * palmadita.
+     */
+    private void keepsakeContemplate(float t, float w, boolean holding) {
+        float reach = NoxisBoredAnimation.env(t, 0, 6, 9, 15);
+        float cradle = NoxisBoredAnimation.env(t, 10, 22, 88, 98);
+        float look = NoxisBoredAnimation.env(t, 22, 30, 84, 92);
+        float nuzzle = NoxisBoredAnimation.env(t, 58, 64, 72, 78);
+        float stow = NoxisBoredAnimation.env(t, 90, 96, 102, 108);
+        float pat = NoxisBoredAnimation.pulse(t, 103.0F, 2.5F);
+        // Busca en el costadito / lo guarda.
+        float pocket = w * Math.max(reach, stow);
+        this.rightArm.xRot = Mth.lerp(pocket, this.rightArm.xRot, 0.7F + 0.25F * pat);
+        this.rightArm.zRot = Mth.lerp(pocket, this.rightArm.zRot, 0.45F);
+        this.head.yRot += 0.35F * pocket;
+        this.head.xRot += 0.15F * pocket;
+        // Lo acuna con las dos patitas.
+        float c = w * cradle;
+        this.rightArm.z -= 0.8F * c;
+        this.leftArm.z -= 0.8F * c;
+        this.rightArm.yScale *= 1.0F + 0.2F * c;
+        this.leftArm.yScale *= 1.0F + 0.2F * c;
+        this.rightArm.xRot = Mth.lerp(c, this.rightArm.xRot, -1.25F - 0.35F * nuzzle);
+        this.rightArm.zRot = Mth.lerp(c, this.rightArm.zRot, -0.35F);
+        this.leftArm.xRot = Mth.lerp(c, this.leftArm.xRot, -1.15F - 0.3F * nuzzle);
+        this.leftArm.zRot = Mth.lerp(c, this.leftArm.zRot, 0.35F);
+        // Lo mira feliz, meciéndose; un saltito de alegría.
+        float l = w * look;
+        this.head.xRot += 0.28F * l - 0.15F * w * nuzzle;
+        this.head.zRot += l * 0.12F * Mth.sin(t * 0.12F) + 0.15F * w * nuzzle;
+        this.body.zRot += l * 0.04F * Mth.sin(t * 0.12F);
+        this.rightEar.zRot -= 0.2F * l;
+        this.leftEar.zRot += 0.2F * l;
+        this.tail.yRot += l * Mth.sin(t * 0.3F) * 0.4F;
+        this.playLift(w * 0.6F * NoxisBoredAnimation.pulse(t, 44.0F, 3.0F));
+        // El tesoro, en sus manitos (punta de la patita derecha, un poquito adelante).
+        if (holding) {
+            ModelPart arm = this.rightArm;
+            float len = 3.0F * arm.yScale;
+            float cx = Mth.cos(arm.xRot), sx = Mth.sin(arm.xRot);
+            float cy = Mth.cos(arm.yRot), sy = Mth.sin(arm.yRot);
+            float cz = Mth.cos(arm.zRot), sz = Mth.sin(arm.zRot);
+            float y1 = len * cx;
+            float z0 = len * sx;
+            float x1 = sy * z0;
+            float z1 = cy * z0;
+            this.flowerAnchor.x = arm.x + x1 * cz - y1 * sz + 1.0F;
+            this.flowerAnchor.y = arm.y + x1 * sz + y1 * cz + 0.8F;
+            this.flowerAnchor.z = arm.z + z1 - 0.8F;
+            this.flowerAnchor.xRot = 0.15F;
+            this.flowerAnchor.zRot = 0.0F;
+        }
     }
 
     // ================================================================== personalidades

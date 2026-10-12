@@ -98,6 +98,13 @@ public class NoxisVillagerRenderer extends MobRenderer<NoxisVillager, NoxisVilla
         state.boredEyesClosed = boredShown && com.noxisculture.entity.idle.NoxisBoredAnimation.eyesClosed(state.boredType, state.boredTime);
         state.boredPupils = boredShown && com.noxisculture.entity.idle.NoxisBoredAnimation.bigPupils(state.boredType, state.boredTime);
         state.boredTired = boredShown && com.noxisculture.entity.idle.NoxisBoredAnimation.tiredEyes(state.boredType, state.boredTime);
+        com.noxisculture.entity.idle.NoxisKeepsakeAnimation keep = entity.getKeepsakeAnimation();
+        state.keepsake = keep.getAnim();
+        state.keepsakeTime = keep.getTime(partialTick);
+        state.keepsakeWeight = keep.isBusy() ? keep.getWeight(partialTick) : 0.0F;
+        boolean keepShown = state.keepsakeWeight > 0.5F;
+        state.keepsakePupils = keepShown && com.noxisculture.entity.idle.NoxisKeepsakeAnimation.bigPupils(state.keepsake, state.keepsakeTime);
+        state.keepsakeClosed = keepShown && com.noxisculture.entity.idle.NoxisKeepsakeAnimation.eyesClosed(state.keepsake, state.keepsakeTime);
         com.noxisculture.entity.idle.NoxisPersonaAnimation persona = entity.getPersonaAnimation();
         state.persona = persona.getAnim();
         state.personaTime = persona.getTime(partialTick);
@@ -140,6 +147,10 @@ public class NoxisVillagerRenderer extends MobRenderer<NoxisVillager, NoxisVilla
         state.restAwake = awake * state.restGestWeight;
         state.bubbleRest = rg.bubbleRest(partialTick);
         ItemStack flower = entity.getHeldFlower();
+        // Contemplando un tesoro: se ve en sus manitos (solo una imagen; sigue guardado en su inventario).
+        ItemStack keepsakeItem = entity.getKeepsakeItem();
+        state.keepsakeHolding = flower.isEmpty() && !keepsakeItem.isEmpty();
+        if (state.keepsakeHolding) flower = keepsakeItem;
         if (flower.isEmpty()) {
             state.heldFlower.clear();
         } else {
