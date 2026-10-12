@@ -230,6 +230,11 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
     private com.noxisculture.entity.personality.@Nullable NoxisPersonality personality;
     private final com.noxisculture.entity.idle.NoxisPersonaAnimation personaAnimation =
             new com.noxisculture.entity.idle.NoxisPersonaAnimation();
+    /** Lector/escritor: 0 = sin decidir, 1 = no, 2 = sí (muy pocos). Y si ya recibió su libro. Se guardan. */
+    private byte scholarTrait;
+    private boolean scholarBookGiven;
+    /** Proporción de Noxis lectores/escritores (muy poquitos). */
+    private static final float SCHOLAR_CHANCE = 0.08F;
     /** Qué cosas le regalaron (las recuerda con cariño y las guarda siempre). Se guarda. */
     private final java.util.LinkedHashSet<net.minecraft.world.item.Item> giftMemory = new java.util.LinkedHashSet<>();
     private final com.noxisculture.entity.idle.NoxisKeepsakeAnimation keepsakeAnimation =
@@ -920,7 +925,21 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
 
     @Override
     public boolean appreciates(ItemStack stack) {
-        return com.noxisculture.entity.nature.NoxisTreasures.isTreasure(stack, this.giftMemory);
+        return com.noxisculture.entity.nature.NoxisTreasures.isTreasure(stack, this.giftMemory)
+                || (this.isScholar() && stack.is(net.minecraft.world.item.Items.BOOK));   // su libro
+    }
+
+    @Override
+    public boolean isScholar() {
+        if (this.scholarTrait == 0) this.scholarTrait = this.random.nextFloat() < SCHOLAR_CHANCE ? (byte) 2 : (byte) 1;
+        return this.scholarTrait == 2;
+    }
+
+    /** Servidor: un lector/escritor recibe su libro (una sola vez, en su inventario privado). */
+    private void tickScholarBook() {
+        if (this.scholarBookGiven || (this.tickCount + this.getId()) % 100 != 0 || !this.isScholar()) return;
+        ItemStack rest = this.getInventory().addItem(new ItemStack(net.minecraft.world.item.Items.BOOK));
+        if (rest.isEmpty()) this.scholarBookGiven = true;          // si no había lugar, prueba más tarde
     }
 
     /** Sin el gesto de objetos en curso (para las demás actividades). */
@@ -1134,6 +1153,8 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         this.goalSelector.addGoal(4, new com.noxisculture.entity.ai.NoxisTidyInventoryGoal<>(this));
         this.goalSelector.addGoal(4, new com.noxisculture.entity.ai.NoxisInspectItemGoal<>(this));
         this.goalSelector.addGoal(4, new com.noxisculture.entity.ai.NoxisKeepsakeGoal<>(this));
+        // Los poquitos lectores/escritores: se sientan a leer o a escribir en un lugar tranquilo.
+        this.goalSelector.addGoal(4, new com.noxisculture.entity.ai.NoxisScholarGoal<>(this));
         // Seguir a un compañero por curiosidad (y, rarísima vez, una travesura).
         this.goalSelector.addGoal(4, new com.noxisculture.entity.ai.NoxisCuriousFollowGoal<>(this));
         this.goalSelector.addGoal(4, new NoxisGreetGoal<>(this));
@@ -1295,6 +1316,7 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         }
         this.tickRestGesture();
         this.tickFriendship();
+        this.tickScholarBook();
         // Rato sin hacer nada (para aburrirse): quieto, sin camino y tranquilo.
         boolean still = this.getNavigation().isDone() && this.getDeltaMovement().horizontalDistanceSqr() < 1.0E-4D;
         if (still && this.canBeBored()) {
@@ -1494,6 +1516,8 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         if (this.friendId != null) output.store("friend_id", net.minecraft.core.UUIDUtil.CODEC, this.friendId);
         output.putInt("friend_trait", this.friendTrait);
         output.putString("personality", this.getPersonality().id());
+        output.putInt("scholar_trait", this.scholarTrait);
+        output.putBoolean("scholar_book", this.scholarBookGiven);
         output.store("gift_memory", net.minecraft.core.registries.BuiltInRegistries.ITEM.byNameCodec().listOf(),
                 new java.util.ArrayList<>(this.giftMemory));
     }
@@ -1527,6 +1551,8 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         this.friendLastSeen = 0L;              // se pone al día al verlo (ver tickFriendship)
         // Personalidad guardada; los Noxis de antes reciben una ahora (y queda guardada).
         this.personality = com.noxisculture.entity.personality.NoxisPersonality.byId(input.getStringOr("personality", ""));
+        this.scholarTrait = (byte) Mth.clamp(input.getInt("scholar_trait").orElse(0).intValue(), 0, 2);
+        this.scholarBookGiven = input.getBooleanOr("scholar_book", false);
         this.giftMemory.clear();
         input.read("gift_memory", net.minecraft.core.registries.BuiltInRegistries.ITEM.byNameCodec().listOf())
                 .ifPresent(this.giftMemory::addAll);
