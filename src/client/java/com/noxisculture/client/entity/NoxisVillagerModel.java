@@ -62,6 +62,10 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
     public static final int PASS_HAT_CROWN = 3;
     public static final int PASS_HAT_BAND = 4;
     public static final int PASS_HAT_FIXED = 5;
+    /** Copia que solo dibuja el libro abierto y el lápiz (lectores y escritores), con {@code noxis_props.png}. */
+    public static final int PASS_PROPS = 6;
+    private static final String PROP_BOOK = "prop_book";
+    private static final String PROP_PENCIL = "prop_pencil";
     /** Globito de sueño (solo lo dibuja la copia {@link #PASS_SLEEP_BUBBLE}). */
     private static final String SLEEP_BUBBLE = "sleep_bubble";
     /** Mechoncito de pelo verde (solo se ve cuando no tiene sombrero). */
@@ -103,6 +107,8 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
     private final ModelPart sleepBubble;
     private final ModelPart hairTuft;
     private final ModelPart flowerAnchor;
+    private final ModelPart propBook;
+    private final ModelPart propPencil;
 
     public NoxisVillagerModel(ModelPart root) {
         this(root, PASS_NORMAL);
@@ -128,6 +134,8 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         this.sleepBubble = this.head.getChild(SLEEP_BUBBLE);
         this.hairTuft = this.head.getChild(HAIR_TUFT);
         this.flowerAnchor = root.getChild(FLOWER_ANCHOR);
+        this.propBook = root.getChild(PROP_BOOK);
+        this.propPencil = root.getChild(PROP_PENCIL);
         this.umbrella = root.getChild(UMBRELLA);
         this.umbrellaCanopy = this.umbrella.getChild(UMBRELLA_CANOPY);
         this.tail = root.getChild(PartNames.BODY).getChild(TAIL);
@@ -268,6 +276,26 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         // Punto (sin cubos) donde se dibuja la flor en la mano; se mueve con la manito.
         root.addOrReplaceChild(FLOWER_ANCHOR, CubeListBuilder.create(), PartPose.ZERO);
 
+        // ---- Libro abierto y lápiz (lectores / escritores): textura propia noxis_props.png ----
+        // Modelados al doble de tamaño y achicados a la mitad en cada cuadro (pixel art más fino).
+        PartDefinition book = root.addOrReplaceChild(PROP_BOOK, CubeListBuilder.create()
+                        .texOffs(0, 24).addBox(-1.0F, 0.3F, -5.0F, 2.0F, 1.0F, 10.0F),          // lomo
+                PartPose.ZERO);
+        book.addOrReplaceChild("left", CubeListBuilder.create()
+                        .texOffs(0, 0).addBox(-7.0F, 0.0F, -5.0F, 7.0F, 1.0F, 10.0F)            // tapa
+                        .texOffs(40, 0).addBox(-6.5F, -1.0F, -4.5F, 6.0F, 1.0F, 9.0F),          // páginas
+                PartPose.rotation(0.0F, 0.0F, 0.22F));
+        book.addOrReplaceChild("right", CubeListBuilder.create()
+                        .texOffs(0, 12).addBox(0.0F, 0.0F, -5.0F, 7.0F, 1.0F, 10.0F)
+                        .texOffs(40, 12).addBox(0.5F, -1.0F, -4.5F, 6.0F, 1.0F, 9.0F),
+                PartPose.rotation(0.0F, 0.0F, -0.22F));
+        root.addOrReplaceChild(PROP_PENCIL, CubeListBuilder.create()
+                        .texOffs(56, 24).addBox(-1.0F, -4.0F, -1.0F, 2.0F, 1.0F, 2.0F)          // terminación oscura
+                        .texOffs(30, 24).addBox(-1.0F, -3.0F, -1.0F, 2.0F, 7.0F, 2.0F)          // cuerpo de madera pintada
+                        .texOffs(40, 24).addBox(-1.0F, 4.0F, -1.0F, 2.0F, 1.0F, 2.0F)           // madera afilada
+                        .texOffs(50, 24).addBox(-0.5F, 5.0F, -0.5F, 1.0F, 1.0F, 1.0F),          // punta de grafito
+                PartPose.ZERO);
+
         return LayerDefinition.create(mesh, 128, 128);
     }
 
@@ -340,7 +368,7 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         float rest = state.restAnim;
         // Sentarse: el descanso o la contemplación de la naturaleza usan la misma postura
         // (la carita de sueño, las orejas caídas y el sombrero son SOLO del descanso).
-        float sit = Math.max(rest, state.natureSit);
+        float sit = Math.max(rest, Math.max(state.natureSit, state.scholarSit));
 
         // ---- Bamboleo cartoon al caminar ----
         float[] waddle = NoxisMoodAnimator.waddle(pos, amount, happy);
@@ -405,7 +433,7 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         //  · Antorcha de noche: ojitos cansados pero vigilando (2 px amarillos + pupila bizca).
         //  · Sentado: los mismos ojitos de sueño, que se cierran al cabecear.
         //  · Siempre: parpadeo normal cada tanto; cansado, parpadeo LENTO con cabeceo.
-        boolean sleepy = torchAnim > 0.5F || rest > 0.5F || state.boredTired || state.playSly || state.personaHalf;
+        boolean sleepy = torchAnim > 0.5F || rest > 0.5F || state.boredTired || state.playSly || state.personaHalf || state.scholarFocused;
         boolean slowBlink = sleepy && (t % 110) < 8;
         boolean normalBlink = (t % 83) < 3;
         // Fascinado con un cristal no parpadea: lo mira con los ojos bien abiertos.
@@ -667,6 +695,14 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
             this.eyesBig.visible = false;
         }
 
+        // ---- Libro y lápiz: solo los dibuja la copia PASS_PROPS (con su textura) ----
+        this.propBook.visible = this.pass == PASS_PROPS && state.bookShown;
+        this.propPencil.visible = this.pass == PASS_PROPS && state.pencilShown;
+        if (this.pass == PASS_PROPS) {
+            this.head.visible = false;
+            this.flowerAnchor.visible = false;
+        }
+
         if (this.pass != PASS_NORMAL) {
             // Copia del brillo: la cabeza queda (su zona de la textura emisiva está vacía) con
             // sus ojitos; todo lo demás se oculta para que el brillo no toque nada más.
@@ -683,7 +719,7 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         }
 
         // ---- Sombrero: lo dibuja NoxisHatLayer con sus colores (copa, lazo y gema por separado) ----
-        boolean hatPass = this.pass >= PASS_HAT_CROWN;
+        boolean hatPass = this.pass >= PASS_HAT_CROWN && this.pass <= PASS_HAT_FIXED;
         this.head.skipDraw = hatPass;                         // de la cabeza, solo el sombrero
         if (hatPass) {
             this.eyesOpen.visible = false;
@@ -960,6 +996,140 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
             this.keepsakeInspect(t, w);
         } else if (a == NoxisKeepsakeAnimation.CONTEMPLATE) {
             this.keepsakeContemplate(t, w, holding);
+        } else if (NoxisKeepsakeAnimation.isBook(a)) {
+            this.bookPose(a, t, w, holding);
+        }
+    }
+
+    // ---------------------------------------------------------------- leer y escribir
+
+    /**
+     * Leer y escribir (ya sentado con la postura de siempre). Abrir: busca el libro en su
+     * costadito y lo trae adelante. Leer: libro en alto con las dos patitas, la cabeza recorre los
+     * renglones de un lado al otro (y baja un poquito en cada uno), da vuelta la página con la
+     * patita, cambia apenas de postura, y a veces se queda pensando mirando para arriba con la
+     * patita en el mentón. Escribir: libro sobre la falda sostenido por una patita; la otra escribe
+     * en garabatos rápidos de renglón en renglón, la cabeza gacha y los ojitos concentrados; a veces
+     * se golpea el mentón pensando y vuelve a escribir con ganas. Cerrar: lo cierra, lo guarda en
+     * su costadito y se levanta.
+     */
+    private void bookPose(byte a, float t, float w, boolean holding) {
+        boolean writing = NoxisKeepsakeAnimation.isWriting(a);
+        // Cuánto está "con el libro" (0 buscándolo / guardándolo, 1 leyendo o escribiendo).
+        float withBook;
+        float pocket = 0.0F;
+        if (a == NoxisKeepsakeAnimation.READ_OPEN || a == NoxisKeepsakeAnimation.WRITE_OPEN) {
+            pocket = NoxisBoredAnimation.env(t, 10, 15, 19, 24);
+            withBook = NoxisBoredAnimation.smooth((t - 20.0F) / 9.0F);
+        } else if (a == NoxisKeepsakeAnimation.READ_CLOSE || a == NoxisKeepsakeAnimation.WRITE_CLOSE) {
+            withBook = 1.0F - NoxisBoredAnimation.smooth((t - 4.0F) / 6.0F);
+            pocket = NoxisBoredAnimation.env(t, 8, 12, 15, 20);
+        } else {
+            withBook = 1.0F;
+        }
+        boolean main = a == NoxisKeepsakeAnimation.READ_MAIN || a == NoxisKeepsakeAnimation.WRITE_MAIN;
+        float think = w * NoxisKeepsakeAnimation.thinking(a, t);
+        // Busca / guarda el libro en el costadito.
+        float p = w * pocket;
+        this.rightArm.xRot = Mth.lerp(p, this.rightArm.xRot, 0.7F);
+        this.rightArm.zRot = Mth.lerp(p, this.rightArm.zRot, 0.45F);
+        this.head.yRot += 0.3F * p;
+        this.head.xRot += 0.15F * p;
+        float b = w * withBook;
+        if (!writing) {
+            // ---- Leer: libro en alto con las dos patitas ----
+            float line = main ? (t % NoxisKeepsakeAnimation.LINE_TICKS) / NoxisKeepsakeAnimation.LINE_TICKS : 0.0F;
+            float scan = line < 0.85F ? NoxisBoredAnimation.smooth(line / 0.85F) : 1.0F - NoxisBoredAnimation.smooth((line - 0.85F) / 0.15F);
+            float lineNo = main ? (int) (t / NoxisKeepsakeAnimation.LINE_TICKS) % 5 : 0.0F;
+            float pageT = main ? t % NoxisKeepsakeAnimation.PAGE_TICKS : 0.0F;
+            float turn = NoxisBoredAnimation.env(pageT, NoxisKeepsakeAnimation.PAGE_TICKS - 14, NoxisKeepsakeAnimation.PAGE_TICKS - 9,
+                    NoxisKeepsakeAnimation.PAGE_TICKS - 7, NoxisKeepsakeAnimation.PAGE_TICKS - 1);
+            float reading = b * (1.0F - NoxisKeepsakeAnimation.thinking(a, t));
+            this.rightArm.z -= 0.6F * b;
+            this.leftArm.z -= 0.6F * b;
+            this.rightArm.yScale *= 1.0F + 0.15F * b;
+            this.leftArm.yScale *= 1.0F + 0.15F * b;
+            this.rightArm.xRot = Mth.lerp(b, this.rightArm.xRot, -1.35F - 0.3F * turn);
+            this.rightArm.zRot = Mth.lerp(b, this.rightArm.zRot, -0.3F - 0.55F * turn);
+            this.leftArm.xRot = Mth.lerp(b, this.leftArm.xRot, -1.35F);
+            this.leftArm.zRot = Mth.lerp(b, this.leftArm.zRot, 0.3F);
+            // La mirada recorre los renglones.
+            this.head.xRot += 0.2F * b + 0.025F * lineNo * reading;
+            this.head.yRot += (-0.14F + 0.28F * scan) * reading;
+            this.head.zRot += 0.05F * Mth.sin(t * 0.05F) * reading;
+            this.body.zRot += 0.035F * Mth.sin(t * 0.021F) * b;            // se acomoda de a poquito
+            this.rightEar.zRot += 0.1F * turn * w;
+            this.tail.yRot += Mth.sin(t * 0.07F) * 0.3F * b;
+            // Pensando: mira para arriba, ladea la cabeza y se apoya la patita en el mentón.
+            this.head.xRot -= 0.45F * think;
+            this.head.zRot += 0.3F * think;
+            this.leftArm.xRot = Mth.lerp(think, this.leftArm.xRot, -2.05F);
+            this.leftArm.zRot = Mth.lerp(think, this.leftArm.zRot, 0.55F);
+            this.rightArm.xRot += 0.25F * think;                           // el libro baja un poquito
+            this.leftEar.zRot -= 0.15F * think * Mth.sin(t * 0.6F);
+        } else {
+            // ---- Escribir: libro sobre la falda; una patita lo sostiene, la otra escribe ----
+            float lineT = main ? (t % 36.0F) / 36.0F : 0.0F;
+            float across = lineT < 0.88F ? NoxisBoredAnimation.smooth(lineT / 0.88F) : 1.0F - NoxisBoredAnimation.smooth((lineT - 0.88F) / 0.12F);
+            float scribbling = b * (main ? 1.0F : 0.0F) * (1.0F - NoxisKeepsakeAnimation.thinking(a, t));
+            float eureka = w * NoxisBoredAnimation.pulse(main ? t % 240.0F : 0.0F, 214.0F, 4.0F);
+            this.leftArm.z -= 0.3F * b;
+            this.leftArm.xRot = Mth.lerp(b, this.leftArm.xRot, -0.75F);
+            this.leftArm.zRot = Mth.lerp(b, this.leftArm.zRot, 0.25F);
+            this.rightArm.z -= 0.5F * b;
+            this.rightArm.xRot = Mth.lerp(b, this.rightArm.xRot, -0.9F + 0.08F * Mth.sin(t * 1.5F) * scribbling);
+            this.rightArm.zRot = Mth.lerp(b, this.rightArm.zRot, -0.3F + 0.1F * Mth.sin(t * 0.9F) * scribbling);
+            this.rightArm.yRot = Mth.lerp(b, this.rightArm.yRot, (-0.25F + 0.5F * across) * scribbling);
+            this.head.xRot += 0.42F * b + 0.03F * Mth.sin(t * 0.35F) * scribbling;   // cabeza gacha, siguiendo lo que escribe
+            this.head.yRot += (-0.08F + 0.16F * across) * scribbling;
+            this.tail.yRot += Mth.sin(t * 0.9F) * 0.15F * scribbling;
+            // Pensando: se golpea el mentón con la patita mirando para arriba... ¡y vuelve con ganas!
+            this.rightArm.xRot = Mth.lerp(think, this.rightArm.xRot, -2.1F + 0.12F * Mth.sin(t * 0.8F));
+            this.rightArm.zRot = Mth.lerp(think, this.rightArm.zRot, -0.6F);
+            this.head.xRot -= 0.6F * think;
+            this.head.zRot -= 0.25F * think;
+            this.rightEar.xRot -= 0.35F * eureka;
+            this.leftEar.xRot -= 0.35F * eureka;
+            this.playLift(0.6F * eureka);
+        }
+        // El libro abierto (y el lápiz, al escribir): modelos 3D propios, en sus manitos.
+        // Solo se ven mientras tiene el libro (el libro real sigue guardado en su inventario).
+        if (holding) {
+            this.propBook.xScale = 0.5F;
+            this.propBook.yScale = 0.5F;
+            this.propBook.zScale = 0.5F;
+            if (!writing) {
+                // Leer: abierto entre las dos patitas, con las páginas hacia su carita.
+                float[] r = handTip(this.rightArm);
+                float[] l = handTip(this.leftArm);
+                this.propBook.x = (r[0] + l[0]) * 0.5F;
+                this.propBook.y = (r[1] + l[1]) * 0.5F + 1.1F;
+                this.propBook.z = Math.min(r[2], l[2]) - 1.2F;
+                this.propBook.xRot = -0.8F + 0.3F * think;
+                this.propBook.yRot = 0.0F;
+                this.propBook.zRot = 0.04F * Mth.sin(t * 0.05F);
+            } else {
+                // Escribir: abierto sobre la falda, justo debajo de la punta del lápiz (con la postura
+                // de escribir de base, así el libro queda quieto mientras el lápiz se mueve por la página).
+                ModelPart arm = this.rightArm;
+                float[] nib = pointAlong(arm.x, arm.y, arm.z, -0.9F, 0.0F, -0.3F, 3.0F * arm.yScale + 3.0F);
+                this.propBook.x = nib[0] + 1.75F;
+                this.propBook.y = nib[1] + 0.5F;
+                this.propBook.z = nib[2];
+                this.propBook.xRot = -0.2F;
+                this.propBook.yRot = 0.0F;
+                this.propBook.zRot = 0.0F;
+                float[] h = handTip(this.rightArm);
+                this.propPencil.x = h[0];
+                this.propPencil.y = h[1];
+                this.propPencil.z = h[2];
+                this.propPencil.xRot = this.rightArm.xRot;
+                this.propPencil.yRot = this.rightArm.yRot;
+                this.propPencil.zRot = this.rightArm.zRot;
+                this.propPencil.xScale = 0.5F;
+                this.propPencil.yScale = 0.5F;
+                this.propPencil.zScale = 0.5F;
+            }
         }
     }
 
@@ -1039,6 +1209,31 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
             this.flowerAnchor.xRot = 0.15F;
             this.flowerAnchor.zRot = 0.0F;
         }
+    }
+
+    /** Un punto a {@code len} del hombro siguiendo esas rotaciones (ZYX), como si fuera el brazo. */
+    private static float[] pointAlong(float px, float py, float pz, float xr, float yr, float zr, float len) {
+        float cx = Mth.cos(xr), sx = Mth.sin(xr);
+        float cy = Mth.cos(yr), sy = Mth.sin(yr);
+        float cz = Mth.cos(zr), sz = Mth.sin(zr);
+        float y1 = len * cx;
+        float z0 = len * sx;
+        float x1 = sy * z0;
+        float z1 = cy * z0;
+        return new float[] {px + x1 * cz - y1 * sz, py + x1 * sz + y1 * cz, pz + z1};
+    }
+
+    /** Punta de la patita (pivote del hombro + rotación ZYX del brazo aplicada a (0, largo, 0)). */
+    private static float[] handTip(ModelPart arm) {
+        float len = 3.0F * arm.yScale;
+        float cx = Mth.cos(arm.xRot), sx = Mth.sin(arm.xRot);
+        float cy = Mth.cos(arm.yRot), sy = Mth.sin(arm.yRot);
+        float cz = Mth.cos(arm.zRot), sz = Mth.sin(arm.zRot);
+        float y1 = len * cx;
+        float z0 = len * sx;
+        float x1 = sy * z0;
+        float z1 = cy * z0;
+        return new float[] {arm.x + x1 * cz - y1 * sz, arm.y + x1 * sz + y1 * cz, arm.z + z1};
     }
 
     // ================================================================== personalidades

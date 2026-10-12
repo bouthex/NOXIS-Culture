@@ -111,6 +111,12 @@ public class NoxisVillagerRenderState extends LivingEntityRenderState {
     public boolean keepsakePupils;
     public boolean keepsakeClosed;
     public boolean keepsakeHolding;
+    /** Leyendo / escribiendo: cuánto está sentado (usa la postura de sentarse de siempre) y ojitos concentrados. */
+    public float scholarSit;
+    /** Libro abierto 3D en las manitos / lápiz en la mano (lectores y escritores). */
+    public boolean bookShown;
+    public boolean pencilShown;
+    public boolean scholarFocused;
     /** La flor que tiene en la mano (vacía si no tiene nada). */
     public final ItemStackRenderState heldFlower = new ItemStackRenderState();
     /** true mientras se está levantando (para no repetir el rebote del "plop" al revés). */

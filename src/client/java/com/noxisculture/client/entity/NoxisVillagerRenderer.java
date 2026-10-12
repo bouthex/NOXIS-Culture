@@ -26,6 +26,9 @@ public class NoxisVillagerRenderer extends MobRenderer<NoxisVillager, NoxisVilla
                 new NoxisVillagerModel(context.bakeLayer(ModModelLayers.NOXIS_VILLAGER), NoxisVillagerModel.PASS_HAT_CROWN),
                 new NoxisVillagerModel(context.bakeLayer(ModModelLayers.NOXIS_VILLAGER), NoxisVillagerModel.PASS_HAT_BAND),
                 new NoxisVillagerModel(context.bakeLayer(ModModelLayers.NOXIS_VILLAGER), NoxisVillagerModel.PASS_HAT_FIXED)));
+        // Libro abierto y lápiz de los lectores / escritores (copia del modelo con su propia textura).
+        this.addLayer(new NoxisPropsLayer(this,
+                new NoxisVillagerModel(context.bakeLayer(ModModelLayers.NOXIS_VILLAGER), NoxisVillagerModel.PASS_PROPS)));
         this.addLayer(new NoxisCrystalGlowLayer(this,
                 new NoxisVillagerModel(context.bakeLayer(ModModelLayers.NOXIS_VILLAGER), NoxisVillagerModel.PASS_GLOW_EYES)));
     }
@@ -105,6 +108,8 @@ public class NoxisVillagerRenderer extends MobRenderer<NoxisVillager, NoxisVilla
         boolean keepShown = state.keepsakeWeight > 0.5F;
         state.keepsakePupils = keepShown && com.noxisculture.entity.idle.NoxisKeepsakeAnimation.bigPupils(state.keepsake, state.keepsakeTime);
         state.keepsakeClosed = keepShown && com.noxisculture.entity.idle.NoxisKeepsakeAnimation.eyesClosed(state.keepsake, state.keepsakeTime);
+        state.scholarSit = state.keepsakeWeight * com.noxisculture.entity.idle.NoxisKeepsakeAnimation.sit(state.keepsake, state.keepsakeTime);
+        state.scholarFocused = keepShown && com.noxisculture.entity.idle.NoxisKeepsakeAnimation.focused(state.keepsake, state.keepsakeTime);
         com.noxisculture.entity.idle.NoxisPersonaAnimation persona = entity.getPersonaAnimation();
         state.persona = persona.getAnim();
         state.personaTime = persona.getTime(partialTick);
@@ -149,8 +154,12 @@ public class NoxisVillagerRenderer extends MobRenderer<NoxisVillager, NoxisVilla
         ItemStack flower = entity.getHeldFlower();
         // Contemplando un tesoro: se ve en sus manitos (solo una imagen; sigue guardado en su inventario).
         ItemStack keepsakeItem = entity.getKeepsakeItem();
+        // Leyendo / escribiendo: el libro se dibuja con su modelo 3D (no con la imagen del ítem).
+        boolean bookAnim = com.noxisculture.entity.idle.NoxisKeepsakeAnimation.isBook(state.keepsake);
+        state.bookShown = bookAnim && !keepsakeItem.isEmpty();
+        state.pencilShown = state.bookShown && com.noxisculture.entity.idle.NoxisKeepsakeAnimation.isWriting(state.keepsake);
         state.keepsakeHolding = flower.isEmpty() && !keepsakeItem.isEmpty();
-        if (state.keepsakeHolding) flower = keepsakeItem;
+        if (state.keepsakeHolding && !bookAnim) flower = keepsakeItem;
         if (flower.isEmpty()) {
             state.heldFlower.clear();
         } else {
