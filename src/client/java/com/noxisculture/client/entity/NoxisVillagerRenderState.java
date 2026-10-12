@@ -97,6 +97,13 @@ public class NoxisVillagerRenderState extends LivingEntityRenderState {
     public boolean playSly;
     public boolean playPupils;
     public boolean playLaugh;
+    /** Gesto de la personalidad: cuál, tiempo, cuánto se ve y ojitos. */
+    public byte persona;
+    public float personaTime;
+    public float personaWeight;
+    public boolean personaPupils;
+    public boolean personaHalf;
+    public boolean personaClosed;
     /** La flor que tiene en la mano (vacía si no tiene nada). */
     public final ItemStackRenderState heldFlower = new ItemStackRenderState();
     /** true mientras se está levantando (para no repetir el rebote del "plop" al revés). */

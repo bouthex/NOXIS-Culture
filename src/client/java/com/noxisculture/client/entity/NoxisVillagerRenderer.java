@@ -98,6 +98,14 @@ public class NoxisVillagerRenderer extends MobRenderer<NoxisVillager, NoxisVilla
         state.boredEyesClosed = boredShown && com.noxisculture.entity.idle.NoxisBoredAnimation.eyesClosed(state.boredType, state.boredTime);
         state.boredPupils = boredShown && com.noxisculture.entity.idle.NoxisBoredAnimation.bigPupils(state.boredType, state.boredTime);
         state.boredTired = boredShown && com.noxisculture.entity.idle.NoxisBoredAnimation.tiredEyes(state.boredType, state.boredTime);
+        com.noxisculture.entity.idle.NoxisPersonaAnimation persona = entity.getPersonaAnimation();
+        state.persona = persona.getAnim();
+        state.personaTime = persona.getTime(partialTick);
+        state.personaWeight = persona.isBusy() ? persona.getWeight(partialTick) : 0.0F;
+        boolean personaShown = state.personaWeight > 0.5F;
+        state.personaPupils = personaShown && com.noxisculture.entity.idle.NoxisPersonaAnimation.bigPupils(state.persona, state.personaTime);
+        state.personaHalf = personaShown && com.noxisculture.entity.idle.NoxisPersonaAnimation.halfClosed(state.persona, state.personaTime);
+        state.personaClosed = personaShown && com.noxisculture.entity.idle.NoxisPersonaAnimation.closed(state.persona, state.personaTime);
         com.noxisculture.entity.idle.NoxisPlayAnimation play = entity.getPlayAnimation();
         for (byte i = 1; i < 9; i++) {
             state.playWeight[i] = play.getWeight(i, partialTick);
