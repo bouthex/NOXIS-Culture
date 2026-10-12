@@ -57,6 +57,36 @@ public enum NoxisPersonality {
         return this.affectionCooldown;
     }
 
+    /** Ganas de acercarse a mirar objetos (1 = normal). */
+    public float inspectWeight() {
+        return switch (this) {
+            case CURIOUS -> 2.0F;
+            case MISCHIEVOUS -> 1.3F;
+            case CALM -> 0.6F;
+            default -> 1.0F;
+        };
+    }
+
+    /** Ganas de sacar y contemplar sus tesoros (1 = normal). */
+    public float keepsakeWeight() {
+        return switch (this) {
+            case ARTIST -> 1.8F;
+            case AFFECTIONATE -> 1.6F;
+            case CALM -> 1.2F;
+            case MISCHIEVOUS -> 0.7F;
+            default -> 1.0F;
+        };
+    }
+
+    /** Chance de quedarse un tesoro suelto que encontró en el piso (después de mirarlo). */
+    public float keepChance() {
+        return switch (this) {
+            case MISCHIEVOUS -> 0.6F;
+            case CURIOUS, ARTIST -> 0.5F;
+            default -> 0.35F;
+        };
+    }
+
     /** Número del gesto propio (ver {@code NoxisPersonaAnimation}). */
     public byte gesture() {
         return (byte) (this.ordinal() + 1);

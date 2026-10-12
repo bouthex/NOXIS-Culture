@@ -82,7 +82,7 @@ import org.jspecify.annotations.Nullable;
  * nos da gratis el menú de comercio vanilla, el guardado de ofertas y la
  * integración con TradeWithPlayerGoal, sin el sistema de profesiones/cerebro.
  */
-public class NoxisVillager extends AbstractVillager implements com.noxisculture.entity.NoxisSpecies, NoxisLightSource, NoxisRestful, NoxisWorker, NoxisFascinatable, NoxisNatureLover, NoxisSocial, NoxisBowlSleeper, com.noxisculture.entity.ai.NoxisBored, com.noxisculture.entity.ai.NoxisFriend, com.noxisculture.entity.ai.NoxisCurious {
+public class NoxisVillager extends AbstractVillager implements com.noxisculture.entity.NoxisSpecies, NoxisLightSource, NoxisRestful, NoxisWorker, NoxisFascinatable, NoxisNatureLover, NoxisSocial, NoxisBowlSleeper, com.noxisculture.entity.ai.NoxisBored, com.noxisculture.entity.ai.NoxisFriend, com.noxisculture.entity.ai.NoxisCurious, com.noxisculture.entity.ai.NoxisKeeper {
     /** Puede reponer en su mesa como mucho cada medio día (~2 veces por día, como vanilla). */
     private static final long RESTOCK_INTERVAL_TICKS = 12_000L;
     /** Espera tras cerrar el menú antes de subir de nivel (vanilla: 40 ticks = 2 s). */
@@ -147,6 +147,13 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
     /** Gesto propio de la personalidad (lo decide el servidor; no se guarda). */
     private static final EntityDataAccessor<Byte> PERSONA_GESTURE =
             SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BYTE);
+    /** Objetos personales: gesto en curso y lo que se ve en sus manitos al contemplar (no se guardan). */
+    private static final EntityDataAccessor<Byte> KEEPSAKE_ANIM =
+            SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BYTE);
+    private static final EntityDataAccessor<ItemStack> KEEPSAKE_ITEM =
+            SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.ITEM_STACK);
+    /** Cuántos tipos de regalo recuerda como mucho. */
+    private static final int GIFT_MEMORY_SIZE = 16;
     /** Cada Noxis se duerme a su hora: entre 0 y 2 minutos después de que oscurece. */
     private static final int BEDTIME_RANDOM = 2400;
     /** ...y se despierta a su ritmo: entre 0 y 40 s después del amanecer. */
@@ -223,6 +230,10 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
     private com.noxisculture.entity.personality.@Nullable NoxisPersonality personality;
     private final com.noxisculture.entity.idle.NoxisPersonaAnimation personaAnimation =
             new com.noxisculture.entity.idle.NoxisPersonaAnimation();
+    /** Qué cosas le regalaron (las recuerda con cariño y las guarda siempre). Se guarda. */
+    private final java.util.LinkedHashSet<net.minecraft.world.item.Item> giftMemory = new java.util.LinkedHashSet<>();
+    private final com.noxisculture.entity.idle.NoxisKeepsakeAnimation keepsakeAnimation =
+            new com.noxisculture.entity.idle.NoxisKeepsakeAnimation();
     // Curiosidad (servidor): quién lo está siguiendo y hasta cuándo.
     private int followerId = -1;
     private long followedUntil;
@@ -261,6 +272,8 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         builder.define(AFFECTION_ANIM, com.noxisculture.entity.idle.NoxisAffectionAnimation.NONE);
         builder.define(PLAY_ANIM, com.noxisculture.entity.idle.NoxisPlayAnimation.NONE);
         builder.define(PERSONA_GESTURE, com.noxisculture.entity.idle.NoxisPersonaAnimation.NONE);
+        builder.define(KEEPSAKE_ANIM, com.noxisculture.entity.idle.NoxisKeepsakeAnimation.NONE);
+        builder.define(KEEPSAKE_ITEM, ItemStack.EMPTY);
     }
 
     public NoxisMood getMood() {
@@ -551,6 +564,7 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
                 && this.entityData.get(REST_GESTURE) == com.noxisculture.entity.idle.NoxisRestGesture.NONE
                 && this.entityData.get(PLAY_ANIM) == com.noxisculture.entity.idle.NoxisPlayAnimation.NONE
                 && this.entityData.get(PERSONA_GESTURE) == com.noxisculture.entity.idle.NoxisPersonaAnimation.NONE
+                && this.entityData.get(KEEPSAKE_ANIM) == com.noxisculture.entity.idle.NoxisKeepsakeAnimation.NONE
                 && this.hatSearchOrigin == null && this.hurtTime == 0
                 && this.onGround() && !this.isInWater() && !this.isPassenger();
     }
@@ -648,11 +662,13 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
                 && this.getBoredAnim() == com.noxisculture.entity.idle.NoxisBoredAnimation.NONE
                 && !this.isStretching() && !this.isInBowl()
                 && this.getPlayAnim() == com.noxisculture.entity.idle.NoxisPlayAnimation.NONE
-                && this.getPersonaGesture() == com.noxisculture.entity.idle.NoxisPersonaAnimation.NONE;
+                && this.getPersonaGesture() == com.noxisculture.entity.idle.NoxisPersonaAnimation.NONE
+                && this.getKeepsakeAnim() == com.noxisculture.entity.idle.NoxisKeepsakeAnimation.NONE;
     }
 
     @Override
     public void storeGift(ItemStack stack) {
+        if (!stack.isEmpty()) this.rememberGift(stack.getItem());   // un regalo: lo recuerda con cariño
         // Reutiliza el inventario que ya trae AbstractVillager (Minecraft lo guarda con el Noxis).
         ItemStack rest = this.getInventory().addItem(stack);
         if (!rest.isEmpty()) {
@@ -849,6 +865,7 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
                 && this.entityData.get(REST_GESTURE) == com.noxisculture.entity.idle.NoxisRestGesture.NONE
                 && this.entityData.get(PLAY_ANIM) == com.noxisculture.entity.idle.NoxisPlayAnimation.NONE
                 && this.entityData.get(PERSONA_GESTURE) == com.noxisculture.entity.idle.NoxisPersonaAnimation.NONE
+                && this.entityData.get(KEEPSAKE_ANIM) == com.noxisculture.entity.idle.NoxisKeepsakeAnimation.NONE
                 && !this.isBaby();
     }
 
@@ -868,7 +885,7 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
     @Override
     public boolean canDoPersonaGesture() {
         return this.isFreeForPlay() && this.getPlayAnim() == com.noxisculture.entity.idle.NoxisPlayAnimation.NONE
-                && !this.isBaby();
+                && this.noKeepsake() && !this.isBaby();
     }
 
     @Override
@@ -879,6 +896,87 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
     @Override
     public void setPersonaGesture(byte gesture) {
         this.entityData.set(PERSONA_GESTURE, gesture);
+    }
+
+    // ---------------- Inventario privado y objetos favoritos (NoxisKeeper) ----------------
+
+    @Override
+    public net.minecraft.world.SimpleContainer getPrivateInventory() {
+        return this.getInventory();
+    }
+
+    @Override
+    public boolean isGiftedItem(net.minecraft.world.item.Item item) {
+        return this.giftMemory.contains(item);
+    }
+
+    private void rememberGift(net.minecraft.world.item.Item item) {
+        this.giftMemory.remove(item);
+        this.giftMemory.add(item);                           // el más reciente queda al final
+        while (this.giftMemory.size() > GIFT_MEMORY_SIZE) {
+            this.giftMemory.remove(this.giftMemory.iterator().next());
+        }
+    }
+
+    @Override
+    public boolean appreciates(ItemStack stack) {
+        return com.noxisculture.entity.nature.NoxisTreasures.isTreasure(stack, this.giftMemory);
+    }
+
+    /** Sin el gesto de objetos en curso (para las demás actividades). */
+    private boolean noKeepsake() {
+        return this.entityData.get(KEEPSAKE_ANIM) == com.noxisculture.entity.idle.NoxisKeepsakeAnimation.NONE;
+    }
+
+    @Override
+    public boolean canHandleKeepsakes() {
+        return this.isFreeForPlay() && this.noPersonaGesture()
+                && this.getPlayAnim() == com.noxisculture.entity.idle.NoxisPlayAnimation.NONE;
+    }
+
+    @Override
+    public boolean canHandleKeepsakesWhileFascinated() {
+        return !this.isInBowl() && !this.isTrading() && !this.isResting() && this.getMood() != NoxisMood.SCARED
+                && this.hurtTime == 0 && !this.socialLink.isBusy() && !this.isHoldingTorch() && !this.isHoldingUmbrella()
+                && this.getNatureAction() == NoxisNatureAction.NONE && this.incomingGift == null;
+    }
+
+    @Override
+    public void setKeepsakeAnim(byte anim) {
+        this.entityData.set(KEEPSAKE_ANIM, anim);
+    }
+
+    @Override
+    public byte getKeepsakeAnim() {
+        return this.entityData.get(KEEPSAKE_ANIM);
+    }
+
+    @Override
+    public void showKeepsake(ItemStack stack) {
+        this.entityData.set(KEEPSAKE_ITEM, stack.isEmpty() ? ItemStack.EMPTY : stack.copyWithCount(1));
+    }
+
+    /** Lo que se ve en sus manitos al contemplar un tesoro (solo para dibujarlo). */
+    public ItemStack getKeepsakeItem() {
+        return this.entityData.get(KEEPSAKE_ITEM);
+    }
+
+    /** Gesto de objetos (solo visual, cliente). */
+    public com.noxisculture.entity.idle.NoxisKeepsakeAnimation getKeepsakeAnimation() {
+        return this.keepsakeAnimation;
+    }
+
+    /** Si muere, sus tesoros quedan en el piso (no se pierden). */
+    @Override
+    public void die(DamageSource source) {
+        if (this.level() instanceof ServerLevel && !this.isRemoved()) {
+            net.minecraft.world.SimpleContainer inv = this.getInventory();
+            for (int i = 0; i < inv.getContainerSize(); i++) {
+                ItemStack s = inv.removeItemNoUpdate(i);
+                if (!s.isEmpty()) this.spawnAtLocation((ServerLevel) this.level(), s);
+            }
+        }
+        super.die(source);
     }
 
     /** Gesto de la personalidad (solo visual, cliente). */
@@ -902,7 +1000,7 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
 
     @Override
     public boolean canFollowCuriously() {
-        return this.isFreeForPlay() && this.noPersonaGesture();
+        return this.isFreeForPlay() && this.noPersonaGesture() && this.noKeepsake();
     }
 
     @Override
@@ -916,7 +1014,7 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
 
     @Override
     public boolean canBePranked() {
-        return this.isFreeForPlay() && this.noPersonaGesture()
+        return this.isFreeForPlay() && this.noPersonaGesture() && this.noKeepsake()
                 && this.getPlayAnim() == com.noxisculture.entity.idle.NoxisPlayAnimation.NONE
                 && this.getNavigation().isDone() && this.getDeltaMovement().horizontalDistanceSqr() < 1.0E-4D;
     }
@@ -1032,6 +1130,10 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         this.goalSelector.addGoal(4, new NoxisNatureGoal<>(this));
         // De vez en cuando, levanta una flor suelta del piso (nunca un regalo reservado para otro).
         this.goalSelector.addGoal(4, new com.noxisculture.entity.ai.NoxisCollectFlowerGoal<>(this));
+        // Objetos: mirar lo que le llama la atención, contemplar sus tesoros y ordenar lo que no le interesa.
+        this.goalSelector.addGoal(4, new com.noxisculture.entity.ai.NoxisTidyInventoryGoal<>(this));
+        this.goalSelector.addGoal(4, new com.noxisculture.entity.ai.NoxisInspectItemGoal<>(this));
+        this.goalSelector.addGoal(4, new com.noxisculture.entity.ai.NoxisKeepsakeGoal<>(this));
         // Seguir a un compañero por curiosidad (y, rarísima vez, una travesura).
         this.goalSelector.addGoal(4, new com.noxisculture.entity.ai.NoxisCuriousFollowGoal<>(this));
         this.goalSelector.addGoal(4, new NoxisGreetGoal<>(this));
@@ -1266,6 +1368,7 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
                 && this.bowlHopAnimation.getAnim() == com.noxisculture.entity.idle.NoxisBowlHop.NONE
                 && !this.boredAnimation.isBusy() && !this.restGesture.isBusy() && !this.affectionAnimation.isBusy()
                 && !this.playAnimation.isBusy() && !this.personaAnimation.isBusy()
+                && !this.keepsakeAnimation.isBusy()
                 && dx * dx + dz * dz < 1.0E-4D;
         // Los dos gestos tranquilos nunca se pisan: el que empezó primero termina antes que el otro.
         boolean fascinated = this.isFascinated() || this.crystalFascination.isActive()
@@ -1281,6 +1384,7 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         this.affectionAnimation.tick(this.entityData.get(AFFECTION_ANIM));
         this.playAnimation.tick(this.entityData.get(PLAY_ANIM));
         this.personaAnimation.tick(this.entityData.get(PERSONA_GESTURE));
+        this.keepsakeAnimation.tick(this.entityData.get(KEEPSAKE_ANIM));
         byte restG = this.entityData.get(REST_GESTURE);
         // En la pecera, acomodarse arranca directo del balanceo (el saltito ya lo hizo).
         this.restGesture.tick(restG, this.isInBowl()
@@ -1390,6 +1494,8 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         if (this.friendId != null) output.store("friend_id", net.minecraft.core.UUIDUtil.CODEC, this.friendId);
         output.putInt("friend_trait", this.friendTrait);
         output.putString("personality", this.getPersonality().id());
+        output.store("gift_memory", net.minecraft.core.registries.BuiltInRegistries.ITEM.byNameCodec().listOf(),
+                new java.util.ArrayList<>(this.giftMemory));
     }
 
     @Override
@@ -1421,6 +1527,9 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         this.friendLastSeen = 0L;              // se pone al día al verlo (ver tickFriendship)
         // Personalidad guardada; los Noxis de antes reciben una ahora (y queda guardada).
         this.personality = com.noxisculture.entity.personality.NoxisPersonality.byId(input.getStringOr("personality", ""));
+        this.giftMemory.clear();
+        input.read("gift_memory", net.minecraft.core.registries.BuiltInRegistries.ITEM.byNameCodec().listOf())
+                .ifPresent(this.giftMemory::addAll);
     }
 
     /** Al desaparecer (muerte, descarga del chunk...), se lleva su luz. */
