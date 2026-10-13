@@ -1578,6 +1578,16 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         this.rootPart.z = this.pivotZ - z2 + this.rootOz;
     }
 
+    /**
+     * Vueltas completas del baile: devuelve el mismo giro llevado al rango -π..π (una vuelta entera
+     * vale 0). Así, cuando la vuelta termina, o cuando el baile se apaga o cambia de coreografía,
+     * el Noxis queda mirando hacia donde miraba, sin "desgirar" para el lado contrario.
+     */
+    private static float turnAngle(float a) {
+        float full = 2.0F * Mth.PI;
+        return a - full * Math.round(a / full);
+    }
+
     /** Mitad de la distancia entre los dos de la pareja (px): el centro de la ronda queda adelante. */
     private static final float PAIR_HALF = 6.8F;
 
@@ -1646,7 +1656,7 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
             }
             case 1 -> {
                 float spin = q < 4.0F ? NoxisBoredAnimation.smooth(q / 4.0F) : 1.0F;
-                this.rootYr += 2.0F * Mth.PI * m * spin * k;
+                this.rootYr += turnAngle(2.0F * Mth.PI * m * spin) * k;
                 float sp = NoxisBoredAnimation.env(q, 0.0F, 0.5F, 3.5F, 4.2F);
                 float cl = NoxisBoredAnimation.env(q, 3.8F, 4.3F, 7.6F, 8.0F);
                 this.rightArm.zRot = Mth.lerp(k * sp, this.rightArm.zRot, 1.45F);
@@ -1718,7 +1728,7 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         this.danceLift(0.8F * Mth.sin(Mth.PI * f) * sway * w);
         this.tail.yRot += 0.6F * s * sway * w;
         float u = q < 4.0F ? 0.0F : NoxisBoredAnimation.smooth((q - 4.0F) / 4.0F);
-        this.pairOrbit(2.0F * Mth.PI * u * w);
+        this.pairOrbit(turnAngle(2.0F * Mth.PI * u) * w);
         this.danceLift(0.9F * Math.abs(Mth.sin(Mth.PI * b)) * spin * w);
         this.head.xRot -= 0.18F * spin * w;
         this.rightEar.zRot -= 0.5F * spin * w;
@@ -1757,7 +1767,9 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         this.head.zRot -= 0.15F * ws * st * stepP * w;
         this.rightArm.xRot += 0.4F * Mth.sin(Mth.PI * b) * stepP * w;
         this.leftArm.xRot -= 0.4F * Mth.sin(Mth.PI * b) * stepP * w;
-        if (q >= 4.0F) this.rootYr += 2.0F * Mth.PI * ws * NoxisBoredAnimation.smooth((q - 4.0F) / 2.0F) * turnP * w;
+        // Giro coordinado: una vuelta entera, con arranque y frenada suaves (q 4 a 6). La vuelta no
+        // se multiplica por turnP: si no, al apagarse el giro "desgiraban" de golpe para el otro lado.
+        this.rootYr += turnAngle(2.0F * Mth.PI * ws * NoxisBoredAnimation.smooth((q - 4.0F) / 2.0F)) * w;
         this.rightArm.zRot = Mth.lerp(turnP * w, this.rightArm.zRot, 1.3F);
         this.leftArm.zRot = Mth.lerp(turnP * w, this.leftArm.zRot, -1.3F);
         ModelPart inner = role == 0 ? this.rightArm : this.leftArm;
@@ -1872,7 +1884,7 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         this.leftArm.xRot = Mth.lerp(fast * w, this.leftArm.xRot, -1.5F);
         this.rightArm.yScale *= 1.0F + 0.3F * fast * w;
         this.leftArm.yScale *= 1.0F + 0.3F * fast * w;
-        this.pairOrbit(4.0F * Mth.PI * NoxisBoredAnimation.smooth(t / 12.0F) * w);
+        this.pairOrbit(turnAngle(4.0F * Mth.PI * NoxisBoredAnimation.smooth(t / 12.0F)) * w);
         this.rightEar.zRot -= 0.7F * fast * w;
         this.leftEar.zRot += 0.7F * fast * w;
         this.head.xRot -= 0.25F * fast * w;

@@ -13,6 +13,9 @@ import com.noxisculture.entity.ModEntityTypes;
 import com.noxisculture.NoxisCulture;
 import com.noxisculture.fluid.ModFluids;
 import net.fabricmc.api.ClientModInitializer;
+import com.noxisculture.particle.ModParticles;
+import net.fabricmc.fabric.api.client.particle.v1.ParticleProviderRegistry;
+import net.minecraft.client.particle.EndRodParticle;
 import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderingRegistry;
 import net.minecraft.client.color.block.BlockTintSources;
 import net.minecraft.client.renderer.block.FluidModel;
@@ -34,11 +37,21 @@ public final class NoxisCultureClient implements ClientModInitializer {
         BlockColorRegistry.register(List.of(new NoxisHatTint(true), new NoxisHatTint(false)), ModBlocks.NOXIS_HAT);
 
         // Noyux: texturas propias, semitransparentes (la transparencia viene de la textura).
+        // Quieto: copia de la textura del caldero, sin destellos blancos y más lenta (la del caldero
+        // no se toca). Fluyendo y cayendo: textura de flujo que baja despacio, en bucle.
+        // La tercera (las caras pegadas a vidrio, hojas, etc.) usa también la de flujo: así ningún
+        // tramo del líquido cambia de aspecto de golpe.
         FluidRenderingRegistry.register(ModFluids.NOYUX, ModFluids.FLOWING_NOYUX,
                 new FluidModel.Unbaked(
-                        new Material(NoxisCulture.id("block/noyux_still")),
+                        new Material(NoxisCulture.id("block/noyux_still_world")),
                         new Material(NoxisCulture.id("block/noyux_flow")),
-                        new Material(NoxisCulture.id("block/noyux_still")),
+                        new Material(NoxisCulture.id("block/noyux_flow")),
                         BlockTintSources.constant(ARGB.opaque(0xFFFFFF))));
+
+        // Partículas del Noyux: dibujos propios (cuadros en assets/noxis_culture/particles), con el
+        // movimiento de las partículas de la vara del End: flotan, brillan y se apagan de a poco.
+        ParticleProviderRegistry.getInstance().register(ModParticles.NOYUX_SMOKE, EndRodParticle.Provider::new);
+        ParticleProviderRegistry.getInstance().register(ModParticles.NOYUX_SPARK, EndRodParticle.Provider::new);
+        ParticleProviderRegistry.getInstance().register(ModParticles.NOYUX_MOTE, EndRodParticle.Provider::new);
     }
 }
