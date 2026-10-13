@@ -24,6 +24,7 @@
     "fabric-api": "*"
   },
   "mixins": [
+    "noxis_culture.mixins.json",
     {
       "config": "noxis_culture.client.mixins.json",
       "environment": "client"
