@@ -87,6 +87,47 @@ public enum NoxisPersonality {
         };
     }
 
+    /** Ganas de pararse a escuchar un sonido interesante (multiplica la chance; nunca es 0). */
+    public float listenWeight() {
+        return switch (this) {
+            case CURIOUS -> 1.0F;
+            case ARTIST, MISCHIEVOUS -> 0.9F;
+            case AFFECTIONATE -> 0.85F;
+            case CALM -> 0.8F;
+        };
+    }
+
+    /** Chance de ir a investigar después de escuchar (los curiosos, mucho; los tranquilos casi nunca). */
+    public float investigateChance(boolean music) {
+        return switch (this) {
+            case CURIOUS -> 0.6F;
+            case MISCHIEVOUS -> 0.45F;
+            case ARTIST -> music ? 0.5F : 0.25F;          // a los artistas los atrae la música
+            case AFFECTIONATE -> 0.3F;
+            case CALM -> 0.1F;
+        };
+    }
+
+    /** Chance de ponerse a bailar cuando suena un disco cerca (todos pueden; ninguno está prohibido). */
+    public float danceChance() {
+        return switch (this) {
+            case AFFECTIONATE -> 0.75F;
+            case MISCHIEVOUS, ARTIST -> 0.7F;
+            case CURIOUS -> 0.6F;
+            case CALM -> 0.4F;
+        };
+    }
+
+    /** Ganas de bailar en pareja con otro que baila cerca (multiplica la chance). */
+    public float pairDanceWeight() {
+        return switch (this) {
+            case AFFECTIONATE -> 1.5F;
+            case MISCHIEVOUS -> 1.2F;
+            case CURIOUS, ARTIST -> 1.0F;
+            case CALM -> 0.7F;
+        };
+    }
+
     /** Número del gesto propio (ver {@code NoxisPersonaAnimation}). */
     public byte gesture() {
         return (byte) (this.ordinal() + 1);

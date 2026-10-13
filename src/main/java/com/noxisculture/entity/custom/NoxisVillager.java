@@ -82,7 +82,7 @@ import org.jspecify.annotations.Nullable;
  * nos da gratis el menú de comercio vanilla, el guardado de ofertas y la
  * integración con TradeWithPlayerGoal, sin el sistema de profesiones/cerebro.
  */
-public class NoxisVillager extends AbstractVillager implements com.noxisculture.entity.NoxisSpecies, NoxisLightSource, NoxisRestful, NoxisWorker, NoxisFascinatable, NoxisNatureLover, NoxisSocial, NoxisBowlSleeper, com.noxisculture.entity.ai.NoxisBored, com.noxisculture.entity.ai.NoxisFriend, com.noxisculture.entity.ai.NoxisCurious, com.noxisculture.entity.ai.NoxisKeeper {
+public class NoxisVillager extends AbstractVillager implements com.noxisculture.entity.NoxisSpecies, NoxisLightSource, NoxisRestful, NoxisWorker, NoxisFascinatable, NoxisNatureLover, NoxisSocial, NoxisBowlSleeper, com.noxisculture.entity.ai.NoxisBored, com.noxisculture.entity.ai.NoxisFriend, com.noxisculture.entity.ai.NoxisCurious, com.noxisculture.entity.ai.NoxisKeeper, com.noxisculture.entity.ai.NoxisListener, com.noxisculture.entity.ai.NoxisDancer {
     /** Puede reponer en su mesa como mucho cada medio día (~2 veces por día, como vanilla). */
     private static final long RESTOCK_INTERVAL_TICKS = 12_000L;
     /** Espera tras cerrar el menú antes de subir de nivel (vanilla: 40 ticks = 2 s). */
@@ -152,6 +152,29 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
             SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BYTE);
     private static final EntityDataAccessor<ItemStack> KEEPSAKE_ITEM =
             SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.ITEM_STACK);
+    /** Reacción a un sonido: etapa (escuchar / investigar / mirar) y hacia dónde está (no se guardan). */
+    private static final EntityDataAccessor<Byte> LISTEN_ANIM =
+            SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BYTE);
+    private static final EntityDataAccessor<Byte> LISTEN_DIR =
+            SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BYTE);
+    /** Baile con un disco: etapa, estilo propio, tick del mundo en que empezó la canción y ticks por tiempo (no se guardan). */
+    private static final EntityDataAccessor<Byte> DANCE =
+            SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BYTE);
+    private static final EntityDataAccessor<Byte> DANCE_STYLE =
+            SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BYTE);
+    private static final EntityDataAccessor<Integer> DANCE_ORIGIN =
+            SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Byte> DANCE_BEAT =
+            SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BYTE);
+    /** Resonancia con un disco Noxis que suena cerca: color (0 = ninguna, 1 = amarillo) y pulso (no se guardan). */
+    private static final EntityDataAccessor<Byte> RESONANCE =
+            SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BYTE);
+    private static final EntityDataAccessor<Integer> RESONANCE_ORIGIN =
+            SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.INT);
+    public static final byte RESONANCE_NONE = 0;
+    public static final byte RESONANCE_YELLOW = 1;
+    /** Hasta qué distancia del tocadiscos resuenan (bloques). */
+    private static final double RESONANCE_RANGE = 12.0D;
     /** Cuántos tipos de regalo recuerda como mucho. */
     private static final int GIFT_MEMORY_SIZE = 16;
     /** Cada Noxis se duerme a su hora: entre 0 y 2 minutos después de que oscurece. */
@@ -248,11 +271,35 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
     private int idleTicks;
     private @Nullable ItemEntity incomingGift;
     private @Nullable LivingEntity giftGiver;
+    /** Oídos: oyente de eventos de juego que viaja con el Noxis (servidor). */
+    private final net.minecraft.world.level.gameevent.DynamicGameEventListener<com.noxisculture.entity.hearing.NoxisHearingListener> hearing;
+    /** El último sonido interesante que oyó y todavía no atendió (servidor, no se guarda). */
+    private com.noxisculture.entity.hearing.@Nullable NoxisHeardSound heardSound;
+    private final com.noxisculture.entity.idle.NoxisListenAnimation listenAnimation =
+            new com.noxisculture.entity.idle.NoxisListenAnimation();
+    private final com.noxisculture.entity.idle.NoxisDanceAnimation danceAnimation =
+            new com.noxisculture.entity.idle.NoxisDanceAnimation();
+    /** Cliente: cuánto se ve la resonancia (sube y baja suave). */
+    private float resonanceAmount;
+    private float resonanceAmountO;
+    /** Pareja de baile (servidor, no se guarda). */
+    private com.noxisculture.entity.ai.@Nullable NoxisDancePair dancePair;
     /** El primer descanso llega pronto (1-5 min) para poder verlo; después, ~1 por día. */
     private int restCooldown = 1_200 + (int) (Math.random() * 4_800);
 
     public NoxisVillager(EntityType<? extends NoxisVillager> type, Level level) {
         super(type, level);
+        this.hearing = new net.minecraft.world.level.gameevent.DynamicGameEventListener<>(
+                new com.noxisculture.entity.hearing.NoxisHearingListener(this));
+    }
+
+    /** Registra sus oídos en el mundo (Minecraft los mueve con él, como los del allay). */
+    @Override
+    public void updateDynamicGameEventListener(
+            java.util.function.BiConsumer<net.minecraft.world.level.gameevent.DynamicGameEventListener<?>, ServerLevel> listenerConsumer) {
+        if (this.level() instanceof ServerLevel serverLevel) {
+            listenerConsumer.accept(this.hearing, serverLevel);
+        }
     }
 
     @Override
@@ -279,6 +326,14 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         builder.define(PERSONA_GESTURE, com.noxisculture.entity.idle.NoxisPersonaAnimation.NONE);
         builder.define(KEEPSAKE_ANIM, com.noxisculture.entity.idle.NoxisKeepsakeAnimation.NONE);
         builder.define(KEEPSAKE_ITEM, ItemStack.EMPTY);
+        builder.define(LISTEN_ANIM, com.noxisculture.entity.idle.NoxisListenAnimation.NONE);
+        builder.define(LISTEN_DIR, (byte) 0);
+        builder.define(DANCE, com.noxisculture.entity.idle.NoxisDanceAnimation.NONE);
+        builder.define(DANCE_STYLE, (byte) 0);
+        builder.define(DANCE_ORIGIN, 0);
+        builder.define(DANCE_BEAT, (byte) 10);
+        builder.define(RESONANCE, RESONANCE_NONE);
+        builder.define(RESONANCE_ORIGIN, 0);
     }
 
     public NoxisMood getMood() {
@@ -354,7 +409,7 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
     public boolean canSocialize() {
         return this.isSafeForSocial() && !this.isResting() && !this.socialLink.isBusy()
                 && this.getNatureAction() == NoxisNatureAction.NONE && !this.flowerCarry.isHolding()
-                && this.incomingGift == null && this.onGround() && !this.isInWater();
+                && this.incomingGift == null && this.onGround() && !this.isInWater() && this.notListening();
     }
 
     @Override
@@ -570,7 +625,7 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
                 && this.entityData.get(PLAY_ANIM) == com.noxisculture.entity.idle.NoxisPlayAnimation.NONE
                 && this.entityData.get(PERSONA_GESTURE) == com.noxisculture.entity.idle.NoxisPersonaAnimation.NONE
                 && this.entityData.get(KEEPSAKE_ANIM) == com.noxisculture.entity.idle.NoxisKeepsakeAnimation.NONE
-                && this.hatSearchOrigin == null && this.hurtTime == 0
+                && this.hatSearchOrigin == null && this.hurtTime == 0 && this.notListening()
                 && this.onGround() && !this.isInWater() && !this.isPassenger();
     }
 
@@ -903,6 +958,153 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         this.entityData.set(PERSONA_GESTURE, gesture);
     }
 
+    // ---------------- Escuchar los sonidos del mundo (NoxisListener) ----------------
+
+    @Override
+    public void hearSound(Vec3 pos, byte kind, @Nullable Entity source) {
+        if (source == this || this.level().isClientSide()) return;
+        long now = this.level().getGameTime();
+        // Si ya tiene uno pendiente y reciente, se queda con el más interesante.
+        if (this.heardSound != null && now - this.heardSound.time() < 20
+                && com.noxisculture.entity.hearing.NoxisSounds.interest(kind)
+                <= com.noxisculture.entity.hearing.NoxisSounds.interest(this.heardSound.kind())) {
+            return;
+        }
+        this.heardSound = new com.noxisculture.entity.hearing.NoxisHeardSound(pos, kind, now, source == null ? -1 : source.getId());
+    }
+
+    @Override
+    public com.noxisculture.entity.hearing.@Nullable NoxisHeardSound getHeardSound() {
+        return this.heardSound;
+    }
+
+    @Override
+    public void clearHeardSound() {
+        this.heardSound = null;
+    }
+
+    /** Tranquilo y sin ninguna otra actividad: no interrumpe comercio, sueño, descanso ni objetos. */
+    @Override
+    public boolean canListen() {
+        return !this.isInBowl() && !this.isBowlHopping() && this.getMood() == NoxisMood.NEUTRAL
+                && !this.isTrading() && !this.isResting() && !this.isFascinated() && !this.isStretching()
+                && this.getNatureAction() == NoxisNatureAction.NONE && !this.flowerCarry.isHolding()
+                && this.getHeldFlower().isEmpty() && this.incomingGift == null
+                && !this.socialLink.isBusy() && this.getSocialAnim() == NoxisSocialAction.NONE
+                && this.entityData.get(HAT_ANIM) == com.noxisculture.entity.idle.NoxisHatAnimation.NONE
+                && this.entityData.get(BOWL_HOP) == com.noxisculture.entity.idle.NoxisBowlHop.NONE
+                && this.entityData.get(REST_GESTURE) == com.noxisculture.entity.idle.NoxisRestGesture.NONE
+                && this.entityData.get(BORED_ANIM) == com.noxisculture.entity.idle.NoxisBoredAnimation.NONE
+                && this.entityData.get(AFFECTION_ANIM) == com.noxisculture.entity.idle.NoxisAffectionAnimation.NONE
+                && this.entityData.get(PLAY_ANIM) == com.noxisculture.entity.idle.NoxisPlayAnimation.NONE
+                && this.entityData.get(PERSONA_GESTURE) == com.noxisculture.entity.idle.NoxisPersonaAnimation.NONE
+                && this.entityData.get(KEEPSAKE_ANIM) == com.noxisculture.entity.idle.NoxisKeepsakeAnimation.NONE
+                && this.hatSearchOrigin == null && this.hurtTime == 0
+                && this.onGround() && !this.isInWater() && !this.isPassenger();
+    }
+
+    @Override
+    public byte getListenAnim() {
+        return this.entityData.get(LISTEN_ANIM);
+    }
+
+    @Override
+    public void setListenAnim(byte anim) {
+        this.entityData.set(LISTEN_ANIM, anim);
+    }
+
+    @Override
+    public void setListenDir(byte dir) {
+        this.entityData.set(LISTEN_DIR, dir);
+    }
+
+    /** Ni escuchando ni bailando (para no interrumpirlo desde otras actividades). */
+    private boolean notListening() {
+        return this.entityData.get(LISTEN_ANIM) == com.noxisculture.entity.idle.NoxisListenAnimation.NONE
+                && this.entityData.get(DANCE) == com.noxisculture.entity.idle.NoxisDanceAnimation.NONE;
+    }
+
+    // ---------------- Bailar con un disco (NoxisDancer) ----------------
+
+    @Override
+    public byte getDanceState() {
+        return this.entityData.get(DANCE);
+    }
+
+    @Override
+    public void setDance(byte state, byte style, int origin, byte beatTicks) {
+        this.entityData.set(DANCE_STYLE, style);
+        this.entityData.set(DANCE_ORIGIN, origin);
+        this.entityData.set(DANCE_BEAT, beatTicks);
+        this.entityData.set(DANCE, state);
+    }
+
+    public byte getDanceStyle() {
+        return this.entityData.get(DANCE_STYLE);
+    }
+
+    @Override
+    public byte getDanceStyleByte() {
+        return this.entityData.get(DANCE_STYLE);
+    }
+
+    @Override
+    public com.noxisculture.entity.ai.@Nullable NoxisDancePair getDancePair() {
+        return this.dancePair;
+    }
+
+    @Override
+    public void setDancePair(com.noxisculture.entity.ai.@Nullable NoxisDancePair pair) {
+        this.dancePair = pair;
+    }
+
+    /** Tick del mundo (recortado) en que empezó la canción: el pulso sale de acá. */
+    public int getDanceOrigin() {
+        return this.entityData.get(DANCE_ORIGIN);
+    }
+
+    public int getDanceBeat() {
+        return Math.max(1, this.entityData.get(DANCE_BEAT));
+    }
+
+    /** Baile (solo visual, cliente). */
+    public com.noxisculture.entity.idle.NoxisDanceAnimation getDanceAnimation() {
+        return this.danceAnimation;
+    }
+
+    // ---------------- Resonancia con los discos Noxis (solo visual) ----------------
+
+    /**
+     * Servidor (cada segundo, cada uno a su turno): ¿suena cerca el disco amarillo? Solo mira la
+     * listita de tocadiscos que están sonando (no busca por el mundo). No toca ningún dato guardado.
+     */
+    private void tickResonance() {
+        if ((this.tickCount + this.getId()) % 20 != 0 || !(this.level() instanceof ServerLevel server)) return;
+        com.noxisculture.entity.hearing.NoxisJukeboxes.Music music = com.noxisculture.entity.hearing.NoxisJukeboxes
+                .findNearSong(server, this.position(), RESONANCE_RANGE, com.noxisculture.sound.ModJukeboxSongs.GOLDEN_SIESTA);
+        byte color = music == null ? RESONANCE_NONE : RESONANCE_YELLOW;
+        if (music != null) this.entityData.set(RESONANCE_ORIGIN, (int) music.origin());
+        if (color != this.entityData.get(RESONANCE)) this.entityData.set(RESONANCE, color);
+    }
+
+    public byte getResonanceColor() {
+        return this.entityData.get(RESONANCE);
+    }
+
+    public int getResonanceOrigin() {
+        return this.entityData.get(RESONANCE_ORIGIN);
+    }
+
+    /** Cuánto se ve la resonancia (0..1, solo cliente). */
+    public float getResonanceAmount(float partialTick) {
+        return Mth.lerp(partialTick, this.resonanceAmountO, this.resonanceAmount);
+    }
+
+    /** Reacción a los sonidos (solo visual, cliente). */
+    public com.noxisculture.entity.idle.NoxisListenAnimation getListenAnimation() {
+        return this.listenAnimation;
+    }
+
     // ---------------- Inventario privado y objetos favoritos (NoxisKeeper) ----------------
 
     @Override
@@ -1033,7 +1235,7 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
 
     @Override
     public boolean canBePranked() {
-        return this.isFreeForPlay() && this.noPersonaGesture() && this.noKeepsake()
+        return this.isFreeForPlay() && this.noPersonaGesture() && this.noKeepsake() && this.notListening()
                 && this.getPlayAnim() == com.noxisculture.entity.idle.NoxisPlayAnimation.NONE
                 && this.getNavigation().isDone() && this.getDeltaMovement().horizontalDistanceSqr() < 1.0E-4D;
     }
@@ -1163,6 +1365,10 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         // Aburrimiento: solo después de un rato quieto sin hacer nada (cualquier objetivo de
         // prioridad 1-3 lo corta: comercio, miedo, sueño, descanso, regalos, buscar el sombrero).
         this.goalSelector.addGoal(4, new com.noxisculture.entity.ai.NoxisBoredGoal<>(this));
+        // Sonidos del mundo: para las orejitas, busca el sonido, escucha y, a veces, va a investigar.
+        this.goalSelector.addGoal(4, new com.noxisculture.entity.ai.NoxisListenGoal<>(this));
+        // Un disco sonando cerca: a veces se acerca y baila al pulso de la canción.
+        this.goalSelector.addGoal(4, new com.noxisculture.entity.ai.NoxisDanceGoal<>(this));
         // Gesto propio de su personalidad, con su vocalización (de vez en cuando, estando tranquilo).
         this.goalSelector.addGoal(5, new com.noxisculture.entity.ai.NoxisPersonaGestureGoal<>(this));
         // A veces, en vez de pasear al azar, va hacia donde está su amigo (sin pegarse).
@@ -1317,6 +1523,7 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         this.tickRestGesture();
         this.tickFriendship();
         this.tickScholarBook();
+        this.tickResonance();
         // Rato sin hacer nada (para aburrirse): quieto, sin camino y tranquilo.
         boolean still = this.getNavigation().isDone() && this.getDeltaMovement().horizontalDistanceSqr() < 1.0E-4D;
         if (still && this.canBeBored()) {
@@ -1390,7 +1597,7 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
                 && this.bowlHopAnimation.getAnim() == com.noxisculture.entity.idle.NoxisBowlHop.NONE
                 && !this.boredAnimation.isBusy() && !this.restGesture.isBusy() && !this.affectionAnimation.isBusy()
                 && !this.playAnimation.isBusy() && !this.personaAnimation.isBusy()
-                && !this.keepsakeAnimation.isBusy()
+                && !this.keepsakeAnimation.isBusy() && !this.listenAnimation.isBusy() && !this.danceAnimation.isBusy()
                 && dx * dx + dz * dz < 1.0E-4D;
         // Los dos gestos tranquilos nunca se pisan: el que empezó primero termina antes que el otro.
         boolean fascinated = this.isFascinated() || this.crystalFascination.isActive()
@@ -1407,6 +1614,19 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         this.playAnimation.tick(this.entityData.get(PLAY_ANIM));
         this.personaAnimation.tick(this.entityData.get(PERSONA_GESTURE));
         this.keepsakeAnimation.tick(this.entityData.get(KEEPSAKE_ANIM));
+        this.listenAnimation.tick(this.entityData.get(LISTEN_ANIM), this.entityData.get(LISTEN_DIR));
+        this.danceAnimation.tick(this.entityData.get(DANCE), this.entityData.get(DANCE_STYLE));
+        // Resonancia: aparece en ~1 s y se apaga suave en ~2 s.
+        this.resonanceAmountO = this.resonanceAmount;
+        this.resonanceAmount = this.entityData.get(RESONANCE) != RESONANCE_NONE
+                ? Math.min(1.0F, this.resonanceAmount + 0.05F) : Math.max(0.0F, this.resonanceAmount - 0.025F);
+        // La caída torpe: una nubecita de polvo al tocar el piso (solo visual).
+        if (this.danceAnimation.landsNow()) {
+            for (int i = 0; i < 4; i++) {
+                this.level().addParticle(ParticleTypes.POOF, this.getRandomX(0.8D), this.getY() + 0.1D,
+                        this.getRandomZ(0.8D), 0.0D, 0.02D, 0.0D);
+            }
+        }
         byte restG = this.entityData.get(REST_GESTURE);
         // En la pecera, acomodarse arranca directo del balanceo (el saltito ya lo hizo).
         this.restGesture.tick(restG, this.isInBowl()
@@ -1566,6 +1786,8 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         if (!this.level().isClientSide() && reason == Entity.RemovalReason.KILLED) {
             com.noxisculture.entity.social.NoxisFriendship.onDeath(this);
         }
+        // Si estaba bailando en pareja, el otro queda libre.
+        if (this.dancePair != null) this.dancePair.dissolve();
         // Lo que tenía reservado (regalo pendiente, flor que iba a buscar) queda libre.
         if (!this.level().isClientSide()) com.noxisculture.entity.nature.NoxisItemClaims.releaseAll(this);
         // Si muere (o lo eliminan) con una pecera reservada o ocupada, la pecera queda libre.

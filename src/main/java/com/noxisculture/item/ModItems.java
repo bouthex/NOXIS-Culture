@@ -53,6 +53,23 @@ public final class ModItems {
                     .component(DataComponents.LORE, new ItemLore(List.of(
                             Component.translatable("item.noxis_culture.noyux_bucket.lore")))));
 
+    /**
+     * Disco de cristal amarillo («Siesta dorada»): un disco de música de verdad, para cualquier
+     * tocadiscos (la canción se define con datos en data/noxis_culture/jukebox_song).
+     */
+    public static final Item MUSIC_DISC_GOLDEN_SIESTA = register(ModItemIds.MUSIC_DISC_GOLDEN_SIESTA, Item::new,
+            new Item.Properties()
+                    .stacksTo(1)
+                    .rarity(Rarity.UNCOMMON)
+                    .jukeboxPlayable(com.noxisculture.sound.ModJukeboxSongs.GOLDEN_SIESTA));
+
+    /** Disco de cristal violeta agrietado («Grieta nocturna»): raro, antiguo y con energía inestable. */
+    public static final Item MUSIC_DISC_NIGHT_RIFT = register(ModItemIds.MUSIC_DISC_NIGHT_RIFT, Item::new,
+            new Item.Properties()
+                    .stacksTo(1)
+                    .rarity(Rarity.RARE)
+                    .jukeboxPlayable(com.noxisculture.sound.ModJukeboxSongs.NIGHT_RIFT));
+
     // ---------------- Huevos de spawn ----------------
     public static final Item NOXIS_VILLAGER_SPAWN_EGG = register(ModItemIds.NOXIS_VILLAGER_SPAWN_EGG,
             SpawnEggItem::new, new Item.Properties().spawnEgg(ModEntityTypes.NOXIS_VILLAGER));

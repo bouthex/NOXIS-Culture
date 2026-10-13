@@ -33,6 +33,11 @@ public final class ModSounds {
     public static final SoundEvent NOXIS_PERSONA_AFFECTION = register("entity.noxis.persona_affection");
     public static final SoundEvent NOXIS_PERSONA_CALM = register("entity.noxis.persona_calm");
 
+    /** Disco de cristal amarillo: «Siesta dorada». */
+    public static final SoundEvent MUSIC_DISC_GOLDEN_SIESTA = register("music_disc.golden_siesta");
+    /** Disco de cristal violeta agrietado: «Grieta nocturna». */
+    public static final SoundEvent MUSIC_DISC_NIGHT_RIFT = register("music_disc.night_rift");
+
     private static SoundEvent register(String name) {
         Identifier id = NoxisCulture.id(name);
         return Registry.register(BuiltInRegistries.SOUND_EVENT, id, SoundEvent.createVariableRangeEvent(id));

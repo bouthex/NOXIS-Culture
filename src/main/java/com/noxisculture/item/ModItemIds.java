@@ -15,6 +15,10 @@ public final class ModItemIds {
     public static final ResourceKey<Item> NIXIL = create("nixil");
     public static final ResourceKey<Item> NOYUX_BUCKET = create("noyux_bucket");
 
+    /** Discos de música Noxis. */
+    public static final ResourceKey<Item> MUSIC_DISC_GOLDEN_SIESTA = create("music_disc_golden_siesta");
+    public static final ResourceKey<Item> MUSIC_DISC_NIGHT_RIFT = create("music_disc_night_rift");
+
     // Huevos de spawn (uno por cada mob del mod)
     public static final ResourceKey<Item> NOXIS_VILLAGER_SPAWN_EGG = create("noxis_villager_spawn_egg");
 

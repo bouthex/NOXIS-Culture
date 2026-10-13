@@ -44,6 +44,9 @@ public final class ModCreativeTabs {
                 // Vida Noxis
                 output.accept(ModBlocks.NOXIS_BOWL.asItem());
                 output.accept(ModBlocks.NOXIS_HAT.asItem());
+                // Música
+                output.accept(ModItems.MUSIC_DISC_GOLDEN_SIESTA);
+                output.accept(ModItems.MUSIC_DISC_NIGHT_RIFT);
             })
             .build();
 
