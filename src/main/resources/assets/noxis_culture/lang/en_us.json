@@ -36,5 +36,9 @@
   "subtitles.noxis_culture.noxis.persona_mischief": "Noxis giggles mischievously",
   "subtitles.noxis_culture.noxis.persona_artist": "Noxis hums softly",
   "subtitles.noxis_culture.noxis.persona_affection": "Noxis calls out cheerfully",
-  "subtitles.noxis_culture.noxis.persona_calm": "Noxis purrs contentedly"
+  "subtitles.noxis_culture.noxis.persona_calm": "Noxis purrs contentedly",
+  "item.noxis_culture.music_disc_golden_siesta": "Yellow Crystal Music Disc",
+  "jukebox_song.noxis_culture.golden_siesta": "Noxis Culture - Golden Siesta",
+  "item.noxis_culture.music_disc_night_rift": "Cracked Violet Crystal Music Disc",
+  "jukebox_song.noxis_culture.night_rift": "Noxis Culture - Night Rift"
 }
