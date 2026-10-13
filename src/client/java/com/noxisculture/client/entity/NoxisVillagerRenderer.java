@@ -31,6 +31,10 @@ public class NoxisVillagerRenderer extends MobRenderer<NoxisVillager, NoxisVilla
                 new NoxisVillagerModel(context.bakeLayer(ModModelLayers.NOXIS_VILLAGER), NoxisVillagerModel.PASS_PROPS)));
         this.addLayer(new NoxisCrystalGlowLayer(this,
                 new NoxisVillagerModel(context.bakeLayer(ModModelLayers.NOXIS_VILLAGER), NoxisVillagerModel.PASS_GLOW_EYES)));
+        // Resonancia con el disco amarillo: cristales dorados y ojitos más cálidos (solo mientras suena cerca).
+        this.addLayer(new NoxisResonanceLayer(this,
+                new NoxisVillagerModel(context.bakeLayer(ModModelLayers.NOXIS_VILLAGER), NoxisVillagerModel.PASS_NORMAL),
+                new NoxisVillagerModel(context.bakeLayer(ModModelLayers.NOXIS_VILLAGER), NoxisVillagerModel.PASS_GLOW_EYES)));
     }
 
     @Override
@@ -128,6 +132,49 @@ public class NoxisVillagerRenderer extends MobRenderer<NoxisVillager, NoxisVilla
         state.playSly = playShown && com.noxisculture.entity.idle.NoxisPlayAnimation.slyEyes(playState);
         state.playPupils = playShown && com.noxisculture.entity.idle.NoxisPlayAnimation.bigPupils(playState);
         state.playLaugh = playShown && com.noxisculture.entity.idle.NoxisPlayAnimation.laughing(playState, state.playTime[playState]);
+        com.noxisculture.entity.idle.NoxisListenAnimation listen = entity.getListenAnimation();
+        for (byte i = 1; i < 4; i++) {
+            state.listenWeight[i] = listen.getWeight(i, partialTick);
+            state.listenTime[i] = listen.getTime(i, partialTick);
+        }
+        state.listenDir = listen.getDir(partialTick);
+        state.listenSide = listen.getSide();
+        byte listenState = listen.getState();
+        boolean listenShown = listenState != 0 && state.listenWeight[listenState] > 0.5F;
+        state.listenPupils = listenShown && com.noxisculture.entity.idle.NoxisListenAnimation.bigPupils(listenState, state.listenTime[listenState]);
+        state.listenClosed = listenShown && com.noxisculture.entity.idle.NoxisListenAnimation.closed(listenState, state.listenTime[listenState]);
+        state.listenNoBlink = listenShown && com.noxisculture.entity.idle.NoxisListenAnimation.noBlink(listenState, state.listenTime[listenState]);
+        state.resonance = entity.getResonanceAmount(partialTick);
+        state.resonanceBeat = ((int) entity.level().getGameTime() - entity.getResonanceOrigin() + partialTick)
+                / com.noxisculture.entity.hearing.NoxisDanceTempo.beatTicksOf(com.noxisculture.sound.ModJukeboxSongs.GOLDEN_SIESTA);
+        com.noxisculture.entity.idle.NoxisDanceAnimation dance = entity.getDanceAnimation();
+        state.danceWeight = dance.getWeight(com.noxisculture.entity.idle.NoxisDanceAnimation.DANCE, partialTick);
+        state.danceFallWeight = dance.getWeight(com.noxisculture.entity.idle.NoxisDanceAnimation.FALL, partialTick);
+        state.danceFallTime = dance.getTime(com.noxisculture.entity.idle.NoxisDanceAnimation.FALL, partialTick);
+        state.dancePairFallWeight = dance.getWeight(com.noxisculture.entity.idle.NoxisDanceAnimation.PAIR_FALL, partialTick);
+        state.dancePairFallTime = dance.getTime(com.noxisculture.entity.idle.NoxisDanceAnimation.PAIR_FALL, partialTick);
+        state.danceStyle = dance.getStyle();
+        state.dancePrevStyle = dance.getPrevStyle();
+        state.danceStyleBlend = dance.getStyleBlend(partialTick);
+        state.danceMirror = com.noxisculture.entity.idle.NoxisDanceAnimation.mirrored(state.danceStyle) ? -1.0F : 1.0F;
+        state.dancePairRole = com.noxisculture.entity.idle.NoxisDanceAnimation.mirrored(state.danceStyle) ? 1 : 0;
+        state.danceSeed = entity.getId();
+        // Pulso: tiempo de la canción con el reloj del mundo (el mismo para todos los que bailan).
+        int clock = (int) entity.level().getGameTime();
+        state.danceBeatTicks = entity.getDanceBeat();
+        state.danceBeatRaw = ((clock - entity.getDanceOrigin()) + partialTick) / state.danceBeatTicks;
+        state.danceClosed = state.danceWeight > 0.5F
+                && com.noxisculture.entity.idle.NoxisDanceAnimation.danceClosed(state.danceBeatRaw, state.danceStyle);
+        boolean fallShown = state.danceFallWeight > 0.5F;
+        boolean pairFallShown = state.dancePairFallWeight > 0.5F;
+        float ft = state.danceFallTime;
+        float pt = state.dancePairFallTime;
+        state.danceClosed |= (fallShown && com.noxisculture.entity.idle.NoxisDanceAnimation.fallClosed(ft))
+                || (pairFallShown && com.noxisculture.entity.idle.NoxisDanceAnimation.pairFallClosed(pt));
+        state.danceHalf = (fallShown && com.noxisculture.entity.idle.NoxisDanceAnimation.fallHalf(ft))
+                || (pairFallShown && com.noxisculture.entity.idle.NoxisDanceAnimation.pairFallHalf(pt));
+        state.danceBig = (fallShown && com.noxisculture.entity.idle.NoxisDanceAnimation.fallBig(ft))
+                || (pairFallShown && com.noxisculture.entity.idle.NoxisDanceAnimation.pairFallBig(pt));
         com.noxisculture.entity.idle.NoxisAffectionAnimation aff = entity.getAffectionAnimation();
         state.affection = aff.getAnim();
         state.affectionTime = aff.getTime(partialTick);

@@ -117,6 +117,34 @@ public class NoxisVillagerRenderState extends LivingEntityRenderState {
     public boolean bookShown;
     public boolean pencilShown;
     public boolean scholarFocused;
+    /** Reacción a sonidos: peso y tiempo de cada etapa (índice = NoxisListenAnimation), dirección y ojitos. */
+    public final float[] listenWeight = new float[4];
+    public final float[] listenTime = new float[4];
+    public float listenDir;
+    public float listenSide = 1.0F;
+    public boolean listenPupils;
+    public boolean listenClosed;
+    public boolean listenNoBlink;
+    /** Baile: cuánto se ve el baile y la caída, en qué tiempo de la canción va, estilo y ojitos. */
+    public float danceWeight;
+    public float danceFallWeight;
+    public float danceFallTime;
+    public float danceBeatRaw;
+    public float danceBeatTicks = 10.0F;
+    public byte danceStyle;
+    public byte dancePrevStyle;
+    public float danceStyleBlend = 1.0F;
+    public float dancePairFallWeight;
+    public float dancePairFallTime;
+    public int dancePairRole;
+    public float danceMirror = 1.0F;
+    public int danceSeed;
+    public boolean danceClosed;
+    public boolean danceHalf;
+    public boolean danceBig;
+    /** Resonancia con el disco amarillo: cuánto se ve (0..1) y el pulso de la canción (en tiempos). */
+    public float resonance;
+    public float resonanceBeat;
     /** La flor que tiene en la mano (vacía si no tiene nada). */
     public final ItemStackRenderState heldFlower = new ItemStackRenderState();
     /** true mientras se está levantando (para no repetir el rebote del "plop" al revés). */

@@ -5,6 +5,8 @@ import com.noxisculture.entity.idle.NoxisBoredAnimation;
 import com.noxisculture.entity.idle.NoxisBowlHop;
 import com.noxisculture.entity.idle.NoxisKeepsakeAnimation;
 import com.noxisculture.entity.idle.NoxisPersonaAnimation;
+import com.noxisculture.entity.idle.NoxisListenAnimation;
+import com.noxisculture.entity.idle.NoxisDanceAnimation;
 import com.noxisculture.entity.idle.NoxisPlayAnimation;
 import com.noxisculture.entity.idle.NoxisRestGesture;
 import com.noxisculture.entity.idle.NoxisHatAnimation;
@@ -103,6 +105,8 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
     private final ModelPart leftLeg;
 
     private final int pass;
+    /** La raíz del modelo (para la caída torpe: todo el Noxis gira desde los pies). */
+    private final ModelPart rootPart;
     private final ModelPart eyesBig;
     private final ModelPart sleepBubble;
     private final ModelPart hairTuft;
@@ -116,6 +120,7 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
 
     public NoxisVillagerModel(ModelPart root, int pass) {
         super(root);
+        this.rootPart = root;
         this.pass = pass;
         this.head = root.getChild(PartNames.HEAD);
         this.body = root.getChild(PartNames.BODY);
@@ -433,16 +438,16 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         //  · Antorcha de noche: ojitos cansados pero vigilando (2 px amarillos + pupila bizca).
         //  · Sentado: los mismos ojitos de sueño, que se cierran al cabecear.
         //  · Siempre: parpadeo normal cada tanto; cansado, parpadeo LENTO con cabeceo.
-        boolean sleepy = torchAnim > 0.5F || rest > 0.5F || state.boredTired || state.playSly || state.personaHalf || state.scholarFocused;
+        boolean sleepy = torchAnim > 0.5F || rest > 0.5F || state.boredTired || state.playSly || state.personaHalf || state.scholarFocused || state.danceHalf;
         boolean slowBlink = sleepy && (t % 110) < 8;
         boolean normalBlink = (t % 83) < 3;
-        // Fascinado con un cristal no parpadea: lo mira con los ojos bien abiertos.
-        if (state.crystalAmount > 0.5F) normalBlink = false;
+        // Fascinado con un cristal no parpadea: lo mira con los ojos bien abiertos (escuchando, tampoco).
+        if (state.crystalAmount > 0.5F || state.listenNoBlink) normalBlink = false;
         boolean closed = slowBlink || (rest > 0.5F && dozing) || (!sleepy && normalBlink)
                 || state.natureEyesClosed > 0.5F
                 || state.socialYawn > 0.5F || Math.abs(state.socialLean) > 0.5F     // bostezo / dormidos juntos
                 || (state.socialDoze > 0.6F && (t % 30) < 12)
-                || state.boredEyesClosed || state.affectionEyesClosed || state.playLaugh || state.personaClosed || state.keepsakeClosed;                     // cabeceo de sueño                    // disfrutando el aroma
+                || state.boredEyesClosed || state.affectionEyesClosed || state.playLaugh || state.personaClosed || state.keepsakeClosed || state.listenClosed || state.danceClosed;                     // cabeceo de sueño                    // disfrutando el aroma
         // Ojitos al acomodarse / despertarse (abre despacito, bosteza con los ojos cerrados).
         if (state.restEyes == NoxisRestGesture.EYES_CLOSED) {
             closed = true;
@@ -458,7 +463,7 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         boolean open = !closed && !sleepy;
         // Pupilas agrandadas, fascinado con la flor: los ojos grandes reemplazan a los normales.
         // También al fascinarse con un cristal (mismas pupilas grandes, mismo plano que el ojo).
-        boolean bigPupils = open && (state.naturePupils > 0.5F || state.crystalAmount > 0.35F || state.boredPupils || state.affectionPupils || state.playPupils || state.personaPupils || state.keepsakePupils);
+        boolean bigPupils = open && (state.naturePupils > 0.5F || state.crystalAmount > 0.35F || state.boredPupils || state.affectionPupils || state.playPupils || state.personaPupils || state.keepsakePupils || state.listenPupils || state.danceBig);
         this.eyesOpen.visible = open && !bigPupils;
         this.eyesBig.visible = bigPupils;
         // Con el parpadeo lento, la cabecita se le cae un poquito (cabeceo de sueño).
@@ -625,6 +630,13 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         // ---- Cariño con su amigo especial (coreografía compartida por los dos) ----
         if (state.affection != NoxisAffectionAnimation.NONE && state.affectionWeight > 0.0F) {
             this.applyAffection(state.affection, state.affectionTime, state.affectionWeight);
+        }
+        // ---- Sonidos del mundo: escuchar, ir a investigar y mirar qué era ----
+        this.applyListen(state.listenWeight, state.listenTime, state.listenDir, state.listenSide,
+                torchAnim > 0.5F, state.umbrellaAnim > 0.5F);
+        // ---- Bailar con un disco (y la caída torpe) ----
+        if (state.danceWeight > 0.0F || state.danceFallWeight > 0.0F || state.dancePairFallWeight > 0.0F) {
+            this.applyDance(state, torchAnim > 0.5F, state.umbrellaAnim > 0.5F);
         }
 
         // ---- Variante de ropa: capa de espalda (componente reutilizable por todas las especies Noxis) ----
@@ -1391,6 +1403,682 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         this.head.xRot += 0.1F * w * NoxisBoredAnimation.env(t, 36, 44, 66, 76);
         this.tail.yRot = Mth.lerp(k * 0.8F, this.tail.yRot, 1.0F);
         this.tail.xRot = Mth.lerp(k * 0.6F, this.tail.xRot, 0.2F);
+    }
+
+    // ================================================================== bailar
+
+    private static float hash(int n) {
+        float x = Mth.sin(n * 12.9898F) * 43758.547F;
+        return x - Mth.floor(x);
+    }
+
+    private void danceLift(float amount) {
+        this.head.y -= amount;
+        this.body.y -= amount;
+        this.rightArm.y -= amount;
+        this.leftArm.y -= amount;
+    }
+
+    /**
+     * Baile: cuatro pasos que cambian cada 8 tiempos (con medio tiempo de mezcla), siempre sobre el
+     * pulso. {@code b}: tiempo de la canción (en tiempos); {@code m}: lado (±1); {@code seed}: para
+     * que cada tiempo salga un poquito distinto (torpeza).
+     */
+    private void dance(float b, float w, int variant, float m, int seed) {
+        float phrase = b / 8.0F;
+        int pi = Mth.floor(phrase);
+        float fp = phrase - pi;
+        int move = Math.floorMod(pi + variant, 4);
+        int prev = Math.floorMod(pi - 1 + variant, 4);
+        float blend = NoxisBoredAnimation.smooth(fp * 16.0F);
+        int n = Mth.floor(b);
+        float f = b - n;
+        float amp = 0.85F + 0.3F * hash(n * 7 + seed);
+        float side = ((n & 1) == 0 ? 1.0F : -1.0F) * m;
+        this.danceMove(prev, w * (1.0F - blend), b, f, amp, side, m, seed);
+        this.danceMove(move, w * blend, b, f, amp, side, m, seed);
+    }
+
+    private void danceMove(int mv, float k, float b, float f, float amp, float side, float m, int seed) {
+        if (k <= 0.0F) return;
+        float lift = Mth.sin(Mth.PI * f) * amp;                 // abajo en el tiempo, arriba entre tiempos
+        switch (mv) {
+            case 0 -> {
+                // Rebote de patitas: una patita y después la otra, bracitos al revés, orejitas que rebotan.
+                this.danceLift(1.1F * lift * k);
+                ModelPart leg = side > 0.0F ? this.rightLeg : this.leftLeg;
+                leg.xRot -= 1.0F * lift * k;
+                leg.y -= 0.6F * lift * k;
+                float swing = 0.42F * side * Mth.cos(Mth.PI * f) * k;
+                this.rightArm.xRot += swing - 0.2F * k;
+                this.leftArm.xRot -= swing + 0.2F * k;
+                this.rightArm.zRot += 0.35F * k;
+                this.leftArm.zRot -= 0.35F * k;
+                this.rightEar.zRot += 0.3F * side * lift * k;
+                this.leftEar.zRot += 0.3F * side * lift * k;
+                this.head.xRot += 0.16F * (1.0F - f) * (1.0F - f) * (1.0F - f) * k;
+                this.head.zRot += 0.08F * side * k;
+                this.tail.yRot += 0.5F * side * k;
+            }
+            case 1 -> {
+                // Balanceo de lado: un vaivén cada dos tiempos, bracitos abiertos, cabeza al revés.
+                float sw = Mth.sin(Mth.PI * b) * m;
+                this.danceLift(0.4F * lift * k);
+                this.body.zRot += 0.16F * sw * k;
+                this.head.zRot -= 0.24F * sw * k;
+                this.head.x += 1.2F * sw * k;
+                this.rightArm.zRot = Mth.lerp(k, this.rightArm.zRot, 1.25F + 0.35F * sw);
+                this.leftArm.zRot = Mth.lerp(k, this.leftArm.zRot, -1.25F + 0.35F * sw);
+                this.rightArm.xRot = Mth.lerp(k, this.rightArm.xRot, -0.3F);
+                this.leftArm.xRot = Mth.lerp(k, this.leftArm.xRot, -0.3F);
+                this.rightEar.zRot += 0.25F * sw * k;
+                this.leftEar.zRot += 0.25F * sw * k;
+                this.tail.yRot += 0.7F * sw * k;
+                this.rightLeg.zRot += 0.12F * sw * k;
+                this.leftLeg.zRot += 0.12F * sw * k;
+            }
+            case 2 -> {
+                // Paso torpe: giro de cadera a cada tiempo, la cabeza mira al otro lado, patitas que bombean.
+                float tw = side * (0.5F - 0.5F * Mth.cos(Mth.PI * Math.min(1.0F, f * 2.0F)));
+                this.body.yRot += 0.38F * tw * k;
+                this.head.yRot -= 0.22F * tw * k;
+                this.danceLift(0.9F * lift * k);
+                float pump = 0.55F * side * Mth.sin(Mth.PI * f);
+                this.rightArm.xRot = Mth.lerp(k, this.rightArm.xRot, -1.15F + pump);
+                this.leftArm.xRot = Mth.lerp(k, this.leftArm.xRot, -1.15F - pump);
+                this.rightArm.zRot = Mth.lerp(k, this.rightArm.zRot, 0.2F);
+                this.leftArm.zRot = Mth.lerp(k, this.leftArm.zRot, -0.2F);
+                this.rightLeg.xRot -= 0.5F * lift * k * (side > 0.0F ? 1.0F : 0.2F);
+                this.leftLeg.xRot -= 0.5F * lift * k * (side < 0.0F ? 1.0F : 0.2F);
+                this.rightEar.zRot -= 0.35F * lift * k;
+                this.leftEar.zRot += 0.35F * lift * k;
+                this.head.zRot += 0.06F * Mth.sin(b * 2.3F + seed) * k;
+            }
+            default -> {
+                // ¡Manitos arriba!: bracitos arriba que se menean, cabeceo, orejitas de a una, colita a mil.
+                this.danceLift(0.6F * lift * k);
+                float wig = Mth.sin(Mth.PI * f) * side;
+                this.rightArm.zRot = Mth.lerp(k, this.rightArm.zRot, 2.15F + 0.35F * wig);
+                this.leftArm.zRot = Mth.lerp(k, this.leftArm.zRot, -2.15F + 0.35F * wig);
+                this.rightArm.xRot = Mth.lerp(k, this.rightArm.xRot, -0.45F);
+                this.leftArm.xRot = Mth.lerp(k, this.leftArm.xRot, -0.45F);
+                this.head.xRot += (0.2F * (1.0F - f) * (1.0F - f) - 0.06F) * k;
+                float flick = 0.4F * NoxisBoredAnimation.pulse(f, 0.15F, 0.2F) * k;
+                if (side > 0.0F) this.rightEar.zRot -= flick;
+                else this.leftEar.zRot += flick;
+                this.tail.yRot += Mth.sin(b * Mth.PI * 2.0F) * 0.6F * k;
+            }
+        }
+    }
+
+    private void applyDance(NoxisVillagerRenderState state, boolean rightBusy, boolean leftBusy) {
+        // El bracito que sostiene la antorcha o el paraguas no baila (la sigue sosteniendo firme).
+        float rx = this.rightArm.xRot, ry = this.rightArm.yRot, rz = this.rightArm.zRot, rY = this.rightArm.y;
+        float lx = this.leftArm.xRot, ly = this.leftArm.yRot, lz = this.leftArm.zRot, lY = this.leftArm.y;
+        float rS = this.rightArm.yScale, lS = this.leftArm.yScale;
+        this.rootXr = this.rootYr = this.rootZr = 0.0F;
+        this.rootOx = this.rootOy = this.rootOz = 0.0F;
+        this.pivotX = 0.0F;
+        this.pivotY = 24.0F;
+        this.pivotZ = 0.0F;
+        // Al caerse, el baile se apaga enseguida.
+        float falling = Math.max(state.danceFallWeight, state.dancePairFallWeight);
+        float danceW = state.danceWeight * (1.0F - Mth.clamp(falling * 3.0F, 0.0F, 1.0F));
+        if (danceW > 0.0F) {
+            // Cambio de coreografía (por ejemplo, de solo a pareja): mezcla suave de una a la otra.
+            float blend = state.danceStyleBlend;
+            if (blend < 1.0F) this.danceRoutine(state.dancePrevStyle, danceW * (1.0F - blend), state);
+            this.danceRoutine(state.danceStyle, danceW * blend, state);
+        }
+        if (state.danceFallWeight > 0.0F) {
+            this.slip(state.danceFallTime, state.danceFallWeight, state.danceMirror);
+        }
+        if (state.dancePairFallWeight > 0.0F) {
+            this.pairFall(state.dancePairFallTime, state.dancePairFallWeight, state.dancePairRole);
+        }
+        if (rightBusy) {
+            this.rightArm.xRot = rx;
+            this.rightArm.yRot = ry;
+            this.rightArm.zRot = rz;
+            this.rightArm.y = rY;
+            this.rightArm.yScale = rS;
+        }
+        if (leftBusy) {
+            this.leftArm.xRot = lx;
+            this.leftArm.yRot = ly;
+            this.leftArm.zRot = lz;
+            this.leftArm.y = lY;
+            this.leftArm.yScale = lS;
+        }
+        this.applyRoot();
+    }
+
+    // Raíz del modelo (todo el Noxis): giros y desplazamientos del baile alrededor de un pivote.
+    private float rootXr, rootYr, rootZr, rootOx, rootOy, rootOz, pivotX, pivotY, pivotZ;
+
+    /** Gira toda la raíz (orden ZYX, como el juego) alrededor del pivote y le suma el desplazamiento. */
+    private void applyRoot() {
+        if (this.rootXr == 0.0F && this.rootYr == 0.0F && this.rootZr == 0.0F
+                && this.rootOx == 0.0F && this.rootOy == 0.0F && this.rootOz == 0.0F) return;
+        float cx = Mth.cos(this.rootXr), sx = Mth.sin(this.rootXr);
+        float cy = Mth.cos(this.rootYr), sy = Mth.sin(this.rootYr);
+        float cz = Mth.cos(this.rootZr), sz = Mth.sin(this.rootZr);
+        float x1 = this.pivotX;
+        float y1 = this.pivotY * cx - this.pivotZ * sx;
+        float z1 = this.pivotY * sx + this.pivotZ * cx;
+        float x2 = x1 * cy + z1 * sy;
+        float z2 = -x1 * sy + z1 * cy;
+        float x3 = x2 * cz - y1 * sz;
+        float y3 = x2 * sz + y1 * cz;
+        this.rootPart.xRot = this.rootXr;
+        this.rootPart.yRot = this.rootYr;
+        this.rootPart.zRot = this.rootZr;
+        this.rootPart.x = this.pivotX - x3 + this.rootOx;
+        this.rootPart.y = this.pivotY - y3 + this.rootOy;
+        this.rootPart.z = this.pivotZ - z2 + this.rootOz;
+    }
+
+    /** Mitad de la distancia entre los dos de la pareja (px): el centro de la ronda queda adelante. */
+    private static final float PAIR_HALF = 6.8F;
+
+    /** Los dos de la pareja giran juntos alrededor del centro (cada uno lo ve adelante suyo). */
+    private void pairOrbit(float phi) {
+        this.rootYr += phi;
+        this.rootOx += -PAIR_HALF * Mth.sin(phi);
+        this.rootOz += -PAIR_HALF + PAIR_HALF * Mth.cos(phi);
+    }
+
+    private void danceRoutine(byte style, float w, NoxisVillagerRenderState state) {
+        if (w <= 0.0F) return;
+        float m = NoxisDanceAnimation.mirrored(style) ? -1.0F : 1.0F;
+        int role = NoxisDanceAnimation.mirrored(style) ? 1 : 0;
+        // El retraso propio solo en los bailes solos (en pareja van exactamente juntos).
+        float beat = state.danceBeatRaw - (NoxisDanceAnimation.isPair(style) ? 0.0F : NoxisDanceAnimation.lag(style) / state.danceBeatTicks);
+        switch (NoxisDanceAnimation.routine(style)) {
+            case NoxisDanceAnimation.SOLO_A -> this.dance(beat, w, NoxisDanceAnimation.variant(style), m, state.danceSeed);
+            case NoxisDanceAnimation.SOLO_B -> this.soloB(beat, w, m, state.danceSeed);
+            case NoxisDanceAnimation.PAIR_RING -> this.pairRing(beat, w, role);
+            default -> this.pairHops(beat, w, role);
+        }
+    }
+
+    // ---------------------------------------------------------------- baile solo B
+
+    /**
+     * Baile solo B (frases de 8 tiempos): pasito de pingüino (se corre de lado a lado, bracitos
+     * duros que aletean, cabecita que va y viene), vueltita y aplausos (una vuelta en su lugar y
+     * después aplaude en cada tiempo) y sentadillas felices (baja en cada tiempo y levanta un
+     * bracito al cielo, primero uno y después el otro).
+     */
+    private void soloB(float b, float w, float m, int seed) {
+        int ph = Mth.floor(b / 8.0F);
+        float q = b - 8.0F * ph;
+        int mv = Math.floorMod(ph, 3);
+        int prev = Math.floorMod(ph - 1, 3);
+        float bl = NoxisBoredAnimation.smooth(q * 2.0F);
+        this.soloBMove(prev, w * (1.0F - bl), b, q + 8.0F, m);
+        this.soloBMove(mv, w * bl, b, q, m);
+    }
+
+    private void soloBMove(int mv, float k, float b, float q, float m) {
+        if (k <= 0.0F) return;
+        int n = Mth.floor(b);
+        float f = b - n;
+        float side = ((n & 1) == 0 ? 1.0F : -1.0F) * m;
+        switch (mv) {
+            case 0 -> {
+                this.rootOx += 1.8F * Mth.sin(Mth.PI * b / 2.0F) * m * k;
+                this.body.zRot += 0.14F * side * k;
+                this.head.zRot -= 0.1F * side * k;
+                ModelPart leg = side > 0.0F ? this.rightLeg : this.leftLeg;
+                leg.zRot += (side > 0.0F ? 1.0F : -1.0F) * 0.45F * Mth.sin(Mth.PI * f) * k;
+                float flap = 0.45F + 0.35F * Math.abs(Mth.sin(2.0F * Mth.PI * b));
+                this.rightArm.zRot = Mth.lerp(k, this.rightArm.zRot, flap);
+                this.leftArm.zRot = Mth.lerp(k, this.leftArm.zRot, -flap);
+                this.rightArm.xRot = Mth.lerp(k, this.rightArm.xRot, 0.15F);
+                this.leftArm.xRot = Mth.lerp(k, this.leftArm.xRot, 0.15F);
+                float peck = (1.0F - f) * (1.0F - f);
+                this.head.z -= 1.1F * peck * k;
+                this.rightEar.xRot -= 0.3F * peck * k;
+                this.leftEar.xRot -= 0.3F * peck * k;
+                this.tail.yRot += 0.5F * side * k;
+                this.danceLift(0.35F * Mth.sin(Mth.PI * f) * k);
+            }
+            case 1 -> {
+                float spin = q < 4.0F ? NoxisBoredAnimation.smooth(q / 4.0F) : 1.0F;
+                this.rootYr += 2.0F * Mth.PI * m * spin * k;
+                float sp = NoxisBoredAnimation.env(q, 0.0F, 0.5F, 3.5F, 4.2F);
+                float cl = NoxisBoredAnimation.env(q, 3.8F, 4.3F, 7.6F, 8.0F);
+                this.rightArm.zRot = Mth.lerp(k * sp, this.rightArm.zRot, 1.45F);
+                this.leftArm.zRot = Mth.lerp(k * sp, this.leftArm.zRot, -1.45F);
+                this.danceLift((0.9F * NoxisBoredAnimation.pulse(q, 0.5F, 0.5F) + 0.9F * NoxisBoredAnimation.pulse(q, 3.6F, 0.5F)) * k);
+                this.rightEar.zRot -= 0.35F * sp * k;
+                this.leftEar.zRot += 0.35F * sp * k;
+                float clap = 1.0F - Math.abs(Mth.sin(Mth.PI * f));
+                this.rightArm.xRot = Mth.lerp(k * cl, this.rightArm.xRot, -1.35F);
+                this.leftArm.xRot = Mth.lerp(k * cl, this.leftArm.xRot, -1.35F);
+                this.rightArm.yRot = Mth.lerp(k * cl, this.rightArm.yRot, -0.15F - 0.45F * clap);
+                this.leftArm.yRot = Mth.lerp(k * cl, this.leftArm.yRot, 0.15F + 0.45F * clap);
+                this.rightArm.zRot = Mth.lerp(k * cl, this.rightArm.zRot, -0.1F);
+                this.leftArm.zRot = Mth.lerp(k * cl, this.leftArm.zRot, 0.1F);
+                float c3 = clap * clap * clap;
+                this.head.xRot += 0.14F * c3 * cl * k;
+                this.rightEar.xRot -= 0.4F * c3 * clap * cl * k;
+                this.leftEar.xRot -= 0.4F * c3 * clap * cl * k;
+                this.tail.yRot += Mth.sin(b * Mth.PI * 2.0F) * 0.5F * cl * k;
+            }
+            default -> {
+                float c = Mth.cos(Mth.PI * f);
+                float dip = c * c;
+                this.head.y += 1.6F * dip * k;
+                this.body.y += 1.4F * dip * k;
+                this.rightArm.y += 1.4F * dip * k;
+                this.leftArm.y += 1.4F * dip * k;
+                float up = Mth.sin(Mth.PI * Math.min(1.0F, f * 1.6F));
+                ModelPart arm = side > 0.0F ? this.rightArm : this.leftArm;
+                ModelPart other = side > 0.0F ? this.leftArm : this.rightArm;
+                float s = side > 0.0F ? 1.0F : -1.0F;
+                arm.zRot = Mth.lerp(k, arm.zRot, s * (1.0F + 1.75F * up));
+                arm.xRot = Mth.lerp(k, arm.xRot, -0.25F);
+                other.zRot = Mth.lerp(k, other.zRot, -s * 0.3F);
+                other.xRot = Mth.lerp(k, other.xRot, -0.6F);
+                this.head.zRot += 0.18F * side * up * k;
+                this.rightEar.xRot += (0.4F * dip - 0.25F * up) * k;
+                this.leftEar.xRot += (0.4F * dip - 0.25F * up) * k;
+                this.tail.xRot = Mth.lerp(k, this.tail.xRot, 1.1F - 0.5F * dip);
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------- bailes en pareja
+
+    /**
+     * Pareja 1, ronda de manitos: tomados de las dos manitos, 4 tiempos de vaivén juntos y después
+     * una vuelta completa los dos alrededor del centro, con saltitos y los ojitos cerrados.
+     * {@code role}: 0 = el que propuso, 1 = el compañero (frente a frente, se mueven en espejo).
+     */
+    private void pairRing(float b, float w, int role) {
+        float ws = role == 0 ? 1.0F : -1.0F;
+        int ph = Mth.floor(b / 8.0F);
+        float q = b - 8.0F * ph;
+        float f = b - Mth.floor(b);
+        this.rightArm.xRot = Mth.lerp(w, this.rightArm.xRot, -1.45F);
+        this.leftArm.xRot = Mth.lerp(w, this.leftArm.xRot, -1.45F);
+        this.rightArm.zRot = Mth.lerp(w, this.rightArm.zRot, -0.12F);
+        this.leftArm.zRot = Mth.lerp(w, this.leftArm.zRot, 0.12F);
+        this.rightArm.yScale *= 1.0F + 0.3F * w;
+        this.leftArm.yScale *= 1.0F + 0.3F * w;
+        float sway = NoxisBoredAnimation.env(q, 0.0F, 0.5F, 3.6F, 4.2F);
+        float spin = NoxisBoredAnimation.env(q, 3.8F, 4.3F, 7.6F, 8.0F);
+        float s = Mth.sin(Mth.PI * b) * ws;
+        this.body.zRot += 0.15F * s * sway * w;
+        this.head.zRot += 0.22F * s * sway * w;
+        this.rightEar.zRot += 0.25F * s * sway * w;
+        this.leftEar.zRot += 0.25F * s * sway * w;
+        this.danceLift(0.8F * Mth.sin(Mth.PI * f) * sway * w);
+        this.tail.yRot += 0.6F * s * sway * w;
+        float u = q < 4.0F ? 0.0F : NoxisBoredAnimation.smooth((q - 4.0F) / 4.0F);
+        this.pairOrbit(2.0F * Mth.PI * u * w);
+        this.danceLift(0.9F * Math.abs(Mth.sin(Mth.PI * b)) * spin * w);
+        this.head.xRot -= 0.18F * spin * w;
+        this.rightEar.zRot -= 0.5F * spin * w;
+        this.leftEar.zRot += 0.5F * spin * w;
+        this.rightEar.xRot += 0.2F * spin * w;
+        this.leftEar.xRot += 0.2F * spin * w;
+        this.tail.xRot = Mth.lerp(spin * w, this.tail.xRot, 0.3F);
+    }
+
+    /**
+     * Pareja 2: saltitos alternados (uno en el tiempo, el otro a contratiempo), pasos al costado
+     * los dos hacia el mismo lado, un giro en su lugar al mismo tiempo y "¡ta-da!" con el bracito
+     * de adentro arriba y un saltito.
+     */
+    private void pairHops(float b, float w, int role) {
+        float ws = role == 0 ? 1.0F : -1.0F;
+        int ph = Mth.floor(b / 8.0F);
+        float q = b - 8.0F * ph;
+        int n = Mth.floor(b);
+        float f = b - n;
+        float hopP = NoxisBoredAnimation.env(q, -0.2F, 0.2F, 1.8F, 2.1F);
+        float stepP = NoxisBoredAnimation.env(q, 1.8F, 2.2F, 3.8F, 4.1F);
+        float turnP = NoxisBoredAnimation.env(q, 3.8F, 4.2F, 5.8F, 6.1F);
+        float taP = NoxisBoredAnimation.env(q, 5.8F, 6.2F, 7.7F, 8.2F);
+        float hb = role == 0 ? Math.abs(Mth.sin(Mth.PI * b)) : Math.abs(Mth.cos(Mth.PI * b));
+        this.danceLift(1.6F * hb * hopP * w);
+        this.rightArm.zRot = Mth.lerp(hopP * w, this.rightArm.zRot, 0.3F + 1.6F * hb);
+        this.leftArm.zRot = Mth.lerp(hopP * w, this.leftArm.zRot, -0.3F - 1.6F * hb);
+        this.rightEar.xRot -= 0.4F * hb * hopP * w;
+        this.leftEar.xRot -= 0.4F * hb * hopP * w;
+        float st = Mth.sin(Mth.PI * Mth.clamp((q - 2.0F) / 2.0F, 0.0F, 1.0F));
+        this.rootOx += 2.6F * ws * st * stepP * w;
+        ModelPart leg = (n & 1) == 0 ? this.rightLeg : this.leftLeg;
+        leg.zRot += ((n & 1) == 0 ? 1.0F : -1.0F) * 0.4F * Mth.sin(Mth.PI * f) * stepP * w;
+        this.body.zRot += 0.12F * ws * st * stepP * w;
+        this.head.zRot -= 0.15F * ws * st * stepP * w;
+        this.rightArm.xRot += 0.4F * Mth.sin(Mth.PI * b) * stepP * w;
+        this.leftArm.xRot -= 0.4F * Mth.sin(Mth.PI * b) * stepP * w;
+        if (q >= 4.0F) this.rootYr += 2.0F * Mth.PI * ws * NoxisBoredAnimation.smooth((q - 4.0F) / 2.0F) * turnP * w;
+        this.rightArm.zRot = Mth.lerp(turnP * w, this.rightArm.zRot, 1.3F);
+        this.leftArm.zRot = Mth.lerp(turnP * w, this.leftArm.zRot, -1.3F);
+        ModelPart inner = role == 0 ? this.rightArm : this.leftArm;
+        ModelPart outer = role == 0 ? this.leftArm : this.rightArm;
+        inner.zRot = Mth.lerp(taP * w, inner.zRot, (role == 0 ? 1.0F : -1.0F) * 2.4F);
+        inner.xRot = Mth.lerp(taP * w, inner.xRot, -0.9F);
+        outer.zRot = Mth.lerp(taP * w, outer.zRot, (role == 0 ? -1.0F : 1.0F) * 0.9F);
+        this.danceLift(1.2F * NoxisBoredAnimation.pulse(q, 7.0F, 0.6F) * w);
+        this.tail.yRot += Mth.sin(b * Mth.PI * 2.0F) * 0.6F * taP * w;
+    }
+
+    // ---------------------------------------------------------------- caídas
+
+    /** Inclinación hacia atrás desde atrás de las patitas (ya sentado: la colita en el piso). */
+    private void tipBack(float angle, float drop, float w) {
+        this.rootXr += angle * w;
+        this.rootOy += drop * w;
+        this.pivotX = 0.0F;
+        this.pivotY = 22.0F;
+        this.pivotZ = 2.5F;
+    }
+
+    /**
+     * Resbalón (baile solo): se entusiasma con un molinete, ¡resbala! (las patitas se van para
+     * adelante, bracitos y orejitas arriba), cae sentado con un rebotito sobre la colita, rueda de
+     * espaldas y se mece como tortuguita pedaleando, se sienta, se rasca la cabecita de vergüenza,
+     * se levanta con un saltito y se sacude la colita mirando a los costados.
+     */
+    private void slip(float t, float w, float m) {
+        float over = NoxisBoredAnimation.env(t, 0, 3, 7, 10);
+        ModelPart kickLeg = m > 0.0F ? this.rightLeg : this.leftLeg;
+        ModelPart armA = m > 0.0F ? this.rightArm : this.leftArm;
+        float wind = -2.6F + 3.2F * NoxisBoredAnimation.smooth(t / 8.0F);
+        armA.xRot = Mth.lerp(over * w, armA.xRot, wind);
+        armA.zRot = Mth.lerp(over * w, armA.zRot, (m > 0.0F ? 1.0F : -1.0F) * 0.5F);
+        this.body.xRot += 0.2F * over * w;
+        kickLeg.xRot -= 1.2F * NoxisBoredAnimation.env(t, 2, 5, 8, 10) * w;
+        float slipK = NoxisBoredAnimation.env(t, 8, 12, 66, 72);
+        this.rightLeg.xRot = Mth.lerp(slipK * w, this.rightLeg.xRot, -1.75F);
+        this.leftLeg.xRot = Mth.lerp(slipK * w, this.leftLeg.xRot, -1.75F);
+        float flail = NoxisBoredAnimation.env(t, 8, 11, 20, 26);
+        this.rightArm.zRot = Mth.lerp(flail * w, this.rightArm.zRot, 2.5F + 0.3F * Mth.sin(t * 1.3F));
+        this.leftArm.zRot = Mth.lerp(flail * w, this.leftArm.zRot, -2.5F + 0.3F * Mth.sin(t * 1.3F + 1.0F));
+        this.rightArm.xRot = Mth.lerp(flail * w, this.rightArm.xRot, -0.5F);
+        this.leftArm.xRot = Mth.lerp(flail * w, this.leftArm.xRot, -0.5F);
+        this.rightEar.xRot -= 0.6F * NoxisBoredAnimation.env(t, 10, 14, 20, 26) * w;
+        this.leftEar.xRot -= 0.6F * NoxisBoredAnimation.env(t, 11, 15, 20, 26) * w;
+        float a;
+        float drop;
+        if (t < 8.0F) {
+            a = 0.0F;
+            drop = 0.0F;
+        } else if (t < 15.0F) {
+            float u = (t - 8.0F) / 7.0F;
+            a = -0.55F * u * u;
+            drop = 2.0F * u * u;
+        } else if (t < 19.0F) {
+            float u = (t - 15.0F) / 4.0F;
+            a = -0.55F + 0.12F * Mth.sin(Mth.PI * u);
+            drop = 2.0F - 0.8F * Mth.sin(Mth.PI * u);
+        } else if (t < 27.0F) {
+            a = -0.55F - 0.8F * NoxisBoredAnimation.smooth((t - 19.0F) / 8.0F);
+            drop = 2.0F;
+        } else if (t < 48.0F) {
+            a = -1.35F + 0.16F * Mth.sin((t - 27.0F) * 0.45F) * Math.max(0.0F, 1.0F - (t - 27.0F) / 18.0F);
+            drop = 2.0F;
+        } else if (t < 58.0F) {
+            a = -1.35F + 1.0F * NoxisBoredAnimation.smooth((t - 48.0F) / 10.0F);
+            drop = 2.0F;
+        } else if (t < 66.0F) {
+            a = -0.35F;
+            drop = 2.0F;
+        } else if (t < 74.0F) {
+            float u = NoxisBoredAnimation.smooth((t - 66.0F) / 8.0F);
+            a = -0.35F * (1.0F - u);
+            drop = 2.0F * (1.0F - u);
+        } else {
+            a = 0.0F;
+            drop = 0.0F;
+        }
+        this.tipBack(a, drop, w);
+        float back = NoxisBoredAnimation.env(t, 20, 26, 46, 54);
+        this.rightLeg.xRot -= 0.5F * back * w * (1.0F + 0.3F * Mth.sin(t * 0.9F));
+        this.leftLeg.xRot -= 0.5F * back * w * (1.0F + 0.3F * Mth.sin(t * 0.9F + Mth.PI));
+        this.rightArm.zRot = Mth.lerp(back * w, this.rightArm.zRot, 1.0F + 0.15F * Mth.sin(t * 0.4F));
+        this.leftArm.zRot = Mth.lerp(back * w, this.leftArm.zRot, -1.0F - 0.15F * Mth.sin(t * 0.4F));
+        this.head.zRot += 0.12F * Mth.sin((t - 30.0F) * 0.35F) * NoxisBoredAnimation.env(t, 30, 36, 44, 50) * w;
+        this.tail.xRot = Mth.lerp(back * w, this.tail.xRot, 0.1F);
+        float shy = NoxisBoredAnimation.env(t, 54, 58, 64, 68);
+        ModelPart scratch = m > 0.0F ? this.leftArm : this.rightArm;
+        scratch.zRot = Mth.lerp(shy * w, scratch.zRot, (m > 0.0F ? -1.0F : 1.0F) * 2.55F + 0.15F * Mth.sin(t * 1.5F));
+        scratch.xRot = Mth.lerp(shy * w, scratch.xRot, -0.3F);
+        this.head.zRot += (m > 0.0F ? -1.0F : 1.0F) * 0.15F * shy * w;
+        this.head.xRot += 0.12F * shy * w;
+        this.rightEar.xRot += 0.5F * shy * w;
+        this.leftEar.xRot += 0.5F * shy * w;
+        this.danceLift(1.0F * NoxisBoredAnimation.pulse(t, 73.0F, 2.5F) * w);
+        float dust = NoxisBoredAnimation.env(t, 72, 74, 78, 80);
+        ModelPart brush = m > 0.0F ? this.rightArm : this.leftArm;
+        brush.xRot = Mth.lerp(dust * w, brush.xRot, 0.7F + 0.4F * Mth.sin((t - 72.0F) * 1.7F));
+        this.head.yRot += 0.4F * Mth.sin((t - 72.0F) * 0.6F) * NoxisBoredAnimation.env(t, 72, 74, 79, 80) * w;
+    }
+
+    /**
+     * Caída en pareja (una sola secuencia para los dos): la ronda se acelera de más, se sueltan y
+     * trastabillan para atrás, caen sentados y ruedan de espaldas mareados, se sientan, se miran y
+     * se ríen, se estiran las manitos para ayudarse a levantar y terminan con un saltito contento.
+     */
+    private void pairFall(float t, float w, int role) {
+        float fast = NoxisBoredAnimation.env(t, 0, 2, 10, 13);
+        this.rightArm.xRot = Mth.lerp(fast * w, this.rightArm.xRot, -1.5F);
+        this.leftArm.xRot = Mth.lerp(fast * w, this.leftArm.xRot, -1.5F);
+        this.rightArm.yScale *= 1.0F + 0.3F * fast * w;
+        this.leftArm.yScale *= 1.0F + 0.3F * fast * w;
+        this.pairOrbit(4.0F * Mth.PI * NoxisBoredAnimation.smooth(t / 12.0F) * w);
+        this.rightEar.zRot -= 0.7F * fast * w;
+        this.leftEar.zRot += 0.7F * fast * w;
+        this.head.xRot -= 0.25F * fast * w;
+        float letGo = NoxisBoredAnimation.env(t, 11, 13, 18, 22);
+        this.rightArm.zRot = Mth.lerp(letGo * w, this.rightArm.zRot, 2.3F + 0.3F * Mth.sin(t * 1.4F));
+        this.leftArm.zRot = Mth.lerp(letGo * w, this.leftArm.zRot, -2.3F - 0.3F * Mth.sin(t * 1.4F));
+        float back = t < 12.0F ? 0.0F : t < 18.0F ? NoxisBoredAnimation.smooth((t - 12.0F) / 6.0F)
+                : t < 68.0F ? 1.0F : 1.0F - NoxisBoredAnimation.smooth((t - 68.0F) / 10.0F);
+        this.rootOz += 2.5F * back * w;
+        float a;
+        float drop;
+        if (t < 14.0F) {
+            a = 0.0F;
+            drop = 0.0F;
+        } else if (t < 20.0F) {
+            float u = (t - 14.0F) / 6.0F;
+            a = -0.5F * u * u;
+            drop = 2.0F * u * u;
+        } else if (t < 24.0F) {
+            float u = (t - 20.0F) / 4.0F;
+            a = -0.5F + 0.1F * Mth.sin(Mth.PI * u);
+            drop = 2.0F - 0.7F * Mth.sin(Mth.PI * u);
+        } else if (t < 31.0F) {
+            a = -0.5F - 0.8F * NoxisBoredAnimation.smooth((t - 24.0F) / 7.0F);
+            drop = 2.0F;
+        } else if (t < 48.0F) {
+            a = -1.3F;
+            drop = 2.0F;
+        } else if (t < 57.0F) {
+            a = -1.3F + 0.95F * NoxisBoredAnimation.smooth((t - 48.0F) / 9.0F);
+            drop = 2.0F;
+        } else if (t < 68.0F) {
+            a = -0.35F;
+            drop = 2.0F;
+        } else if (t < 80.0F) {
+            float u = NoxisBoredAnimation.smooth((t - 68.0F) / 12.0F);
+            a = -0.35F * (1.0F - u);
+            drop = 2.0F * (1.0F - u);
+        } else {
+            a = 0.0F;
+            drop = 0.0F;
+        }
+        this.tipBack(a, drop, w);
+        float legs = NoxisBoredAnimation.env(t, 15, 19, 72, 80);
+        this.rightLeg.xRot = Mth.lerp(legs * w, this.rightLeg.xRot, -1.7F);
+        this.leftLeg.xRot = Mth.lerp(legs * w, this.leftLeg.xRot, -1.7F);
+        float lying = NoxisBoredAnimation.env(t, 24, 30, 46, 54);
+        this.rightLeg.xRot -= 0.45F * lying * w;
+        this.leftLeg.xRot -= 0.45F * lying * w;
+        this.head.zRot += 0.2F * Mth.sin(t * 0.5F + role * 1.7F) * lying * w;
+        this.head.xRot += 0.1F * Mth.cos(t * 0.5F + role * 1.7F) * lying * w;
+        this.rightArm.zRot = Mth.lerp(lying * w, this.rightArm.zRot, 1.1F);
+        this.leftArm.zRot = Mth.lerp(lying * w, this.leftArm.zRot, -1.1F);
+        this.rightEar.zRot -= 0.3F * lying * w;
+        this.leftEar.zRot += 0.3F * lying * w;
+        float laugh = NoxisBoredAnimation.env(t, 56, 59, 66, 69);
+        this.danceLift(0.35F * Math.abs(Mth.sin(t * 1.9F)) * laugh * w);
+        this.rightArm.xRot = Mth.lerp(laugh * w, this.rightArm.xRot, -0.7F);
+        this.leftArm.xRot = Mth.lerp(laugh * w, this.leftArm.xRot, -0.7F);
+        this.rightArm.zRot = Mth.lerp(laugh * w, this.rightArm.zRot, -0.2F);
+        this.leftArm.zRot = Mth.lerp(laugh * w, this.leftArm.zRot, 0.2F);
+        this.rightEar.zRot += 0.15F * Mth.sin(t * 1.9F) * laugh * w;
+        this.leftEar.zRot -= 0.15F * Mth.sin(t * 1.9F) * laugh * w;
+        this.head.xRot -= 0.12F * laugh * w;
+        float help = NoxisBoredAnimation.env(t, 66, 70, 78, 82);
+        this.rightArm.xRot = Mth.lerp(help * w, this.rightArm.xRot, -1.5F);
+        this.leftArm.xRot = Mth.lerp(help * w, this.leftArm.xRot, -1.5F);
+        this.rightArm.yScale *= 1.0F + 0.3F * help * w;
+        this.leftArm.yScale *= 1.0F + 0.3F * help * w;
+        this.rightArm.zRot = Mth.lerp(help * w, this.rightArm.zRot, -0.12F);
+        this.leftArm.zRot = Mth.lerp(help * w, this.leftArm.zRot, 0.12F);
+        this.danceLift(1.1F * NoxisBoredAnimation.pulse(t, 84.0F, 2.5F) * w);
+        this.rightEar.zRot -= 0.3F * NoxisBoredAnimation.pulse(t, 86.0F, 3.0F) * w;
+        this.leftEar.zRot += 0.3F * NoxisBoredAnimation.pulse(t, 86.0F, 3.0F) * w;
+        this.tail.yRot += Mth.sin(t * 0.9F) * 0.5F * NoxisBoredAnimation.env(t, 80, 82, 88, 90) * w;
+    }
+
+    // ================================================================== escuchar sonidos
+
+    private void applyListen(float[] w, float[] t, float dir, float side, boolean rightBusy, boolean leftBusy) {
+        if (w[NoxisListenAnimation.PERK] > 0.0F) {
+            this.listenPerk(t[NoxisListenAnimation.PERK], w[NoxisListenAnimation.PERK], dir, side, rightBusy, leftBusy);
+        }
+        if (w[NoxisListenAnimation.INVESTIGATE] > 0.0F) {
+            this.listenWalk(t[NoxisListenAnimation.INVESTIGATE], w[NoxisListenAnimation.INVESTIGATE], dir);
+        }
+        if (w[NoxisListenAnimation.PEEK] > 0.0F) {
+            this.listenPeek(t[NoxisListenAnimation.PEEK], w[NoxisListenAnimation.PEEK], rightBusy, leftBusy);
+        }
+    }
+
+    /**
+     * Escuchar: respingo chiquito ("¡eh!"), orejitas paradas, adelantadas y giradas hacia el
+     * sonido (la de ese lado gira más; la otra se echa atrás); la cabeza lo busca con un vaivén que
+     * se apaga (el giro real lo hace el servidor); pausa de escucha con la cabeza ladeada, la patita
+     * de ese lado junto a la carita, colita alerta y quieta y tiquitos de oreja; cierra con un
+     * cabeceo ("ajá"). {@code dir}: hacia dónde está el sonido respecto de la cabeza (-1..1);
+     * {@code side}: de qué lado quedó al empezar (+1 = su derecha).
+     */
+    private void listenPerk(float t, float w, float dir, float side, boolean rightBusy, boolean leftBusy) {
+        float perk = NoxisBoredAnimation.env(t, 0, 3, 46, 56);
+        float orient = NoxisBoredAnimation.env(t, 1, 6, 46, 56);
+        float search = NoxisBoredAnimation.env(t, 8, 11, 20, 26);
+        float hold = NoxisBoredAnimation.env(t, 16, 22, 44, 54);
+        float sg = side >= 0.0F ? 1.0F : -1.0F;
+        // 1) ¡eh!: un respingo chiquito.
+        float jolt = NoxisBoredAnimation.pulse(t, 2.0F, 2.5F) * 0.6F * w;
+        this.head.y -= jolt;
+        this.body.y -= jolt * 0.6F;
+        this.rightArm.y -= jolt * 0.6F;
+        this.leftArm.y -= jolt * 0.6F;
+        // 2) Orejitas: derechitas, más altas, adelantadas y giradas hacia el sonido.
+        float k = w * perk;
+        this.rightEar.zRot = Mth.lerp(k, this.rightEar.zRot, -0.04F);
+        this.leftEar.zRot = Mth.lerp(k, this.leftEar.zRot, 0.04F);
+        this.rightEar.xRot -= 0.3F * k;
+        this.leftEar.xRot -= 0.3F * k;
+        this.rightEar.y -= 0.9F * k;
+        this.leftEar.y -= 0.9F * k;
+        ModelPart near = sg > 0.0F ? this.rightEar : this.leftEar;
+        ModelPart far = sg > 0.0F ? this.leftEar : this.rightEar;
+        float a = Math.max(Math.min(1.0F, Math.abs(dir)), 0.6F * hold);
+        near.yRot += w * orient * (1.05F * dir + 0.3F * sg * hold);
+        far.yRot += w * orient * 0.6F * dir;
+        far.xRot += w * orient * 0.55F * a;
+        near.zRot -= sg * w * orient * 0.25F * a;
+        float ticks = NoxisBoredAnimation.pulse(t, 28.0F, 1.6F) + NoxisBoredAnimation.pulse(t, 31.0F, 1.6F)
+                + NoxisBoredAnimation.pulse(t, 38.0F, 1.6F);
+        near.zRot -= sg * w * 0.28F * ticks;
+        // 3) La cabeza busca: vaivén corto que se apaga.
+        this.head.yRot += w * 0.2F * Mth.sin((t - 8.0F) * 0.75F) * search * Math.max(0.0F, 1.0F - (t - 8.0F) / 18.0F);
+        // 4) Pausa de escucha: cabeza ladeada, quieto, apenas inclinado.
+        float h = w * hold;
+        this.head.zRot += 0.22F * sg * h;
+        this.head.xRot -= 0.05F * h;
+        this.body.zRot += 0.04F * sg * h;
+        this.body.xRot += 0.05F * h;
+        // La patita de ese lado, levantada junto a la carita (si ese bracito está libre).
+        boolean busy = sg > 0.0F ? rightBusy : leftBusy;
+        if (!busy) {
+            ModelPart arm = sg > 0.0F ? this.rightArm : this.leftArm;
+            float p = w * NoxisBoredAnimation.env(t, 14, 22, 44, 54);
+            arm.zRot = Mth.lerp(p, arm.zRot, sg * 2.1F);
+            arm.xRot = Mth.lerp(p, arm.xRot, -0.25F);
+            arm.yRot = Mth.lerp(p, arm.yRot, -sg * 0.5F);
+        }
+        // Colita alerta: arriba y quieta.
+        this.tail.xRot = Mth.lerp(w * perk * 0.85F, this.tail.xRot, 1.25F);
+        this.tail.yRot = Mth.lerp(w * hold, this.tail.yRot, 0.0F);
+        // 5) Ajá: cabeceo chiquito.
+        this.head.xRot += w * 0.14F * NoxisBoredAnimation.pulse(t, 51.0F, 3.0F);
+    }
+
+    /** Ir a investigar: cuello estirado, orejitas bien adelante, patitas al frente; cada tanto para una orejita. */
+    private void listenWalk(float t, float w, float dir) {
+        this.rightEar.zRot = Mth.lerp(w, this.rightEar.zRot, -0.08F);
+        this.leftEar.zRot = Mth.lerp(w, this.leftEar.zRot, 0.08F);
+        this.rightEar.xRot -= 0.5F * w;
+        this.leftEar.xRot -= 0.5F * w;
+        this.rightEar.yRot += 0.35F * dir * w;
+        this.leftEar.yRot += 0.35F * dir * w;
+        this.head.z -= 0.9F * w;
+        this.head.xRot += 0.06F * w;
+        this.body.xRot += 0.12F * w;
+        this.rightArm.xRot -= 0.45F * w;
+        this.leftArm.xRot -= 0.45F * w;
+        this.rightArm.zRot -= 0.12F * w;
+        this.leftArm.zRot += 0.12F * w;
+        this.tail.xRot = Mth.lerp(w * 0.8F, this.tail.xRot, 0.15F);
+        this.tail.yRot = Mth.lerp(w * 0.8F, this.tail.yRot, 0.18F * Mth.sin(t * 0.25F));
+        float check = NoxisBoredAnimation.env(t % 46.0F, 30, 33, 38, 42);
+        this.head.zRot += 0.15F * check * w;
+        this.rightEar.zRot += 0.25F * check * w;
+    }
+
+    /** ¿Y esto?: se inclina a mirar, ladea la cabeza a un lado y al otro, y saltito de "¡encontrado!". */
+    private void listenPeek(float t, float w, boolean rightBusy, boolean leftBusy) {
+        float on = NoxisBoredAnimation.env(t, 0, 6, 34, 42);
+        float look = NoxisBoredAnimation.env(t, 2, 8, 30, 38);
+        this.body.xRot += 0.2F * on * w;
+        this.head.z -= 0.9F * on * w;
+        this.head.xRot += 0.32F * look * w;
+        float tl = NoxisBoredAnimation.env(t, 6, 10, 13, 17);
+        float tr = NoxisBoredAnimation.env(t, 17, 21, 24, 28);
+        this.head.zRot += 0.4F * (tl - tr) * w;
+        float k = on * w;
+        this.rightEar.zRot = Mth.lerp(k, this.rightEar.zRot, -0.06F);
+        this.leftEar.zRot = Mth.lerp(k, this.leftEar.zRot, 0.06F);
+        this.rightEar.xRot -= (0.55F * tl + 0.15F) * k;
+        this.leftEar.xRot -= (0.55F * tr + 0.15F) * k;
+        this.rightEar.yRot += 0.5F * tl * w;
+        this.leftEar.yRot -= 0.5F * tr * w;
+        if (!rightBusy) {
+            this.rightArm.xRot = Mth.lerp(k, this.rightArm.xRot, -0.75F);
+            this.rightArm.zRot = Mth.lerp(k, this.rightArm.zRot, -0.25F);
+        }
+        if (!leftBusy) {
+            this.leftArm.xRot = Mth.lerp(k, this.leftArm.xRot, -0.75F);
+            this.leftArm.zRot = Mth.lerp(k, this.leftArm.zRot, 0.25F);
+        }
+        float hop = NoxisBoredAnimation.pulse(t, 34.0F, 3.0F) * 0.9F * w;
+        this.head.y -= hop;
+        this.body.y -= hop;
+        this.rightArm.y -= hop;
+        this.leftArm.y -= hop;
+        this.tail.yRot += w * Mth.sin(t * 0.9F) * 0.5F * NoxisBoredAnimation.env(t, 30, 32, 38, 42);
     }
 
     // ================================================================== curiosidad y travesuras
