@@ -58,6 +58,8 @@ public class NoxisDanceGoal<T extends PathfinderMob & NoxisDancer> extends Goal 
     private static final float PAIR_CHANCE = 0.35F;
     private static final int PAIR_GATHER_TIMEOUT = 60;
     private static final int MIN_SOLO_BEFORE_PAIR = 60;
+    /** Espacio cómodo entre bailarines (bloques). */
+    private static final double DANCE_ROOM = 1.8D;
 
     private enum Phase { APPROACH, SOLO, PAIR, FALL, PAIR_FALL, LEAVE }
 
@@ -113,15 +115,29 @@ public class NoxisDanceGoal<T extends PathfinderMob & NoxisDancer> extends Goal 
         return true;
     }
 
-    /** Un lugar alrededor del tocadiscos (2 a 3,5 bloques), cada uno con su ángulo: no se amontonan. */
+    /**
+     * Un lugar alrededor del tocadiscos (2 a 3,5 bloques), cada uno con su ángulo. Entre unos pocos
+     * candidatos se queda con el que más lejos queda de los otros Noxis (los que ya bailan y los que
+     * están parados cerca): bailan cerca, pero cada uno con su espacio.
+     */
     private @Nullable Vec3 pickSpot(Vec3 center, RandomSource random) {
-        for (int i = 0; i < 4; i++) {
-            float angle = this.mob.getId() * 2.39996F + i * 1.3F + random.nextFloat() * 0.4F;
+        java.util.List<PathfinderMob> others = this.mob.level().getEntitiesOfClass(PathfinderMob.class,
+                new AABB(center, center).inflate(5.0D, 3.0D, 5.0D),
+                e -> e != this.mob && e instanceof NoxisListener && e.isAlive());
+        Vec3 best = null;
+        double bestRoom = -1.0D;
+        for (int i = 0; i < 6; i++) {
+            float angle = this.mob.getId() * 2.39996F + i * 1.05F + random.nextFloat() * 0.4F;
             double r = 2.0D + random.nextDouble() * 1.5D;
             Vec3 p = new Vec3(center.x + Mth.cos(angle) * r, this.mob.getY(), center.z + Mth.sin(angle) * r);
-            if (this.mob.getNavigation().createPath(BlockPos.containing(p), 0) != null) return p;
+            double room = NoxisSpacing.room(others, p, DANCE_ROOM);
+            if (room <= bestRoom) continue;
+            if (this.mob.getNavigation().createPath(BlockPos.containing(p), 0) == null) continue;
+            best = p;
+            bestRoom = room;
+            if (room >= DANCE_ROOM) break;                 // ya tiene todo su espacio
         }
-        return null;
+        return best;
     }
 
     @Override
