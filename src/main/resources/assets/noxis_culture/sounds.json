@@ -111,5 +111,21 @@
       "noxis_culture:noxis/calm1",
       "noxis_culture:noxis/calm2"
     ]
+  },
+  "music_disc.golden_siesta": {
+    "sounds": [
+      {
+        "name": "noxis_culture:records/golden_siesta",
+        "stream": true
+      }
+    ]
+  },
+  "music_disc.night_rift": {
+    "sounds": [
+      {
+        "name": "noxis_culture:records/night_rift",
+        "stream": true
+      }
+    ]
   }
 }
