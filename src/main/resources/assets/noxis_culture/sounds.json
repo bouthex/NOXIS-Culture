@@ -127,5 +127,40 @@
         "stream": true
       }
     ]
+  },
+  "block.noyux.ambient": {
+    "subtitle": "subtitles.noxis_culture.noyux.ambient",
+    "sounds": [
+      "noxis_culture:noyux/noyux_ambient1",
+      "noxis_culture:noyux/noyux_ambient2",
+      "noxis_culture:noyux/noyux_ambient3"
+    ]
+  },
+  "block.noyux.flow": {
+    "subtitle": "subtitles.noxis_culture.noyux.flow",
+    "sounds": [
+      "noxis_culture:noyux/noyux_flow1",
+      "noxis_culture:noyux/noyux_flow2"
+    ]
+  },
+  "block.noyux_fire.crackle": {
+    "subtitle": "subtitles.noxis_culture.noyux_fire.crackle",
+    "sounds": [
+      "noxis_culture:noyux/noyux_crackle1",
+      "noxis_culture:noyux/noyux_crackle2",
+      "noxis_culture:noyux/noyux_crackle3"
+    ]
+  },
+  "block.noyux_fire.ignite": {
+    "subtitle": "subtitles.noxis_culture.noyux_fire.ignite",
+    "sounds": [
+      "noxis_culture:noyux/noyux_ignite"
+    ]
+  },
+  "block.noyux_fire.extinguish": {
+    "subtitle": "subtitles.noxis_culture.noyux_fire.extinguish",
+    "sounds": [
+      "noxis_culture:noyux/noyux_fizz"
+    ]
   }
 }
