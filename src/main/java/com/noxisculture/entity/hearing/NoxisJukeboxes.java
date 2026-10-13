@@ -49,8 +49,12 @@ public final class NoxisJukeboxes {
         JukeboxSongPlayer player = jukebox.getSongPlayer();
         if (!player.isPlaying()) return null;
         long origin = level.getGameTime() - player.getTicksSinceSongStarted();
-        net.minecraft.core.Holder<net.minecraft.world.item.JukeboxSong> song = player.getSong();
-        return new Music(pos, origin, NoxisDanceTempo.beatTicks(song), song == null ? null : song.unwrapKey().orElse(null));
+        // El reproductor devuelve la canción en sí; su nombre (clave) se busca en el registro de canciones.
+        net.minecraft.world.item.JukeboxSong song = player.getSong();
+        net.minecraft.resources.ResourceKey<net.minecraft.world.item.JukeboxSong> key = song == null ? null
+                : level.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.JUKEBOX_SONG)
+                        .getResourceKey(song).orElse(null);
+        return new Music(pos, origin, key == null ? NoxisDanceTempo.DEFAULT_BEAT_TICKS : NoxisDanceTempo.beatTicksOf(key), key);
     }
 
     /** El tocadiscos más cercano que está sonando ESA canción (o null). */
