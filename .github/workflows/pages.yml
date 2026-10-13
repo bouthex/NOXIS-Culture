@@ -1,0 +1,47 @@
+# Publica la presentación multilingüe (carpeta site/) en GitHub Pages.
+name: pages
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'site/**'
+      - 'docs/readme/**'
+      - 'tools/check-i18n.js'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v6
+      - name: check the five languages
+        run: node tools/check-i18n.js
+      - name: assemble site
+        run: |
+          mkdir -p _site/assets
+          cp -r site/. _site/
+          cp docs/readme/*.png docs/readme/*.gif _site/assets/
+          touch _site/.nojekyll
+      - name: configure pages
+        uses: actions/configure-pages@v5
+      - name: upload site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - name: deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
