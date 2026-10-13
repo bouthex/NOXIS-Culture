@@ -12,6 +12,7 @@ public final class ModBlockIds {
     public static final ResourceKey<Block> NOYUX_CAULDRON = create("noyux_cauldron");
     public static final ResourceKey<Block> NOYUX = create("noyux");
     public static final ResourceKey<Block> NOXIS_LIGHT = create("noxis_light");
+    public static final ResourceKey<Block> NOYUX_FIRE = create("noyux_fire");
 
     private static ResourceKey<Block> create(String name) {
         return ResourceKey.create(Registries.BLOCK, NoxisCulture.id(name));

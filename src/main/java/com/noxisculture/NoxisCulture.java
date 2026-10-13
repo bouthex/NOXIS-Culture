@@ -26,6 +26,7 @@ public final class NoxisCulture implements ModInitializer {
     public void onInitialize() {
         // El orden importa: los bloques registran sus BlockItems antes que el resto de ítems.
         ModSounds.initialize();
+        com.noxisculture.particle.ModParticles.initialize();
         ModFluids.initialize();
         ModBlocks.initialize();
         ModItems.initialize();

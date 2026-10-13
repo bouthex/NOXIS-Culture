@@ -38,6 +38,15 @@ public final class ModSounds {
     /** Disco de cristal violeta agrietado: «Grieta nocturna». */
     public static final SoundEvent MUSIC_DISC_NIGHT_RIFT = register("music_disc.night_rift");
 
+    /** Noyux: burbujeo grave y viscoso con un rumor energético de fondo. */
+    public static final SoundEvent NOYUX_AMBIENT = register("block.noyux.ambient");
+    /** Noyux fluyendo o cayendo: una masa pesada que corre. */
+    public static final SoundEvent NOYUX_FLOW = register("block.noyux.flow");
+    /** Fuego violeta: crepitar seco con un tintineo de cristal. */
+    public static final SoundEvent NOYUX_FIRE_CRACKLE = register("block.noyux_fire.crackle");
+    public static final SoundEvent NOYUX_FIRE_IGNITE = register("block.noyux_fire.ignite");
+    public static final SoundEvent NOYUX_FIRE_FIZZ = register("block.noyux_fire.extinguish");
+
     private static SoundEvent register(String name) {
         Identifier id = NoxisCulture.id(name);
         return Registry.register(BuiltInRegistries.SOUND_EVENT, id, SoundEvent.createVariableRangeEvent(id));

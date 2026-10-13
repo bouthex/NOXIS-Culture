@@ -66,7 +66,6 @@ import net.minecraft.world.entity.ai.goal.LookAtTradingPlayerGoal;
 import net.minecraft.world.entity.ai.goal.PanicGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.TradeWithPlayerGoal;
-import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.npc.villager.AbstractVillager;
 import net.minecraft.world.entity.player.Player;
@@ -82,7 +81,7 @@ import org.jspecify.annotations.Nullable;
  * nos da gratis el menú de comercio vanilla, el guardado de ofertas y la
  * integración con TradeWithPlayerGoal, sin el sistema de profesiones/cerebro.
  */
-public class NoxisVillager extends AbstractVillager implements com.noxisculture.entity.NoxisSpecies, NoxisLightSource, NoxisRestful, NoxisWorker, NoxisFascinatable, NoxisNatureLover, NoxisSocial, NoxisBowlSleeper, com.noxisculture.entity.ai.NoxisBored, com.noxisculture.entity.ai.NoxisFriend, com.noxisculture.entity.ai.NoxisCurious, com.noxisculture.entity.ai.NoxisKeeper, com.noxisculture.entity.ai.NoxisListener, com.noxisculture.entity.ai.NoxisDancer {
+public class NoxisVillager extends AbstractVillager implements com.noxisculture.entity.NoxisSpecies, NoxisLightSource, NoxisRestful, NoxisWorker, NoxisFascinatable, NoxisNatureLover, NoxisSocial, NoxisBowlSleeper, com.noxisculture.entity.ai.NoxisBored, com.noxisculture.entity.ai.NoxisFriend, com.noxisculture.entity.ai.NoxisCurious, com.noxisculture.entity.ai.NoxisKeeper, com.noxisculture.entity.ai.NoxisListener, com.noxisculture.entity.ai.NoxisDancer, com.noxisculture.entity.ai.NoxisRoamer {
     /** Puede reponer en su mesa como mucho cada medio día (~2 veces por día, como vanilla). */
     private static final long RESTOCK_INTERVAL_TICKS = 12_000L;
     /** Espera tras cerrar el menú antes de subir de nivel (vanilla: 40 ticks = 2 s). */
@@ -221,6 +220,8 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
     // Pecera y sombrero (servidor; se guardan con el Noxis).
     private @Nullable BlockPos bowlPos;
     private @Nullable BlockPos hatPos;
+    /** Centro provisorio de su zona si no tiene pecera (donde apareció; se guarda). */
+    private @Nullable BlockPos homeAnchor;
     private final com.noxisculture.entity.idle.NoxisBowlHop bowlHopAnimation = new com.noxisculture.entity.idle.NoxisBowlHop();
     /** Búsqueda temporal de sombrero (al despertarse sin el suyo; no se guarda). */
     private @Nullable BlockPos hatSearchOrigin;
@@ -1018,6 +1019,28 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         this.entityData.set(LISTEN_DIR, dir);
     }
 
+    // ---------------- Paseo y espacio personal (NoxisRoamer) ----------------
+
+    @Override
+    public @Nullable BlockPos getHomeAnchor() {
+        return this.bowlPos != null ? this.bowlPos : this.homeAnchor;
+    }
+
+    @Override
+    public boolean canRoam() {
+        return this.canListen() && this.notListening() && this.dancePair == null;
+    }
+
+    /** La zona provisoria: donde apareció; si por algo terminó muy lejos, pasa a ser donde está. */
+    private void tickHomeAnchor() {
+        if (this.tickCount % 40 != 0 || !this.onGround()) return;
+        if (this.homeAnchor == null
+                || this.homeAnchor.distSqr(this.blockPosition()) > com.noxisculture.entity.ai.NoxisWanderGoal.REANCHOR_DISTANCE
+                        * com.noxisculture.entity.ai.NoxisWanderGoal.REANCHOR_DISTANCE) {
+            this.homeAnchor = this.blockPosition().immutable();
+        }
+    }
+
     /** Ni escuchando ni bailando (para no interrumpirlo desde otras actividades). */
     private boolean notListening() {
         return this.entityData.get(LISTEN_ANIM) == com.noxisculture.entity.idle.NoxisListenAnimation.NONE
@@ -1373,7 +1396,10 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         this.goalSelector.addGoal(5, new com.noxisculture.entity.ai.NoxisPersonaGestureGoal<>(this));
         // A veces, en vez de pasear al azar, va hacia donde está su amigo (sin pegarse).
         this.goalSelector.addGoal(5, new com.noxisculture.entity.ai.NoxisSeekFriendGoal<>(this));
-        this.goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 0.35D));
+        // Espacio personal: si hay 4 o más parados en el mismo lugar, algunos se corren un poquito.
+        this.goalSelector.addGoal(5, new com.noxisculture.entity.ai.NoxisMakeRoomGoal<>(this));
+        // Pasear por su zona (su pecera o donde apareció): tramos cortos con paradas para observar.
+        this.goalSelector.addGoal(5, new com.noxisculture.entity.ai.NoxisWanderGoal<>(this));
         this.goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 6.0F));
         this.goalSelector.addGoal(9, new RandomLookAroundGoal(this));
     }
@@ -1524,6 +1550,7 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         this.tickFriendship();
         this.tickScholarBook();
         this.tickResonance();
+        this.tickHomeAnchor();
         // Rato sin hacer nada (para aburrirse): quieto, sin camino y tranquilo.
         boolean still = this.getNavigation().isDone() && this.getDeltaMovement().horizontalDistanceSqr() < 1.0E-4D;
         if (still && this.canBeBored()) {
@@ -1733,6 +1760,7 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         output.putBoolean("in_bowl", this.isInBowl());
         if (this.bowlPos != null) output.store("bowl_pos", BlockPos.CODEC, this.bowlPos);
         if (this.hatPos != null) output.store("hat_pos", BlockPos.CODEC, this.hatPos);
+        if (this.homeAnchor != null) output.store("home_anchor", BlockPos.CODEC, this.homeAnchor);
         if (this.friendId != null) output.store("friend_id", net.minecraft.core.UUIDUtil.CODEC, this.friendId);
         output.putInt("friend_trait", this.friendTrait);
         output.putString("personality", this.getPersonality().id());
@@ -1765,6 +1793,7 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         this.setInBowl(input.getBooleanOr("in_bowl", false));
         this.bowlPos = input.read("bowl_pos", BlockPos.CODEC).orElse(null);
         this.hatPos = input.read("hat_pos", BlockPos.CODEC).orElse(null);
+        this.homeAnchor = input.read("home_anchor", BlockPos.CODEC).orElse(null);
         if (this.bowlPos == null) this.setInBowl(false);
         this.friendId = input.read("friend_id", net.minecraft.core.UUIDUtil.CODEC).orElse(null);
         this.friendTrait = (byte) Mth.clamp(input.getInt("friend_trait").orElse(0).intValue(), 0, 2);

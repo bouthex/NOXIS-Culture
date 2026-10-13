@@ -1,6 +1,8 @@
 package com.noxisculture.fluid.custom;
 
 import com.noxisculture.block.ModBlocks;
+import com.noxisculture.block.custom.NoyuxBurning;
+import com.noxisculture.sound.ModSounds;
 import com.noxisculture.fluid.ModFluidTags;
 import com.noxisculture.fluid.ModFluids;
 import com.noxisculture.item.ModItems;
@@ -41,7 +43,13 @@ import org.jspecify.annotations.Nullable;
  *  - No genera fuentes infinitas.
  *  - Tocarlo quema 5 corazones por segundo.
  *  - Corroe de a poco la piedra que toca: piedra -> adoquín -> grava.
+ *  - Quema la piedra: enciende fuego violeta sobre la piedra quemable que toca (NoyuxBurning).
  *    (Se detiene en la grava para no "comerse" el mundo.)
+ *  - Movimiento como en la lava: está en la etiqueta de fluidos minecraft:lava
+ *    (data/minecraft/tags/fluid/lava.json), que es lo que Minecraft usa para la física de las
+ *    entidades en un líquido (flotar, subir con salto, salir). El fuego de la lava NO viene de la
+ *    etiqueta (lo pone LavaFluid#entityInside): el Noyux sigue haciendo solo su propio daño.
+ *    Al tocar agua no se vuelve obsidiana ni roca (ver LiquidBlockNoyuxMixin).
  */
 public abstract class NoyuxFluid extends FlowingFluid {
     private static final int TICK_DELAY = 40;          // lava en el Overworld: 30
@@ -74,10 +82,16 @@ public abstract class NoyuxFluid extends FlowingFluid {
             level.addParticle(ParticleTypes.PORTAL, pos.getX() + random.nextDouble(), pos.getY() + 0.9D,
                     pos.getZ() + random.nextDouble(), 0.0D, 0.04D, 0.0D);
         }
-        if (random.nextInt(120) == 0) {
+        // Sonido propio: quieto burbujea grave; fluyendo o cayendo suena a una masa pesada que corre.
+        // Pocas veces y con variaciones de tono, para que no se repita de forma molesta.
+        if (!state.isSource()) {
+            if (random.nextInt(100) == 0) {
+                level.playLocalSound(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D,
+                        ModSounds.NOYUX_FLOW, SoundSource.BLOCKS, 0.45F, 0.85F + random.nextFloat() * 0.25F, false);
+            }
+        } else if (random.nextInt(140) == 0) {
             level.playLocalSound(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D,
-                    SoundEvents.BUBBLE_COLUMN_WHIRLPOOL_AMBIENT, SoundSource.BLOCKS,
-                    0.4F, 0.6F + random.nextFloat() * 0.2F, false);
+                    ModSounds.NOYUX_AMBIENT, SoundSource.BLOCKS, 0.4F, 0.8F + random.nextFloat() * 0.3F, false);
         }
     }
 
@@ -119,6 +133,8 @@ public abstract class NoyuxFluid extends FlowingFluid {
 
     @Override
     protected void randomTick(ServerLevel level, BlockPos pos, FluidState state, RandomSource random) {
+        // Quema la piedra que toca (fuego violeta: ver NoyuxBurning).
+        NoyuxBurning.igniteAround(level, pos, random, 0.35F, 1);
         if (random.nextInt(CORRODE_CHANCE) != 0) {
             return;
         }
@@ -134,7 +150,8 @@ public abstract class NoyuxFluid extends FlowingFluid {
         }
     }
 
-    private static @Nullable BlockState corrode(BlockState state) {
+    /** Un paso de corrosión (piedra → adoquín → grava); null si ese bloque no se corroe. */
+    public static @Nullable BlockState corrode(BlockState state) {
         if (state.is(Blocks.DEEPSLATE)) return Blocks.COBBLED_DEEPSLATE.defaultBlockState();
         if (state.is(BlockTags.BASE_STONE_OVERWORLD)) return Blocks.COBBLESTONE.defaultBlockState();
         if (state.is(Blocks.COBBLESTONE) || state.is(Blocks.COBBLED_DEEPSLATE)) return Blocks.GRAVEL.defaultBlockState();

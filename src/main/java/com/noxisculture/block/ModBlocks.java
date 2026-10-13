@@ -22,7 +22,6 @@ import net.minecraft.world.item.equipment.Equippable;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.DropExperienceBlock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -119,8 +118,20 @@ public final class ModBlocks {
     /** El líquido Noyux colocado en el mundo. */
     public static final Block NOYUX = register(
             ModBlockIds.NOYUX,
-            props -> new LiquidBlock(ModFluids.NOYUX, props),
+            props -> new com.noxisculture.block.custom.NoyuxLiquidBlock(ModFluids.NOYUX, props),
             BlockBehaviour.Properties.ofFullCopy(Blocks.WATER).lightLevel(state -> 6));
+
+    /** Fuego violeta del Noyux: arde sobre la piedra (ver NoyuxBurning). Sin ítem ni botín. */
+    public static final Block NOYUX_FIRE = register(
+            ModBlockIds.NOYUX_FIRE, com.noxisculture.block.custom.NoyuxFireBlock::new,
+            BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_PURPLE)
+                    .replaceable()
+                    .noOcclusion()
+                    .noLootTable()
+                    .strength(0.0F)
+                    .pushReaction(PushReaction.DESTROY)
+                    .lightLevel(state -> 10));
 
     /** Luz invisible que acompaña a los Noxis (luz dinámica sin shaders). */
     public static final Block NOXIS_LIGHT = register(
