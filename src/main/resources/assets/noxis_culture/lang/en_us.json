@@ -40,5 +40,11 @@
   "item.noxis_culture.music_disc_golden_siesta": "Yellow Crystal Music Disc",
   "jukebox_song.noxis_culture.golden_siesta": "Noxis Culture - Golden Siesta",
   "item.noxis_culture.music_disc_night_rift": "Cracked Violet Crystal Music Disc",
-  "jukebox_song.noxis_culture.night_rift": "Noxis Culture - Night Rift"
+  "jukebox_song.noxis_culture.night_rift": "Noxis Culture - Night Rift",
+  "block.noxis_culture.noyux_fire": "Noyux Fire",
+  "subtitles.noxis_culture.noyux.ambient": "Noyux bubbles",
+  "subtitles.noxis_culture.noyux.flow": "Noyux flows",
+  "subtitles.noxis_culture.noyux_fire.crackle": "Violet fire crackles",
+  "subtitles.noxis_culture.noyux_fire.ignite": "Stone ignites",
+  "subtitles.noxis_culture.noyux_fire.extinguish": "Violet fire dies out"
 }

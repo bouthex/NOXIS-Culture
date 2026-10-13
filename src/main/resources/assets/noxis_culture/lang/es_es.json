@@ -40,5 +40,11 @@
   "item.noxis_culture.music_disc_golden_siesta": "Disco de cristal amarillo",
   "jukebox_song.noxis_culture.golden_siesta": "Noxis Culture - Siesta dorada",
   "item.noxis_culture.music_disc_night_rift": "Disco de cristal violeta agrietado",
-  "jukebox_song.noxis_culture.night_rift": "Noxis Culture - Grieta nocturna"
+  "jukebox_song.noxis_culture.night_rift": "Noxis Culture - Grieta nocturna",
+  "block.noxis_culture.noyux_fire": "Fuego de Noyux",
+  "subtitles.noxis_culture.noyux.ambient": "Noyux burbujea",
+  "subtitles.noxis_culture.noyux.flow": "Noyux fluye",
+  "subtitles.noxis_culture.noyux_fire.crackle": "Fuego violeta crepita",
+  "subtitles.noxis_culture.noyux_fire.ignite": "La piedra se enciende",
+  "subtitles.noxis_culture.noyux_fire.extinguish": "Fuego violeta se apaga"
 }

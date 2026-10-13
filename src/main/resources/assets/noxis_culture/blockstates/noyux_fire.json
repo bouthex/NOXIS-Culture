@@ -1,0 +1,9 @@
+{
+  "multipart": [
+    {
+      "apply": {
+        "model": "noxis_culture:block/noyux_fire_floor"
+      }
+    }
+  ]
+}
