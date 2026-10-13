@@ -18,6 +18,8 @@
   <a href="#installation">Installation</a>
 </p>
 
+<p align="center"><sub><a href="https://bouthex.github.io/NOXIS-Culture/">English · Español · Русский · 简体中文 · Português</a></sub></p>
+
 <p align="center"><img src="docs/readme/divider.png" alt="" width="100%"></p>
 
 ## The Noxis Universe
