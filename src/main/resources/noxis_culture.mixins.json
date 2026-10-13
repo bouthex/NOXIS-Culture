@@ -4,7 +4,8 @@
   "package": "com.noxisculture.mixin.common",
   "compatibilityLevel": "JAVA_25",
   "mixins": [
-    "MobAmbientSoundMixin"
+    "MobAmbientSoundMixin",
+    "LiquidBlockNoyuxMixin"
   ],
   "injectors": {
     "defaultRequire": 0
