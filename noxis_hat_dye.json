@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:crafting_dye",
+  "category": "equipment",
+  "dye": "#minecraft:dyes",
+  "group": "dyed_armor",
+  "result": {
+    "id": "noxis_culture:noxis_hat"
+  },
+  "target": "noxis_culture:noxis_hat"
+}

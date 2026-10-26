@@ -1,0 +1,18 @@
+{
+  "fabric:load_conditions": [
+    {
+      "condition": "fabric:not",
+      "value": {
+        "condition": "fabric:true"
+      }
+    }
+  ],
+  "type": "minecraft:blasting",
+  "category": "misc",
+  "cookingtime": 100,
+  "experience": 1.2,
+  "ingredient": "noxis_culture:raw_noxus",
+  "result": {
+    "id": "noxis_culture:noxus_ingot"
+  }
+}

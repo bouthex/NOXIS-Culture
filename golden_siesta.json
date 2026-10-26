@@ -1,0 +1,8 @@
+{
+  "sound_event": "noxis_culture:music_disc.golden_siesta",
+  "description": {
+    "translate": "jukebox_song.noxis_culture.golden_siesta"
+  },
+  "length_in_seconds": 119.3,
+  "comparator_output": 11
+}
