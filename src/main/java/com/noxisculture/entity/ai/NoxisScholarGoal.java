@@ -24,14 +24,18 @@ import org.jspecify.annotations.Nullable;
  * <p>Todo es visual: el libro es un libro vanilla vacío que nunca sale de su inventario (lo que
  * se ve en sus manitos es solo una imagen) y nadie puede ver lo que "lee" o "escribe".</p>
  *
- * <p>Espera propia de 4 a 8 minutos; un solo lector/escritor activo por zona; comercio, miedo,
- * sueño, descansos y demás actividades lo cortan (vuelve suave a su postura).</p>
+ * <p>Espera propia de 3 a 6 minutos; un solo lector/escritor activo por zona; comercio, miedo,
+ * sueño, descansos y demás actividades lo cortan (vuelve suave a su postura). La antorcha no lo
+ * impide: la guarda mientras lee y la vuelve a sacar después.</p>
+ *
+ * <p>Depuración: con {@code -Dnoxisculture.debugScholars=true} se anota en el registro por qué un
+ * lector no empieza (como mucho una vez por minuto por Noxis).</p>
  */
 public class NoxisScholarGoal<T extends PathfinderMob & NoxisKeeper> extends Goal {
     private static final double ZONE = 12.0D;
     private static final int SPOT_RADIUS = 6;
-    private static final int COOLDOWN = 4800;          // 4 min ...
-    private static final int COOLDOWN_RANDOM = 4800;   // ... a 8 min
+    private static final int COOLDOWN = 3600;          // 3 min ...
+    private static final int COOLDOWN_RANDOM = 3600;   // ... a 6 min
     private static final int WALK_TIMEOUT = 200;
     private static final double SPEED = 0.35D;
 
@@ -68,14 +72,35 @@ public class NoxisScholarGoal<T extends PathfinderMob & NoxisKeeper> extends Goa
         this.nextCheckTick = this.mob.tickCount + 100 + random.nextInt(60);
         long now = this.mob.level().getGameTime();
         if (this.nextAllowedTime < 0L) this.nextAllowedTime = now + 1200 + random.nextInt(2400);   // el primero: 1 a 3 min
-        if (now < this.nextAllowedTime || !this.mob.isScholar() || !this.mob.canHandleKeepsakes()) return false;
-        if (!this.mob.onGround() || this.mob.isInWater() || this.bookSlot() < 0 || random.nextInt(2) != 0) return false;
+        if (now < this.nextAllowedTime || !this.mob.isScholar()) return false;
+        if (!this.mob.canStudy()) return this.why("ocupado con otra cosa o no está tranquilo");
+        if (!this.mob.onGround() || this.mob.isInWater()) return this.why("no está en suelo firme");
+        if (this.bookSlot() < 0) return this.why("no tiene su libro en el inventario");
+        if (random.nextInt(2) != 0) return false;
         // Un solo lector/escritor activo por zona.
         boolean busy = !this.mob.level().getEntitiesOfClass(PathfinderMob.class, this.mob.getBoundingBox().inflate(ZONE, 4.0D, ZONE),
                 e -> e != this.mob && e instanceof NoxisKeeper k && NoxisKeepsakeAnimation.isBook(k.getKeepsakeAnim())).isEmpty();
-        if (busy) return false;
+        if (busy) return this.why("ya hay otro leyendo cerca");
         this.spot = this.findQuietSpot();
-        return this.spot != null;
+        if (this.spot == null) return this.why("no encontró un lugar tranquilo");
+        if (com.noxisculture.entity.custom.NoxisVillager.DEBUG_SCHOLARS) {
+            com.noxisculture.NoxisCulture.LOGGER.info("[Noxis lectores] {} va a {}", this.mob.getUUID(), "leer o escribir");
+        }
+        return true;
+    }
+
+    private long lastWhy = -1L;
+
+    /** Depuración: anota por qué no empezó (como mucho una vez por minuto). Siempre devuelve false. */
+    private boolean why(String reason) {
+        if (com.noxisculture.entity.custom.NoxisVillager.DEBUG_SCHOLARS) {
+            long now = this.mob.level().getGameTime();
+            if (this.lastWhy < 0L || now - this.lastWhy >= 1200L) {
+                this.lastWhy = now;
+                com.noxisculture.NoxisCulture.LOGGER.info("[Noxis lectores] {} no empieza: {}", this.mob.getUUID(), reason);
+            }
+        }
+        return false;
     }
 
     /** Un lugarcito tranquilo cerca: piso firme, sin nadie a menos de 2,5 bloques, al que pueda llegar. */
@@ -124,7 +149,7 @@ public class NoxisScholarGoal<T extends PathfinderMob & NoxisKeeper> extends Goa
 
     @Override
     public boolean canContinueToUse() {
-        if (this.done || this.mob.hurtTime > 0 || !this.mob.canHandleKeepsakes()) return false;
+        if (this.done || this.mob.hurtTime > 0 || !this.mob.canStudy()) return false;
         return this.bookSlot() >= 0;
     }
 

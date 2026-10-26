@@ -2,6 +2,7 @@ package com.noxisculture.block.custom;
 
 import com.noxisculture.block.ModBlockTags;
 import com.noxisculture.block.ModBlocks;
+import com.noxisculture.fluid.ModFluidTags;
 import com.noxisculture.particle.ModParticles;
 import com.noxisculture.sound.ModSounds;
 import net.minecraft.core.BlockPos;
@@ -11,6 +12,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.FluidState;
 
 /**
  * Combustión de la piedra por el Noyux (servidor). Mecánica propia: la piedra no arde en Minecraft,
@@ -24,7 +26,10 @@ import net.minecraft.world.level.block.state.BlockState;
  *   <li><b>Propagación controlada:</b> cada fuego tiene una generación (0 = encendido por el Noyux);
  *   solo se propaga a lugares vecinos con piedra quemable y hasta la generación {@link #MAX_SPREAD}.
  *   Así nunca se extiende sin fin.</li>
- *   <li><b>Extinción:</b> se apaga solo al consumirse, al quedar sin piedra debajo o con agua al lado.</li>
+ *   <li><b>Nunca frena al Noyux:</b> no se enciende donde el Noyux todavía puede correr, y si el
+ *   líquido llega al lado, el fuego se retira solo (y el líquido, de todos modos, lo puede pisar).</li>
+ *   <li><b>Extinción:</b> se apaga al consumirse, al quedar sin piedra debajo o con agua o lava al
+ *   lado. La lluvia no lo apaga.</li>
  * </ul>
  */
 public final class NoyuxBurning {
@@ -42,9 +47,23 @@ public final class NoyuxBurning {
         return level.getBlockState(pos).isAir() && isBurnable(level.getBlockState(pos.below()));
     }
 
+    /**
+     * ¿Hay Noyux al lado (o encima) de {@code pos} que todavía puede correr hasta ahí? En ese lugar no
+     * se enciende fuego, así las llamas nunca se adelantan al líquido ni le cortan el paso.
+     * Con caída 2, el Noyux que tiene 2 o menos ya no avanza de costado.
+     */
+    public static boolean nearSpreadingNoyux(BlockGetter level, BlockPos pos) {
+        if (level.getFluidState(pos.above()).is(ModFluidTags.NOYUX)) return true;
+        for (Direction dir : Direction.Plane.HORIZONTAL) {
+            FluidState fluid = level.getFluidState(pos.relative(dir));
+            if (fluid.is(ModFluidTags.NOYUX) && fluid.getAmount() > 2) return true;
+        }
+        return false;
+    }
+
     /** Enciende fuego violeta en {@code pos} (si se puede). Devuelve si lo encendió. */
     public static boolean ignite(ServerLevel level, BlockPos pos, int spread) {
-        if (!canBurnAt(level, pos)) return false;
+        if (!canBurnAt(level, pos) || nearSpreadingNoyux(level, pos)) return false;
         level.setBlockAndUpdate(pos, ModBlocks.NOYUX_FIRE.defaultBlockState()
                 .setValue(NoyuxFireBlock.SPREAD, Math.min(spread, MAX_SPREAD)));
         RandomSource random = level.getRandom();

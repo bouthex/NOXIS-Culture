@@ -46,12 +46,12 @@ window.NOXIS_I18N.pt = {
     ],
     relics: {
       title: "Relíquias e materiais",
-      alt: "Tijolos de Noxite, Noxus, Nixil, a Picareta Cosmos, Noyux, o aquário Noxis e o ovo gerador",
+      alt: "Tijolos de Noxite, Noxus, Nixil, a Picareta de Noxus, Noyux, o aquário Noxis e o ovo gerador",
       items: [
         "O <b>Noxus</b> se forma nas profundezas. Refine-o em lingotes ou coloque-o como um bloco que emite um leve brilho violeta.",
-        "O <b>Noyux</b> é um líquido violeta, lento e corrosivo, que desgasta a pedra. Guardado em um caldeirão, ele pode transformar Noxus bruto em lingotes.",
+        "O <b>Noyux</b> é um líquido violeta, lento e corrosivo, que desgasta a pedra. Guardado em um caldeirão, ele pode transformar Noxus bruto em lingotes. Ele incendeia a pedra com um fogo violeta lento que a chuva não apaga e, ao encontrar a água, endurece em <b>Niris</b>, uma pedra negra com reflexos azuis e violeta.",
         "Os <b>Tijolos de Noxite</b> <span class=\"ig\">(Noxite Bricks)</span> são a pedra escura dos Noxis. A variante brilhante pode ser fundida em <b>Nixil</b>.",
-        "A <b>Picareta Cosmos</b> <span class=\"ig\">(Cosmos Pickaxe)</span> carrega o <i>Pulso Estelar</i> <span class=\"ig\">(Stellar Pulse)</span>, que sente os veios de minério escondidos ao seu redor.",
+        "A <b>Picareta de Noxus</b> <span class=\"ig\">(Noxus Pickaxe)</span> carrega o <i>Pulso Estelar</i> <span class=\"ig\">(Stellar Pulse)</span>, que sente os veios de minério escondidos ao seu redor.",
         "Os <b>comerciantes Noxis</b> valorizam cristais, ecos e sculk. Seus clientes mais fiéis podem sair com algo cósmico."
       ]
     },
@@ -67,7 +67,7 @@ window.NOXIS_I18N.pt = {
     paras: [
       "Todo Noxis nasce com um de cinco temperamentos. Ele define como brinca, como ama e com que frequência se mete em encrenca.",
       "As orelhas dizem o que o rosto não diz. Alguns usam capa. Alguns levam uma luz para a escuridão. Quando a chuva chega, eles têm um plano.",
-      "Eles se ajeitam antes de dormir e se espreguiçam ao acordar. Guardam pequenos tesouros, colocam as coisas de volta no lugar e deixam presentes para quem amam."
+      "Eles se ajeitam antes de dormir e se espreguiçam ao acordar. Guardam pequenos tesouros, colocam as coisas de volta no lugar e deixam presentes para quem amam. De vez em quando, param para observar um animal, em silêncio e a uma distância respeitosa."
     ],
     whisper: "Algumas coisas só acontecem quando você não está olhando. Outras, só quando está.",
     tagline: "Dizem que o mundo parece diferente através dos olhos deles."

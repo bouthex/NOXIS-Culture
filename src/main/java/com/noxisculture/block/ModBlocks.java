@@ -78,6 +78,37 @@ public final class ModBlocks {
                     .sound(SoundType.AMETHYST)
                     .lightLevel(state -> 5)); // el ojo corrupto ilumina un poco
 
+    // ---------------- Reacciones del Noyux ----------------
+
+    /**
+     * Niris: Noyux (fuente) + agua. Piedra negra con reflejos azules y violetas. Un poco más blanda
+     * que la obsidiana (40 contra 50), pide pico de diamante o mejor y aguanta explosiones.
+     */
+    public static final Block NIRIS = register(
+            ModBlockItemIds.NIRIS, Block::new,
+            BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_BLACK)
+                    .instrument(NoteBlockInstrument.BASEDRUM)
+                    .requiresCorrectToolForDrops()
+                    .strength(40.0F, 1000.0F));
+
+    /**
+     * Ignyx (nombre pendiente de aprobación): Noyux (fuente) + lava. Cristal transparente y muy frágil:
+     * se rompe como el vidrio y no deja nada, salvo con el Pico de Noxus (ver su tabla de botín).
+     */
+    public static final Block IGNYX = register(
+            ModBlockItemIds.IGNYX, net.minecraft.world.level.block.TransparentBlock::new,
+            BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_MAGENTA)
+                    .instrument(NoteBlockInstrument.HAT)
+                    .strength(0.3F)
+                    .sound(SoundType.GLASS)
+                    .noOcclusion()
+                    .lightLevel(state -> 3)
+                    .isRedstoneConductor((state, level, pos) -> false)
+                    .isSuffocating((state, level, pos) -> false)
+                    .isViewBlocking((state, level, pos) -> false));
+
     // ---------------- Vida Noxis ----------------
 
     /** Pecera Noxis: donde duermen los Noxis (una por Noxis). */

@@ -20,7 +20,7 @@ import net.minecraft.world.item.component.ItemLore;
 public final class ModItems {
     private ModItems() {}
 
-    /** Pico del Cosmos: herramienta exclusiva que venden los Aldeanos Noxis. */
+    /** Pico de Noxus (antes "Pico del Cosmos"; el ID interno sigue siendo cosmos_pickaxe): herramienta exclusiva que venden los Aldeanos Noxis. */
     public static final Item COSMOS_PICKAXE = register(
             ModItemIds.COSMOS_PICKAXE,
             CosmosPickaxeItem::new,

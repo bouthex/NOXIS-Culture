@@ -257,8 +257,21 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
     /** Lector/escritor: 0 = sin decidir, 1 = no, 2 = sí (muy pocos). Y si ya recibió su libro. Se guardan. */
     private byte scholarTrait;
     private boolean scholarBookGiven;
-    /** Proporción de Noxis lectores/escritores (muy poquitos). */
-    private static final float SCHOLAR_CHANCE = 0.08F;
+    /**
+     * Proporción de Noxis lectores/escritores (pocos). Depende de la zona, para que sean raros pero
+     * se puedan encontrar: si no hay ningún lector cerca, la chance es mayor; si ya hay, es menor.
+     */
+    private static final float SCHOLAR_CHANCE_NONE_NEAR = 0.30F;
+    private static final float SCHOLAR_CHANCE_ONE_NEAR = 0.08F;
+    private static final float SCHOLAR_CHANCE_MORE_NEAR = 0.03F;
+    private static final double SCHOLAR_ZONE = 48.0D;
+    /** Versión de la tirada de lector/escritor: las criaturas guardadas con la tirada vieja (8 % fijo) tiran una vez más. */
+    private static final int SCHOLAR_ROLL_VERSION = 2;
+    private boolean scholarRerolled;
+    /** Mientras se pregunta si puede leer, la antorcha no cuenta (la guarda para leer). */
+    private boolean studyCheck;
+    /** Registro de depuración de los lectores: arrancar el juego con -Dnoxisculture.debugScholars=true */
+    public static final boolean DEBUG_SCHOLARS = Boolean.getBoolean("noxisculture.debugScholars");
     /** Qué cosas le regalaron (las recuerda con cariño y las guarda siempre). Se guarda. */
     private final java.util.LinkedHashSet<net.minecraft.world.item.Item> giftMemory = new java.util.LinkedHashSet<>();
     private final com.noxisculture.entity.idle.NoxisKeepsakeAnimation keepsakeAnimation =
@@ -415,7 +428,8 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
 
     @Override
     public boolean isSafeForSocial() {
-        return !this.isInBowl() && this.getMood() == NoxisMood.NEUTRAL && !this.isTrading() && !this.isHoldingTorch()
+        return !this.isInBowl() && this.getMood() == NoxisMood.NEUTRAL && !this.isTrading()
+                && (!this.isHoldingTorch() || this.studyCheck)
                 && !this.isHoldingUmbrella() && !this.isFascinated() && this.hurtTime == 0;
     }
 
@@ -1156,8 +1170,31 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
 
     @Override
     public boolean isScholar() {
-        if (this.scholarTrait == 0) this.scholarTrait = this.random.nextFloat() < SCHOLAR_CHANCE ? (byte) 2 : (byte) 1;
+        if (this.scholarTrait == 0 && !this.level().isClientSide()) {
+            int near = this.level().getEntitiesOfClass(NoxisVillager.class, this.getBoundingBox().inflate(SCHOLAR_ZONE, 16.0D, SCHOLAR_ZONE),
+                    e -> e != this && e.scholarTrait == 2).size();
+            float chance = near == 0 ? SCHOLAR_CHANCE_NONE_NEAR : near == 1 ? SCHOLAR_CHANCE_ONE_NEAR : SCHOLAR_CHANCE_MORE_NEAR;
+            this.scholarTrait = this.random.nextFloat() < chance ? (byte) 2 : (byte) 1;
+            if (DEBUG_SCHOLARS) {
+                com.noxisculture.NoxisCulture.LOGGER.info("[Noxis lectores] {} en {}: {} (lectores cerca: {}, chance {})",
+                        this.getUUID(), this.blockPosition().toShortString(), this.scholarTrait == 2 ? "LECTOR" : "no", near, chance);
+            }
+        }
         return this.scholarTrait == 2;
+    }
+
+    /**
+     * ¿Puede ponerse a leer o escribir? Igual que {@link #canHandleKeepsakes()}, pero la antorcha no
+     * lo impide: de noche o en cuevas la guarda mientras lee (ver {@link #setKeepsakeAnim}).
+     */
+    @Override
+    public boolean canStudy() {
+        this.studyCheck = true;
+        try {
+            return this.canHandleKeepsakes();
+        } finally {
+            this.studyCheck = false;
+        }
     }
 
     /** Servidor: un lector/escritor recibe su libro (una sola vez, en su inventario privado). */
@@ -1188,6 +1225,10 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
     @Override
     public void setKeepsakeAnim(byte anim) {
         this.entityData.set(KEEPSAKE_ANIM, anim);
+        // Para leer o escribir necesita las dos manitos: guarda la antorcha (la vuelve a sacar después).
+        if (com.noxisculture.entity.idle.NoxisKeepsakeAnimation.isBook(anim) && this.isHoldingTorch()) {
+            this.entityData.set(TORCH, false);
+        }
     }
 
     @Override
@@ -1399,6 +1440,8 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         // Espacio personal: si hay 4 o más parados en el mismo lugar, algunos se corren un poquito.
         this.goalSelector.addGoal(5, new com.noxisculture.entity.ai.NoxisMakeRoomGoal<>(this));
         // Pasear por su zona (su pecera o donde apareció): tramos cortos con paradas para observar.
+        // Observar animales con calma (prioridad baja: cualquier otra actividad lo corta).
+        this.goalSelector.addGoal(5, new com.noxisculture.entity.ai.NoxisAnimalWatchGoal<>(this));
         this.goalSelector.addGoal(5, new com.noxisculture.entity.ai.NoxisWanderGoal<>(this));
         this.goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 6.0F));
         this.goalSelector.addGoal(9, new RandomLookAroundGoal(this));
@@ -1574,6 +1617,7 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
                     || this.level().getBrightness(LightLayer.SKY, this.blockPosition()) < CAVE_SKY_LIGHT;
             // Sin antorcha dentro de la pecera ni mientras se saca o se pone el sombrero (usa los bracitos).
             boolean torch = dark && !this.isInBowl()
+                    && !com.noxisculture.entity.idle.NoxisKeepsakeAnimation.isBook(this.entityData.get(KEEPSAKE_ANIM))
                     && this.entityData.get(HAT_ANIM) == com.noxisculture.entity.idle.NoxisHatAnimation.NONE
                     && this.entityData.get(BOWL_HOP) == com.noxisculture.entity.idle.NoxisBowlHop.NONE;
             if (torch != this.isHoldingTorch()) {
@@ -1766,6 +1810,7 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         output.putString("personality", this.getPersonality().id());
         output.putInt("scholar_trait", this.scholarTrait);
         output.putBoolean("scholar_book", this.scholarBookGiven);
+        output.putInt("scholar_roll", SCHOLAR_ROLL_VERSION);
         output.store("gift_memory", net.minecraft.core.registries.BuiltInRegistries.ITEM.byNameCodec().listOf(),
                 new java.util.ArrayList<>(this.giftMemory));
     }
@@ -1802,6 +1847,11 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         this.personality = com.noxisculture.entity.personality.NoxisPersonality.byId(input.getStringOr("personality", ""));
         this.scholarTrait = (byte) Mth.clamp(input.getInt("scholar_trait").orElse(0).intValue(), 0, 2);
         this.scholarBookGiven = input.getBooleanOr("scholar_book", false);
+        // Guardado con la tirada vieja y salió "no": tira otra vez (una sola vez) con la tirada nueva.
+        if (!this.scholarRerolled && this.scholarTrait == 1 && input.getInt("scholar_roll").orElse(1).intValue() < SCHOLAR_ROLL_VERSION) {
+            this.scholarTrait = 0;
+            this.scholarRerolled = true;
+        }
         this.giftMemory.clear();
         input.read("gift_memory", net.minecraft.core.registries.BuiltInRegistries.ITEM.byNameCodec().listOf())
                 .ifPresent(this.giftMemory::addAll);

@@ -46,12 +46,12 @@ window.NOXIS_I18N.es = {
     ],
     relics: {
       title: "Reliquias y materiales",
-      alt: "Ladrillos de Noxita, Noxus, Nixil, el Pico del Cosmos, Noyux, la Pecera Noxis y el huevo del Aldeano Noxis",
+      alt: "Ladrillos de Noxita, Noxus, Nixil, el Pico de Noxus, Noyux, la Pecera Noxis y el huevo del Aldeano Noxis",
       items: [
         "El <b>Noxus</b> se forma en las profundidades. Refínalo en lingotes o colócalo como un bloque que desprende un tenue resplandor violeta.",
-        "El <b>Noyux</b> es un líquido violeta, lento y corrosivo, que carcome la piedra. En un caldero, puede convertir el Noxus en bruto en lingotes.",
+        "El <b>Noyux</b> es un líquido violeta, lento y corrosivo, que carcome la piedra. En un caldero, puede convertir el Noxus en bruto en lingotes. Enciende la piedra con un fuego violeta lento que la lluvia no apaga, y al tocar el agua se endurece en <b>Niris</b>, una piedra negra con reflejos azules y violetas.",
         "Los <b>Ladrillos de Noxita</b> son la piedra oscura de los Noxis. Su variante resplandeciente se funde en <b>Nixil</b>.",
-        "El <b>Pico del Cosmos</b> lleva el <i>Pulso Estelar</i>, que percibe las vetas de mineral ocultas a tu alrededor.",
+        "El <b>Pico de Noxus</b> lleva el <i>Pulso Estelar</i>, que percibe las vetas de mineral ocultas a tu alrededor.",
         "Los <b>comerciantes Noxis</b> valoran los cristales, los ecos y el sculk. Sus clientes más fieles pueden irse con algo cósmico."
       ]
     },
@@ -67,7 +67,7 @@ window.NOXIS_I18N.es = {
     paras: [
       "Cada Noxis nace con uno de cinco temperamentos. Define cómo juega, cómo quiere y cuán a menudo se mete en problemas.",
       "Sus orejas dicen lo que sus caras callan. Algunos llevan capa. Otros llevan una luz hacia la oscuridad. Cuando llega la lluvia, tienen un plan.",
-      "Se acomodan antes de dormir y se estiran al despertar. Guardan pequeños tesoros, devuelven las cosas a su lugar y dejan regalos a quienes quieren."
+      "Se acomodan antes de dormir y se estiran al despertar. Guardan pequeños tesoros, devuelven las cosas a su lugar y dejan regalos a quienes quieren. De vez en cuando se detienen a mirar a un animal, en silencio y a una distancia respetuosa."
     ],
     whisper: "Algunas cosas solo pasan cuando no estás mirando. Otras, solo cuando sí.",
     tagline: "Dicen que el mundo se ve distinto a través de sus ojos."

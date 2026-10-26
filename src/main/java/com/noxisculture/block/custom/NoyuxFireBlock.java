@@ -1,6 +1,7 @@
 package com.noxisculture.block.custom;
 
 import com.mojang.serialization.MapCodec;
+import com.noxisculture.fluid.ModFluidTags;
 import com.noxisculture.fluid.custom.NoyuxFluid;
 import com.noxisculture.particle.ModParticles;
 import com.noxisculture.sound.ModSounds;
@@ -11,6 +12,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -18,6 +20,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
+import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
@@ -27,13 +30,18 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * Fuego violeta del Noyux: arde sobre la piedra (mecánica propia, ver {@link NoyuxBurning}).
  *
  * <ul>
- *   <li>Se revisa cada 1,5 a 2,5 s (tick programado, nunca cada tick).</li>
- *   <li>Envejece ({@link #AGE}) y se consume solo; al consumirse a veces "quema" la piedra de abajo
- *   un paso (piedra → adoquín → grava, igual que la corrosión del Noyux).</li>
- *   <li>Mientras arde puede encender un lugar vecino con piedra quemable, hasta la generación
- *   {@link NoyuxBurning#MAX_SPREAD} ({@link #SPREAD}): la propagación siempre termina.</li>
- *   <li>Se apaga con agua al lado o si ya no hay piedra quemable debajo.</li>
- *   <li>Quema a las criaturas que están adentro (daño mágico, como el Noyux).</li>
+ *   <li>Se revisa una vez por segundo (tick programado de 20 ticks, nunca cada tick).</li>
+ *   <li>Quema a quien esté adentro: {@link #DAMAGE} de daño mágico por segundo. Antes eran 2,0 cada
+ *   1,5 a 2,5 s (≈ 1 por segundo); ahora son 4,0 por segundo. No se suma al daño del líquido: quien
+ *   ya está dentro del Noyux solo recibe el daño del Noyux. Tampoco enciende al jugador con fuego
+ *   vanilla, así que el efecto termina apenas sale de las llamas.</li>
+ *   <li>Envejece despacio ({@link #AGE}) y se consume solo; al consumirse a veces "quema" la piedra de
+ *   abajo un paso (piedra → adoquín → grava, igual que la corrosión del Noyux).</li>
+ *   <li>Avanza de a poco: de vez en cuando enciende un único lugar vecino con piedra quemable, hasta la
+ *   generación {@link NoyuxBurning#MAX_SPREAD} ({@link #SPREAD}). La propagación siempre termina.</li>
+ *   <li>Nunca frena al Noyux: no tiene colisión, el líquido lo puede pisar, y si llega Noyux que todavía
+ *   corre, el fuego se retira solo (y no se vuelve a encender ahí, ver NoyuxBurning#nearSpreadingNoyux).</li>
+ *   <li>Se apaga con agua o lava al lado (o si lo pisan). La lluvia NO lo apaga (el fuego vanilla no cambia).</li>
  * </ul>
  */
 public class NoyuxFireBlock extends Block {
@@ -41,9 +49,12 @@ public class NoyuxFireBlock extends Block {
     public static final IntegerProperty AGE = IntegerProperty.create("age", 0, 7);
     public static final IntegerProperty SPREAD = IntegerProperty.create("spread", 0, NoyuxBurning.MAX_SPREAD);
     private static final VoxelShape SHAPE = Block.box(0, 0, 0, 16, 1, 16);
-    private static final float SPREAD_CHANCE = 0.45F;
+    private static final int TICK = 20;                 // se revisa una vez por segundo
+    private static final float AGE_CHANCE = 0.35F;      // por segundo: vive ~15 a 25 s
+    private static final float SPREAD_CHANCE = 0.12F;   // por segundo: avanza de a un bloque, despacio
     private static final float SCORCH_CHANCE = 0.35F;
-    private static final float DAMAGE = 2.0F;
+    /** Daño por segundo dentro del fuego violeta (antes: 2,0 cada 1,5-2,5 s). */
+    public static final float DAMAGE = 4.0F;
 
     public NoyuxFireBlock(Properties properties) {
         super(properties);
@@ -71,13 +82,13 @@ public class NoyuxFireBlock extends Block {
     }
 
     private static int delay(RandomSource random) {
-        return 30 + random.nextInt(20);
+        return TICK;
     }
 
     @Override
     protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
-        if (!level.isClientSide()) {
-            level.scheduleTick(pos, this, delay(level.getRandom()));
+        if (!level.isClientSide() && !oldState.is(this)) {
+            level.scheduleTick(pos, this, 10 + level.getRandom().nextInt(TICK));   // desfasados entre sí
         }
     }
 
@@ -88,18 +99,27 @@ public class NoyuxFireBlock extends Block {
             this.extinguish(level, pos, random);
             return;
         }
-        // Agua al lado: se apaga.
+        // Llega Noyux que todavía corre: el fuego le deja paso (sin chispas ni sonido).
+        if (NoyuxBurning.nearSpreadingNoyux(level, pos)) {
+            level.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
+            return;
+        }
+        // Agua o lava al lado: se apaga.
         for (Direction dir : Direction.values()) {
-            if (level.getFluidState(pos.relative(dir)).is(FluidTags.WATER)) {
+            FluidState near = level.getFluidState(pos.relative(dir));
+            if (near.is(FluidTags.WATER) || NoyuxReactions.isLava(near)) {
                 this.extinguish(level, pos, random);
                 return;
             }
         }
-        // Quema a quien esté adentro.
+        // Quema a quien esté adentro (una vez por segundo).
         for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, new AABB(pos))) {
+            if (living instanceof Player player && (player.isCreative() || player.isSpectator())) continue;
+            if (level.getFluidState(living.blockPosition()).is(ModFluidTags.NOYUX)) continue; // ya lo quema el líquido
             living.hurtServer(level, level.damageSources().magic(), DAMAGE);
         }
-        int age = state.getValue(AGE) + 1 + random.nextInt(2);
+        int age = state.getValue(AGE);
+        if (random.nextFloat() < AGE_CHANCE) age++;
         if (age > 7) {
             // Se consumió: a veces deja la piedra quemada (un paso de corrosión).
             if (random.nextFloat() < SCORCH_CHANCE) {
@@ -109,13 +129,14 @@ public class NoyuxFireBlock extends Block {
             this.extinguish(level, pos, random);
             return;
         }
-        // Propagación controlada a un lugar vecino con piedra quemable.
+        // Propagación lenta: a lo sumo un lugar vecino (al costado, o un escalón arriba o abajo).
         int spread = state.getValue(SPREAD);
-        if (spread < NoyuxBurning.MAX_SPREAD && random.nextFloat() < SPREAD_CHANCE) {
-            BlockPos target = pos.offset(random.nextInt(3) - 1, random.nextInt(3) - 1, random.nextInt(3) - 1);
-            if (!target.equals(pos)) NoyuxBurning.ignite(level, target, spread + 1);
+        if (spread < NoyuxBurning.MAX_SPREAD && age >= 2 && random.nextFloat() < SPREAD_CHANCE) {
+            Direction dir = Direction.Plane.HORIZONTAL.getRandomDirection(random);
+            BlockPos target = pos.relative(dir).above(random.nextInt(3) - 1);
+            NoyuxBurning.ignite(level, target, spread + 1);
         }
-        level.setBlockAndUpdate(pos, state.setValue(AGE, age));
+        if (age != state.getValue(AGE)) level.setBlockAndUpdate(pos, state.setValue(AGE, age));
         level.scheduleTick(pos, this, delay(random));
     }
 

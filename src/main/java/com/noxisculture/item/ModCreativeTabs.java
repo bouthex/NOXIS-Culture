@@ -38,6 +38,8 @@ public final class ModCreativeTabs {
                 output.accept(ModItems.NOYUX_BUCKET);
                 output.accept(ModItems.NOXUS_INGOT);
                 output.accept(ModBlocks.NOXUS_BLOCK.asItem());
+                output.accept(ModBlocks.NIRIS.asItem());
+                output.accept(ModBlocks.IGNYX.asItem());
                 // Materiales y herramientas
                 output.accept(ModItems.NIXIL);
                 output.accept(ModItems.COSMOS_PICKAXE);

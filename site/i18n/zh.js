@@ -46,12 +46,12 @@ window.NOXIS_I18N.zh = {
     ],
     relics: {
       title: "遗物与材料",
-      alt: "Noxite 砖、Noxus、Nixil、Cosmos 镐、Noyux、Noxis 鱼缸和刷怪蛋",
+      alt: "Noxite 砖、Noxus、Nixil、Noxus 镐、Noyux、Noxis 鱼缸和刷怪蛋",
       items: [
         "<b>Noxus</b> 形成于地下深处。可以把它精炼成锭，也可以放置成散发淡淡紫光的方块。",
-        "<b>Noyux</b> 是一种流动缓慢、带有腐蚀性的紫色液体，会侵蚀石头。盛在炼药锅里时，它能把粗 Noxus 变成锭。",
+        "<b>Noyux</b> 是一种流动缓慢、带有腐蚀性的紫色液体，会侵蚀石头。盛在炼药锅里时，它能把粗 Noxus 变成锭。它会用缓慢燃烧、雨水也浇不灭的紫色火焰点燃石头；与水相遇时，它会凝固成 <b>Niris</b>——一种闪着蓝紫色光泽的黑色石头。",
         "<b>Noxite 砖</b> <span class=\"ig\">(Noxite Bricks)</span> 是 Noxis 的暗色石材。它的发光变种可以熔炼成 <b>Nixil</b>。",
-        "<b>Cosmos 镐</b> <span class=\"ig\">(Cosmos Pickaxe)</span> 蕴藏着<i>星辰脉动</i> <span class=\"ig\">(Stellar Pulse)</span>，能感知你周围隐藏的矿脉。",
+        "<b>Noxus 镐</b> <span class=\"ig\">(Noxus Pickaxe)</span> 蕴藏着<i>星辰脉动</i> <span class=\"ig\">(Stellar Pulse)</span>，能感知你周围隐藏的矿脉。",
         "<b>Noxis 商人</b>看重水晶、回响和幽匿。它们最忠实的顾客，也许能带走一些来自宇宙的东西。"
       ]
     },
@@ -67,7 +67,7 @@ window.NOXIS_I18N.zh = {
     paras: [
       "每只 Noxis 生来就带有五种性情之一。性情决定了它们怎样玩耍、怎样去爱，以及多常惹上麻烦。",
       "它们的耳朵会说出脸上藏起的心事。有的披着斗篷，有的提着一盏灯走进黑暗。下雨的时候，它们自有打算。",
-      "睡前它们会先安顿好自己，醒来时会伸个懒腰。它们珍藏小小的宝物，把东西放回原处，还会给在乎的人留下礼物。"
+      "睡前它们会先安顿好自己，醒来时会伸个懒腰。它们珍藏小小的宝物，把东西放回原处，还会给在乎的人留下礼物。它们偶尔会停下脚步，静静地在不远处观察一只动物。"
     ],
     whisper: "有些事只在你不看的时候发生。另一些，只在你看着的时候。",
     tagline: "有人说，透过它们的眼睛，世界会变得不一样。"

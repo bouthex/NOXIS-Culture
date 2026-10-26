@@ -16,6 +16,7 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.InsideBlockEffectApplier;
@@ -182,7 +183,23 @@ public abstract class NoyuxFluid extends FlowingFluid {
 
     @Override
     public boolean canBeReplacedWith(FluidState state, BlockGetter level, BlockPos pos, Fluid fluid, Direction direction) {
-        return direction == Direction.DOWN && !fluid.is(ModFluidTags.NOYUX);
+        // El agua y la lava no lo pisan: reaccionan con él (NoyuxReactions) en vez de reemplazarlo.
+        return direction == Direction.DOWN && !fluid.is(ModFluidTags.NOYUX)
+                && !fluid.is(FluidTags.WATER) && !fluid.is(FluidTags.LAVA);
+    }
+
+    /** Noyux que cae sobre agua o lava: deja adoquín (como la lava que cae al agua deja piedra). */
+    @Override
+    protected void spreadTo(LevelAccessor level, BlockPos pos, BlockState state, Direction direction, FluidState target) {
+        BlockState result = com.noxisculture.block.custom.NoyuxReactions.flowingResult(level.getFluidState(pos));
+        if (result != null) {
+            if (state.getBlock() instanceof LiquidBlock) {
+                level.setBlock(pos, result, Block.UPDATE_ALL);
+            }
+            com.noxisculture.block.custom.NoyuxReactions.fizz(level, pos);
+            return;
+        }
+        super.spreadTo(level, pos, state, direction, target);
     }
 
     @Override

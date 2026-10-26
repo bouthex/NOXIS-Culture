@@ -20,6 +20,10 @@ public final class ModBlockItemIds {
     public static final BlockItemId DEEPSLATE_NOXUS_ORE = create("deepslate_noxus_ore");
     public static final BlockItemId NOXUS_BLOCK = create("noxus_block");
 
+    // Reacciones del Noyux
+    public static final BlockItemId NIRIS = create("niris");
+    public static final BlockItemId IGNYX = create("ignyx");   // nombre pendiente de aprobación
+
     // Vida Noxis
     public static final BlockItemId NOXIS_BOWL = create("noxis_bowl");
     public static final BlockItemId NOXIS_HAT = create("noxis_hat");

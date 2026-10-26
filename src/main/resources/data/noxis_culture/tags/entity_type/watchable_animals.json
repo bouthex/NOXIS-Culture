@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "values": [
+    { "id": "minecraft:squid", "required": false },
+    { "id": "minecraft:glow_squid", "required": false },
+    { "id": "minecraft:allay", "required": false }
+  ]
+}

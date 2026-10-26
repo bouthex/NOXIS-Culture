@@ -1,6 +1,6 @@
 {
   "block.noxis_culture.noxite_bricks": "Noxite Bricks",
-  "item.noxis_culture.cosmos_pickaxe": "Cosmos Pickaxe",
+  "item.noxis_culture.cosmos_pickaxe": "Noxus Pickaxe",
   "item.noxis_culture.cosmos_pickaxe.lore": "Right-click: Stellar Pulse",
   "item.noxis_culture.cosmos_pickaxe.pulse": "✦ Stellar Pulse: %s ore veins nearby",
   "entity.noxis_culture.noxis_villager": "Noxis Villager",
@@ -46,5 +46,7 @@
   "subtitles.noxis_culture.noyux.flow": "Noyux flows",
   "subtitles.noxis_culture.noyux_fire.crackle": "Violet fire crackles",
   "subtitles.noxis_culture.noyux_fire.ignite": "Stone ignites",
-  "subtitles.noxis_culture.noyux_fire.extinguish": "Violet fire dies out"
+  "subtitles.noxis_culture.noyux_fire.extinguish": "Violet fire dies out",
+  "block.noxis_culture.niris": "Niris",
+  "block.noxis_culture.ignyx": "Ignyx"
 }

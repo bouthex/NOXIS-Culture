@@ -35,6 +35,11 @@ public interface NoxisKeeper extends NoxisCurious {
     /** ¿Es de los poquitos Noxis lectores y escritores? (se decide una vez y se guarda). */
     boolean isScholar();
 
+    /** ¿Puede ponerse a leer o escribir? (como canHandleKeepsakes, pero la antorcha no lo impide). */
+    default boolean canStudy() {
+        return this.canHandleKeepsakes();
+    }
+
     /** Reacción de fascinación (la de los cristales) mientras mira algo cristalino. */
     void setFascinated(boolean fascinated);
 }

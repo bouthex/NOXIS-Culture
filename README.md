@@ -72,13 +72,13 @@
 ### Relics &amp; Materials
 
 <p align="center">
-  <img src="docs/readme/materials.png" alt="Noxite bricks, Noxus, Nixil, the Cosmos Pickaxe, Noyux, the Noxis Fishbowl and the spawn egg" width="100%">
+  <img src="docs/readme/materials.png" alt="Noxite bricks, Noxus, Nixil, the Noxus Pickaxe, Noyux, the Noxis Fishbowl and the spawn egg" width="100%">
 </p>
 
 - **Noxus** forms deep underground. Refine it into ingots, or set it as a block that gives off a faint violet glow.
-- **Noyux** is a slow, corrosive violet liquid that eats into stone. Held in a cauldron, it can turn raw Noxus into ingots.
+- **Noyux** is a slow, corrosive violet liquid that eats into stone. Held in a cauldron, it can turn raw Noxus into ingots. It sets stone alight with a slow violet fire that the rain cannot put out, and where it meets water it hardens into **Niris**, a black stone with blue and violet glints.
 - **Noxite Bricks** are the dark stone of the Noxis. Their glowing variant smelts down into **Nixil**.
-- The **Cosmos Pickaxe** carries the *Stellar Pulse*, which senses the ore veins hidden around you.
+- The **Noxus Pickaxe** carries the *Stellar Pulse*, which senses the ore veins hidden around you.
 - **Noxis traders** value crystals, echoes and sculk. Their most loyal customers may leave with something cosmic.
 
 ### A Hat for Every Noxis
@@ -107,7 +107,8 @@
       Their ears say what their faces won't. Some wear capes. Some carry a light into the dark.
       When the rain comes, they have a plan.<br><br>
       They settle in before they sleep and stretch when they wake.
-      They keep small treasures, put things back where they belong, and leave gifts for the ones they care about.<br><br>
+      They keep small treasures, put things back where they belong, and leave gifts for the ones they care about.
+      Now and then they stop to watch an animal, quietly, from a respectful distance.<br><br>
       <i>Some things only happen when you are not looking. Others, only when you are.</i>
     </td>
   </tr>

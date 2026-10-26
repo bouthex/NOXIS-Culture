@@ -47,12 +47,12 @@ window.NOXIS_I18N.en = {
     ],
     relics: {
       title: "Relics &amp; Materials",
-      alt: "Noxite bricks, Noxus, Nixil, the Cosmos Pickaxe, Noyux, the Noxis Fishbowl and the spawn egg",
+      alt: "Noxite bricks, Noxus, Nixil, the Noxus Pickaxe, Noyux, the Noxis Fishbowl and the spawn egg",
       items: [
         "<b>Noxus</b> forms deep underground. Refine it into ingots, or set it as a block that gives off a faint violet glow.",
-        "<b>Noyux</b> is a slow, corrosive violet liquid that eats into stone. Held in a cauldron, it can turn raw Noxus into ingots.",
+        "<b>Noyux</b> is a slow, corrosive violet liquid that eats into stone. Held in a cauldron, it can turn raw Noxus into ingots. It sets stone alight with a slow violet fire that the rain cannot put out, and where it meets water it hardens into <b>Niris</b>, a black stone with blue and violet glints.",
         "<b>Noxite Bricks</b> are the dark stone of the Noxis. Their glowing variant smelts down into <b>Nixil</b>.",
-        "The <b>Cosmos Pickaxe</b> carries the <i>Stellar Pulse</i>, which senses the ore veins hidden around you.",
+        "The <b>Noxus Pickaxe</b> carries the <i>Stellar Pulse</i>, which senses the ore veins hidden around you.",
         "<b>Noxis traders</b> value crystals, echoes and sculk. Their most loyal customers may leave with something cosmic."
       ]
     },
@@ -68,7 +68,7 @@ window.NOXIS_I18N.en = {
     paras: [
       "Every Noxis is born with one of five temperaments. It shapes how they play, how they love and how often they get into trouble.",
       "Their ears say what their faces won't. Some wear capes. Some carry a light into the dark. When the rain comes, they have a plan.",
-      "They settle in before they sleep and stretch when they wake. They keep small treasures, put things back where they belong, and leave gifts for the ones they care about."
+      "They settle in before they sleep and stretch when they wake. They keep small treasures, put things back where they belong, and leave gifts for the ones they care about. Now and then they stop to watch an animal, quietly, from a respectful distance."
     ],
     whisper: "Some things only happen when you are not looking. Others, only when you are.",
     tagline: "Some say the world looks different through their eyes."

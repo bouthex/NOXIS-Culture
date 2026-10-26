@@ -4,7 +4,9 @@
   "package": "com.noxisculture.mixin.client",
   "compatibilityLevel": "JAVA_25",
   "client": [
-    "GameRendererMixin"
+    "GameRendererMixin",
+    "FogRendererNoyuxMixin",
+    "ScreenEffectRendererNoyuxMixin"
   ],
   "injectors": {
     "defaultRequire": 1

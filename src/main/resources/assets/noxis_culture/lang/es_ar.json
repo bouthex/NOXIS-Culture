@@ -1,6 +1,6 @@
 {
   "block.noxis_culture.noxite_bricks": "Ladrillos de Noxita",
-  "item.noxis_culture.cosmos_pickaxe": "Pico del Cosmos",
+  "item.noxis_culture.cosmos_pickaxe": "Pico de Noxus",
   "item.noxis_culture.cosmos_pickaxe.lore": "Clic derecho: Pulso Estelar",
   "item.noxis_culture.cosmos_pickaxe.pulse": "✦ Pulso Estelar: %s vetas cerca",
   "entity.noxis_culture.noxis_villager": "Aldeano Noxis",
@@ -46,5 +46,7 @@
   "subtitles.noxis_culture.noyux.flow": "Noyux fluye",
   "subtitles.noxis_culture.noyux_fire.crackle": "Fuego violeta crepita",
   "subtitles.noxis_culture.noyux_fire.ignite": "La piedra se enciende",
-  "subtitles.noxis_culture.noyux_fire.extinguish": "Fuego violeta se apaga"
+  "subtitles.noxis_culture.noyux_fire.extinguish": "Fuego violeta se apaga",
+  "block.noxis_culture.niris": "Niris",
+  "block.noxis_culture.ignyx": "Ignyx"
 }

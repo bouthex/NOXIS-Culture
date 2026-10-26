@@ -3,6 +3,7 @@ package com.noxisculture.tag;
 import com.noxisculture.NoxisCulture;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.tags.TagKey;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 
@@ -25,6 +26,17 @@ public final class ModTags {
 
         private static TagKey<Item> create(String name) {
             return TagKey.create(Registries.ITEM, NoxisCulture.id(name));
+        }
+    }
+
+    public static final class EntityTypes {
+        /** Criaturas extra que los Noxis se paran a mirar (además de los animales vanilla y de mods que sean Animal). */
+        public static final TagKey<EntityType<?>> WATCHABLE_ANIMALS = create("watchable_animals");
+        /** Animales que los Noxis NO se paran a mirar (por ejemplo, los peligrosos). */
+        public static final TagKey<EntityType<?>> NOT_WATCHABLE = create("not_watchable");
+
+        private static TagKey<EntityType<?>> create(String name) {
+            return TagKey.create(Registries.ENTITY_TYPE, NoxisCulture.id(name));
         }
     }
 }
