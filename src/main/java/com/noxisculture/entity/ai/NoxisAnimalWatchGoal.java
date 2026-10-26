@@ -98,8 +98,8 @@ public class NoxisAnimalWatchGoal<T extends PathfinderMob & NoxisCurious> extend
 
     /** ¿Los Noxis se paran a mirar a esta criatura? */
     public static boolean isWatchable(Entity e) {
-        if (!e.isAlive() || e.getType().is(ModTags.EntityTypes.NOT_WATCHABLE)) return false;
-        return e instanceof Animal || e.getType().is(ModTags.EntityTypes.WATCHABLE_ANIMALS);
+        if (!e.isAlive() || e.is(ModTags.EntityTypes.NOT_WATCHABLE)) return false;
+        return e instanceof Animal || e.is(ModTags.EntityTypes.WATCHABLE_ANIMALS);
     }
 
     private static List<PathfinderMob> watchersOf(Entity animal) {
