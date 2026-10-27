@@ -76,5 +76,22 @@
   "noxis_culture.config.save": "Salvar",
   "noxis_culture.config.note": "Os comportamentos valem nos mundos do seu jogo; servidores dedicados usam o próprio arquivo.",
   "subtitles.noxis_culture.noxis.hum": "Noxis cantarola uma melodia",
-  "subtitles.noxis_culture.noxis.whistle": "Noxis assobia uma melodia"
+  "subtitles.noxis_culture.noxis.whistle": "Noxis assobia uma melodia",
+  "noxis_culture.config.tab.effects": "Efeitos e sons",
+  "noxis_culture.config.note_effects": "As opções visuais e de som só mudam o que você vê e ouve.",
+  "noxis_culture.config.open_button": "Noxis Culture",
+  "noxis_culture.config.open_button.tooltip": "Abre as configurações do Noxis Culture (também: /noxisculture config).",
+  "noxis_culture.config.option.sky_gazing": "Contemplar o céu: %s",
+  "noxis_culture.config.option.sky_gazing.tooltip": "Com que frequência os Noxis param a céu aberto para olhar as estrelas, o pôr do sol ou o nascer do sol. Desativado desliga.",
+  "noxis_culture.config.option.quiet_moments": "Momentos compartilhados: %s",
+  "noxis_culture.config.option.quiet_moments.tooltip": "Com que frequência dois Noxis ficam lado a lado compartilhando um momento tranquilo. Desativado desliga.",
+  "noxis_culture.config.option.discoveries": "Descobertas: %s",
+  "noxis_culture.config.option.discoveries.tooltip": "Com que frequência os Noxis param para observar flores, cristais, minérios e outros achados próximos. Desativado desliga.",
+  "noxis_culture.config.option.painting": "Pinturas: %s",
+  "noxis_culture.config.option.painting.tooltip": "Com que frequência os Artistas montam o cavalete e pintam. Desativado desliga (as obras já feitas continuam).",
+  "block.noxis_culture.noxis_painting": "Pintura Noxis",
+  "block.noxis_culture.noxis_document": "Documento Noxis",
+  "item.noxis_culture.noxis_document.book": "Livro Noxis",
+  "item.noxis_culture.noxis_document.notebook": "Caderno Noxis",
+  "item.noxis_culture.noxis_document.sheet": "Folha Noxis"
 }

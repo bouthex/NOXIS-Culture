@@ -104,6 +104,19 @@ public class NoxisVillagerRenderState extends LivingEntityRenderState {
     public boolean humEyesHalf;
     /** Silbando: se ve la boquita en "o". */
     public boolean whistleMouth;
+    /** Momentos tranquilos (etapa 2): peso y tiempo de cada estado (índice = NoxisAmbientAnimation). */
+    public final float[] ambientWeight = new float[com.noxisculture.entity.idle.NoxisAmbientAnimation.COUNT];
+    public final float[] ambientTime = new float[com.noxisculture.entity.idle.NoxisAmbientAnimation.COUNT];
+    public boolean ambientPartnerRight;
+    /** Desfase propio (de la id) para que dos Noxis juntos no se muevan igual. */
+    public float ambientPhase;
+    /** Sentado en un momento tranquilo (0-1). */
+    public float ambientSit;
+    /** Pintando: tamaño del caballete (0-1), etapa del lienzo, pincel y paleta. */
+    public float easelScale;
+    public int canvasStage;
+    public boolean brushShown;
+    public boolean paletteShown;
     /** Sentado mirando un animal (0-1). */
     public float watchSit;
     /** Gesto de la personalidad: cuál, tiempo, cuánto se ve y ojitos. */

@@ -61,6 +61,8 @@ public final class NoxisAmbientAnimation {
     private final float[] weight = new float[COUNT];
     private final float[] weightO = new float[COUNT];
     private final int[] time = new int[COUNT];
+    /** Cómo va el lienzo (solo cliente): 0 en blanco, 1 boceto, 2 terminado. Vuelve a 0 al dejar de pintar. */
+    private int canvasStage;
 
     public static byte encode(byte state, boolean partnerRight) {
         return (byte) (state | (partnerRight ? PARTNER_RIGHT : 0));
@@ -93,6 +95,9 @@ public final class NoxisAmbientAnimation {
             this.state = s;
             this.partnerRight = partnerRight(serverRaw);
         }
+        if (!isPainting(s)) this.canvasStage = 0;
+        else if (s == PAINT_STROKE) this.canvasStage = Math.max(this.canvasStage, 1);
+        else if (s == PAINT_RETOUCH || s == PAINT_ADMIRE || s == PAINT_PACK) this.canvasStage = 2;
         for (int i = 1; i < COUNT; i++) {
             this.weightO[i] = this.weight[i];
             boolean on = i == this.state;
@@ -123,6 +128,27 @@ public final class NoxisAmbientAnimation {
 
     public float getTime(int s, float pt) {
         return this.time[s] + pt;
+    }
+
+    public int getCanvasStage() {
+        return this.canvasStage;
+    }
+
+    /** Qué tan armado está el caballete (0-1): se arma en la preparación y se desarma al guardar. */
+    public float getEaselScale(float pt) {
+        byte s = this.state;
+        if (!isPainting(s)) return 0.0F;
+        if (s == PAINT_SETUP) return Mth.clamp((this.time[s] + pt - 6.0F) / 24.0F, 0.0F, 1.0F);
+        if (s == PAINT_PACK) return 1.0F - Mth.clamp((this.time[s] + pt - 8.0F) / 20.0F, 0.0F, 1.0F);
+        return 1.0F;
+    }
+
+    /** Pincel y paleta en las manitos: desde la mitad de la preparación hasta que empieza a guardar. */
+    public boolean toolsInHand() {
+        byte s = this.state;
+        if (s == PAINT_SETUP) return this.time[s] > SETUP_LENGTH / 2;
+        if (s == PAINT_PACK) return this.time[s] < PACK_LENGTH / 2;
+        return s >= PAINT_STROKE && s <= PAINT_ADMIRE;
     }
 
     /** Cuánto está sentado (0-1), sumando las posturas sentadas. */

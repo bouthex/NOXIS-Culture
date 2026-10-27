@@ -76,5 +76,22 @@
   "noxis_culture.config.save": "Guardar",
   "noxis_culture.config.note": "Los comportamientos se aplican a los mundos de tu juego; un servidor dedicado usa su propio archivo.",
   "subtitles.noxis_culture.noxis.hum": "Noxis tararea una melodía",
-  "subtitles.noxis_culture.noxis.whistle": "Noxis silba una melodía"
+  "subtitles.noxis_culture.noxis.whistle": "Noxis silba una melodía",
+  "noxis_culture.config.tab.effects": "Efectos y sonidos",
+  "noxis_culture.config.note_effects": "Las opciones visuales y de sonido solo cambian lo que ves y escuchás.",
+  "noxis_culture.config.open_button": "Noxis Culture",
+  "noxis_culture.config.open_button.tooltip": "Abre la configuración de Noxis Culture (también: /noxisculture config).",
+  "noxis_culture.config.option.sky_gazing": "Contemplar el cielo: %s",
+  "noxis_culture.config.option.sky_gazing.tooltip": "Con qué frecuencia los Noxis se detienen a cielo abierto a mirar las estrellas, el atardecer o el amanecer. Desactivado lo apaga.",
+  "noxis_culture.config.option.quiet_moments": "Momentos compartidos: %s",
+  "noxis_culture.config.option.quiet_moments.tooltip": "Con qué frecuencia dos Noxis se quedan uno al lado del otro compartiendo un rato tranquilo. Desactivado lo apaga.",
+  "noxis_culture.config.option.discoveries": "Descubrimientos: %s",
+  "noxis_culture.config.option.discoveries.tooltip": "Con qué frecuencia los Noxis se detienen a mirar flores, cristales, minerales y otros hallazgos cercanos. Desactivado lo apaga.",
+  "noxis_culture.config.option.painting": "Pinturas: %s",
+  "noxis_culture.config.option.painting.tooltip": "Con qué frecuencia los Artistas arman su caballete y pintan. Desactivado lo apaga (las obras ya hechas se conservan).",
+  "block.noxis_culture.noxis_painting": "Pintura Noxis",
+  "block.noxis_culture.noxis_document": "Documento Noxis",
+  "item.noxis_culture.noxis_document.book": "Libro Noxis",
+  "item.noxis_culture.noxis_document.notebook": "Cuaderno Noxis",
+  "item.noxis_culture.noxis_document.sheet": "Hoja Noxis"
 }

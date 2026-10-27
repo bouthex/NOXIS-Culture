@@ -128,6 +128,19 @@ public class NoxisVillagerRenderer extends MobRenderer<NoxisVillager, NoxisVilla
             state.playTime[i] = play.getTime(i, partialTick);
         }
         state.watchSit = state.playWeight[com.noxisculture.entity.idle.NoxisPlayAnimation.SIT_WATCH];
+        com.noxisculture.entity.idle.NoxisAmbientAnimation amb = entity.getAmbientAnimation();
+        boolean ambBusy = amb.isBusy();
+        for (int i = 1; i < com.noxisculture.entity.idle.NoxisAmbientAnimation.COUNT; i++) {
+            state.ambientWeight[i] = ambBusy ? amb.getWeight(i, partialTick) : 0.0F;
+            state.ambientTime[i] = amb.getTime(i, partialTick);
+        }
+        state.ambientPartnerRight = amb.isPartnerRight();
+        state.ambientPhase = (entity.getId() % 7) * 0.9F;
+        state.ambientSit = ambBusy ? amb.getSit(partialTick) : 0.0F;
+        state.easelScale = amb.getEaselScale(partialTick);
+        state.canvasStage = amb.getCanvasStage();
+        state.brushShown = amb.toolsInHand();
+        state.paletteShown = state.brushShown;
         com.noxisculture.entity.idle.NoxisHumAnimation humAnim = entity.getHumAnimation();
         state.hum = humAnim.getState();
         state.humWeight = humAnim.isBusy() ? humAnim.getWeight(partialTick) : 0.0F;

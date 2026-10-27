@@ -76,5 +76,22 @@
   "noxis_culture.config.save": "Save",
   "noxis_culture.config.note": "Behaviors apply to worlds hosted by your game; dedicated servers use their own file.",
   "subtitles.noxis_culture.noxis.hum": "Noxis hums a melody",
-  "subtitles.noxis_culture.noxis.whistle": "Noxis whistles a melody"
+  "subtitles.noxis_culture.noxis.whistle": "Noxis whistles a melody",
+  "noxis_culture.config.tab.effects": "Effects and sounds",
+  "noxis_culture.config.note_effects": "Visual and sound options only affect what you see and hear.",
+  "noxis_culture.config.open_button": "Noxis Culture",
+  "noxis_culture.config.open_button.tooltip": "Open the Noxis Culture settings (also: /noxisculture config).",
+  "noxis_culture.config.option.sky_gazing": "Sky gazing: %s",
+  "noxis_culture.config.option.sky_gazing.tooltip": "How often Noxis stop under the open sky to watch the stars, the sunset or the sunrise. Off disables it.",
+  "noxis_culture.config.option.quiet_moments": "Shared quiet moments: %s",
+  "noxis_culture.config.option.quiet_moments.tooltip": "How often two Noxis stop side by side to share a calm moment. Off disables it.",
+  "noxis_culture.config.option.discoveries": "Discoveries: %s",
+  "noxis_culture.config.option.discoveries.tooltip": "How often Noxis stop to inspect flowers, crystals, ores and other finds nearby. Off disables it.",
+  "noxis_culture.config.option.painting": "Paintings: %s",
+  "noxis_culture.config.option.painting.tooltip": "How often Artists set up their easel and paint. Off disables it (paintings already made stay).",
+  "block.noxis_culture.noxis_painting": "Noxis Painting",
+  "block.noxis_culture.noxis_document": "Noxis Document",
+  "item.noxis_culture.noxis_document.book": "Noxis Book",
+  "item.noxis_culture.noxis_document.notebook": "Noxis Notebook",
+  "item.noxis_culture.noxis_document.sheet": "Noxis Sheet"
 }

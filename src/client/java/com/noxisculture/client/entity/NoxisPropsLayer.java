@@ -9,7 +9,8 @@ import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 
 /**
- * Libro abierto y lápiz de los Noxis lectores / escritores: modelitos 3D (tapas, lomo, páginas
+ * Libro abierto y lápiz de los Noxis lectores / escritores, y caballete, lienzo, pincel y paleta de los
+ * artistas: modelitos 3D (tapas, lomo, páginas
  * con renglones; lápiz de madera pintada con punta y terminación oscura) con su propia textura
  * {@code noxis_props.png}. Usa una copia del modelo que solo muestra esas piezas, así siguen
  * exactamente las patitas en cada pose; no toca las texturas del Noxis.
@@ -30,7 +31,7 @@ public class NoxisPropsLayer extends RenderLayer<NoxisVillagerRenderState, Noxis
     @Override
     public void submit(PoseStack poseStack, SubmitNodeCollector collector, int light,
                        NoxisVillagerRenderState state, float yRot, float xRot) {
-        if (!state.bookShown) return;
+        if (!state.bookShown && state.easelScale <= 0.01F && !state.brushShown && !state.paletteShown) return;
         collector.order(0).submitModel(this.propsModel, state, poseStack, this.type, light, OverlayTexture.NO_OVERLAY,
                 -1, null, 0, null);
     }

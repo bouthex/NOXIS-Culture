@@ -76,5 +76,22 @@
   "noxis_culture.config.save": "保存",
   "noxis_culture.config.note": "行为设置作用于你的游戏所运行的世界；专用服务器使用自己的配置文件。",
   "subtitles.noxis_culture.noxis.hum": "Noxis：哼唱旋律",
-  "subtitles.noxis_culture.noxis.whistle": "Noxis：吹口哨"
+  "subtitles.noxis_culture.noxis.whistle": "Noxis：吹口哨",
+  "noxis_culture.config.tab.effects": "效果与声音",
+  "noxis_culture.config.note_effects": "视觉与声音选项只会改变你看到和听到的内容。",
+  "noxis_culture.config.open_button": "Noxis Culture",
+  "noxis_culture.config.open_button.tooltip": "打开 Noxis Culture 设置（也可用：/noxisculture config）。",
+  "noxis_culture.config.option.sky_gazing": "仰望天空：%s",
+  "noxis_culture.config.option.sky_gazing.tooltip": "Noxis 在露天下停下来看星星、日落或日出的频率。关闭即停用。",
+  "noxis_culture.config.option.quiet_moments": "共享的宁静时光：%s",
+  "noxis_culture.config.option.quiet_moments.tooltip": "两只 Noxis 并肩停下、一起安静待一会儿的频率。关闭即停用。",
+  "noxis_culture.config.option.discoveries": "发现：%s",
+  "noxis_culture.config.option.discoveries.tooltip": "Noxis 停下来观察附近花朵、水晶、矿石和其他发现的频率。关闭即停用。",
+  "noxis_culture.config.option.painting": "绘画：%s",
+  "noxis_culture.config.option.painting.tooltip": "艺术家支起画架作画的频率。关闭即停用（已完成的画作会保留）。",
+  "block.noxis_culture.noxis_painting": "Noxis 画作",
+  "block.noxis_culture.noxis_document": "Noxis 文献",
+  "item.noxis_culture.noxis_document.book": "Noxis 之书",
+  "item.noxis_culture.noxis_document.notebook": "Noxis 笔记本",
+  "item.noxis_culture.noxis_document.sheet": "Noxis 纸页"
 }

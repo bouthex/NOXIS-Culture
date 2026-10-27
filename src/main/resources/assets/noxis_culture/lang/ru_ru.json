@@ -76,5 +76,22 @@
   "noxis_culture.config.save": "Сохранить",
   "noxis_culture.config.note": "Поведение применяется в мирах вашей игры; выделенный сервер использует свой файл.",
   "subtitles.noxis_culture.noxis.hum": "Noxis напевает мелодию",
-  "subtitles.noxis_culture.noxis.whistle": "Noxis насвистывает мелодию"
+  "subtitles.noxis_culture.noxis.whistle": "Noxis насвистывает мелодию",
+  "noxis_culture.config.tab.effects": "Эффекты и звуки",
+  "noxis_culture.config.note_effects": "Визуальные и звуковые настройки меняют только то, что вы видите и слышите.",
+  "noxis_culture.config.open_button": "Noxis Culture",
+  "noxis_culture.config.open_button.tooltip": "Открыть настройки Noxis Culture (также: /noxisculture config).",
+  "noxis_culture.config.option.sky_gazing": "Созерцание неба: %s",
+  "noxis_culture.config.option.sky_gazing.tooltip": "Как часто Noxis останавливаются под открытым небом, чтобы смотреть на звёзды, закат или рассвет. «Выкл.» отключает.",
+  "noxis_culture.config.option.quiet_moments": "Совместные тихие минуты: %s",
+  "noxis_culture.config.option.quiet_moments.tooltip": "Как часто два Noxis останавливаются рядом, чтобы спокойно побыть вместе. «Выкл.» отключает.",
+  "noxis_culture.config.option.discoveries": "Открытия: %s",
+  "noxis_culture.config.option.discoveries.tooltip": "Как часто Noxis останавливаются рассмотреть цветы, кристаллы, руды и другие находки поблизости. «Выкл.» отключает.",
+  "noxis_culture.config.option.painting": "Картины: %s",
+  "noxis_culture.config.option.painting.tooltip": "Как часто Художники ставят мольберт и рисуют. «Выкл.» отключает (уже готовые картины остаются).",
+  "block.noxis_culture.noxis_painting": "Картина Noxis",
+  "block.noxis_culture.noxis_document": "Документ Noxis",
+  "item.noxis_culture.noxis_document.book": "Книга Noxis",
+  "item.noxis_culture.noxis_document.notebook": "Тетрадь Noxis",
+  "item.noxis_culture.noxis_document.sheet": "Лист Noxis"
 }

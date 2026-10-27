@@ -6,6 +6,7 @@ import com.noxisculture.entity.idle.NoxisBowlHop;
 import com.noxisculture.entity.idle.NoxisKeepsakeAnimation;
 import com.noxisculture.entity.idle.NoxisPersonaAnimation;
 import com.noxisculture.entity.idle.NoxisHumAnimation;
+import com.noxisculture.entity.idle.NoxisAmbientAnimation;
 import com.noxisculture.entity.idle.NoxisListenAnimation;
 import com.noxisculture.entity.idle.NoxisDanceAnimation;
 import com.noxisculture.entity.idle.NoxisPlayAnimation;
@@ -75,6 +76,10 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
     private static final String HAIR_TUFT = "hair_tuft";
     /** Boquita en "o" para silbar (solo se ve mientras silba). */
     private static final String WHISTLE_MOUTH = "whistle_mouth";
+    /** Caballete con lienzo (tres etapas del lienzo), pincel y paleta de los artistas (copia PASS_PROPS). */
+    private static final String PROP_EASEL = "prop_easel";
+    private static final String PROP_BRUSH = "prop_brush";
+    private static final String PROP_PALETTE = "prop_palette";
     private static final String UMBRELLA = "umbrella";
     private static final String UMBRELLA_CANOPY = "umbrella_canopy";
     private static final float HAT_Y = -8.0F;
@@ -117,6 +122,12 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
     private final ModelPart propBook;
     private final ModelPart propPencil;
     private final ModelPart whistleMouth;
+    private final ModelPart propEasel;
+    private final ModelPart easelCanvas0;
+    private final ModelPart easelCanvas1;
+    private final ModelPart easelCanvas2;
+    private final ModelPart propBrush;
+    private final ModelPart propPalette;
 
     public NoxisVillagerModel(ModelPart root) {
         this(root, PASS_NORMAL);
@@ -143,6 +154,12 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         this.sleepBubble = this.head.getChild(SLEEP_BUBBLE);
         this.hairTuft = this.head.getChild(HAIR_TUFT);
         this.whistleMouth = this.head.getChild(WHISTLE_MOUTH);
+        this.propEasel = root.getChild(PROP_EASEL);
+        this.easelCanvas0 = this.propEasel.getChild("canvas0");
+        this.easelCanvas1 = this.propEasel.getChild("canvas1");
+        this.easelCanvas2 = this.propEasel.getChild("canvas2");
+        this.propBrush = root.getChild(PROP_BRUSH);
+        this.propPalette = root.getChild(PROP_PALETTE);
         this.flowerAnchor = root.getChild(FLOWER_ANCHOR);
         this.propBook = root.getChild(PROP_BOOK);
         this.propPencil = root.getChild(PROP_PENCIL);
@@ -310,6 +327,30 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
                         .texOffs(50, 24).addBox(-0.5F, 5.0F, -0.5F, 1.0F, 1.0F, 1.0F),          // punta de grafito
                 PartPose.ZERO);
 
+        // ---- Caballete, pincel y paleta (artistas): textura noxis_props.png, modelados al doble y achicados ----
+        // El caballete se para en el piso, adelante del Noxis; el lienzo mira hacia él (cara sur).
+        PartDefinition easel = root.addOrReplaceChild(PROP_EASEL, CubeListBuilder.create()
+                        .texOffs(40, 40).addBox(-8.0F, -26.0F, -1.0F, 2.0F, 26.0F, 2.0F)        // pata izquierda
+                        .texOffs(48, 40).addBox(6.0F, -26.0F, -1.0F, 2.0F, 26.0F, 2.0F)         // pata derecha
+                        .texOffs(64, 40).addBox(-8.0F, -12.0F, -1.0F, 16.0F, 1.0F, 3.0F),       // bandeja
+                PartPose.offset(0.0F, 24.0F, -11.0F));
+        easel.addOrReplaceChild("back_leg", CubeListBuilder.create()
+                        .texOffs(56, 40).addBox(-1.0F, -24.0F, -1.0F, 2.0F, 24.0F, 2.0F),
+                PartPose.offsetAndRotation(0.0F, 0.0F, -2.0F, -0.35F, 0.0F, 0.0F));
+        easel.addOrReplaceChild("canvas0", CubeListBuilder.create()
+                        .texOffs(0, 40).addBox(-9.0F, -27.0F, 0.0F, 18.0F, 14.0F, 1.0F), PartPose.ZERO);
+        easel.addOrReplaceChild("canvas1", CubeListBuilder.create()
+                        .texOffs(0, 56).addBox(-9.0F, -27.0F, 0.0F, 18.0F, 14.0F, 1.0F), PartPose.ZERO);
+        easel.addOrReplaceChild("canvas2", CubeListBuilder.create()
+                        .texOffs(0, 72).addBox(-9.0F, -27.0F, 0.0F, 18.0F, 14.0F, 1.0F), PartPose.ZERO);
+        root.addOrReplaceChild(PROP_BRUSH, CubeListBuilder.create()
+                        .texOffs(84, 40).addBox(-0.5F, -2.0F, -0.5F, 1.0F, 8.0F, 1.0F)          // mango
+                        .texOffs(84, 50).addBox(-0.5F, 6.0F, -0.5F, 1.0F, 2.0F, 1.0F),          // punta con pintura
+                PartPose.ZERO);
+        root.addOrReplaceChild(PROP_PALETTE, CubeListBuilder.create()
+                        .texOffs(88, 40).addBox(-3.0F, 0.0F, -2.5F, 6.0F, 1.0F, 5.0F),
+                PartPose.ZERO);
+
         return LayerDefinition.create(mesh, 128, 128);
     }
 
@@ -382,7 +423,7 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         float rest = state.restAnim;
         // Sentarse: el descanso o la contemplación de la naturaleza usan la misma postura
         // (la carita de sueño, las orejas caídas y el sombrero son SOLO del descanso).
-        float sit = Math.max(Math.max(rest, state.watchSit), Math.max(state.natureSit, state.scholarSit));
+        float sit = Math.max(Math.max(Math.max(rest, state.watchSit), state.ambientSit), Math.max(state.natureSit, state.scholarSit));
 
         // ---- Bamboleo cartoon al caminar ----
         float[] waddle = NoxisMoodAnimator.waddle(pos, amount, happy);
@@ -640,6 +681,8 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         }
         // ---- Curiosidad y travesuras (seguir, observar, acercarse agachadito, ¡salto!, susto y juego) ----
         this.applyPlay(state.playWeight, state.playTime);
+        // ---- Momentos tranquilos (etapa 2): cielo, compañía, descubrir, preocuparse, pintar, dejar y mirar obras ----
+        this.applyAmbient(state);
         // ---- Cariño con su amigo especial (coreografía compartida por los dos) ----
         if (state.affection != NoxisAffectionAnimation.NONE && state.affectionWeight > 0.0F) {
             this.applyAffection(state.affection, state.affectionTime, state.affectionWeight);
@@ -725,7 +768,14 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         // ---- Libro y lápiz: solo los dibuja la copia PASS_PROPS (con su textura) ----
         this.propBook.visible = this.pass == PASS_PROPS && state.bookShown;
         this.propPencil.visible = this.pass == PASS_PROPS && state.pencilShown;
+        this.propEasel.visible = this.pass == PASS_PROPS && state.easelScale > 0.01F;
+        this.easelCanvas0.visible = state.canvasStage == 0;
+        this.easelCanvas1.visible = state.canvasStage == 1;
+        this.easelCanvas2.visible = state.canvasStage == 2;
+        this.propBrush.visible = this.pass == PASS_PROPS && state.brushShown;
+        this.propPalette.visible = this.pass == PASS_PROPS && state.paletteShown;
         if (this.pass == PASS_PROPS) {
+            this.placePaintProps(state);
             this.head.visible = false;
             this.flowerAnchor.visible = false;
         }
@@ -2121,6 +2171,258 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         if (w[NoxisPlayAnimation.PLAYFUL] > 0.0F) this.playPlayful(t[NoxisPlayAnimation.PLAYFUL], w[NoxisPlayAnimation.PLAYFUL]);
         // Sentado mirando un animal: la misma atención que al observar, más suave (la postura sentada la pone "sit").
         if (w[NoxisPlayAnimation.SIT_WATCH] > 0.0F) this.playWatch(t[NoxisPlayAnimation.SIT_WATCH] * 0.7F, w[NoxisPlayAnimation.SIT_WATCH] * 0.6F);
+    }
+
+    // ================================================================== momentos tranquilos (etapa 2)
+
+    private void applyAmbient(NoxisVillagerRenderState state) {
+        float[] w = state.ambientWeight;
+        float[] t = state.ambientTime;
+        float f = state.ambientPartnerRight ? 1.0F : -1.0F;
+        float phase = state.ambientPhase;
+        if (w[NoxisAmbientAnimation.SKY_STAND] > 0.0F) this.ambientSky(t[NoxisAmbientAnimation.SKY_STAND], w[NoxisAmbientAnimation.SKY_STAND], false, phase);
+        if (w[NoxisAmbientAnimation.SKY_SIT] > 0.0F) this.ambientSky(t[NoxisAmbientAnimation.SKY_SIT], w[NoxisAmbientAnimation.SKY_SIT], true, phase);
+        if (w[NoxisAmbientAnimation.QUIET_SIT] > 0.0F) this.ambientQuiet(t[NoxisAmbientAnimation.QUIET_SIT], w[NoxisAmbientAnimation.QUIET_SIT], f, phase, true);
+        if (w[NoxisAmbientAnimation.QUIET_STAND] > 0.0F) this.ambientQuiet(t[NoxisAmbientAnimation.QUIET_STAND], w[NoxisAmbientAnimation.QUIET_STAND], f, phase, false);
+        if (w[NoxisAmbientAnimation.DISCOVER_LOOK] > 0.0F) this.discoverLook(t[NoxisAmbientAnimation.DISCOVER_LOOK], w[NoxisAmbientAnimation.DISCOVER_LOOK]);
+        if (w[NoxisAmbientAnimation.DISCOVER_LOW] > 0.0F) this.discoverLow(t[NoxisAmbientAnimation.DISCOVER_LOW], w[NoxisAmbientAnimation.DISCOVER_LOW]);
+        if (w[NoxisAmbientAnimation.DISCOVER_SURPRISE] > 0.0F) this.discoverSurprise(t[NoxisAmbientAnimation.DISCOVER_SURPRISE], w[NoxisAmbientAnimation.DISCOVER_SURPRISE]);
+        if (w[NoxisAmbientAnimation.DISCOVER_SCAN] > 0.0F) this.discoverScan(t[NoxisAmbientAnimation.DISCOVER_SCAN], w[NoxisAmbientAnimation.DISCOVER_SCAN]);
+        if (w[NoxisAmbientAnimation.CONCERN_WATCH] > 0.0F) this.concernWatch(t[NoxisAmbientAnimation.CONCERN_WATCH], w[NoxisAmbientAnimation.CONCERN_WATCH]);
+        if (w[NoxisAmbientAnimation.CONCERN_STAND] > 0.0F) this.concernBeside(t[NoxisAmbientAnimation.CONCERN_STAND], w[NoxisAmbientAnimation.CONCERN_STAND], f, false);
+        if (w[NoxisAmbientAnimation.CONCERN_SIT] > 0.0F) this.concernBeside(t[NoxisAmbientAnimation.CONCERN_SIT], w[NoxisAmbientAnimation.CONCERN_SIT], f, true);
+        if (w[NoxisAmbientAnimation.CONCERN_RECEIVE] > 0.0F) this.concernReceive(t[NoxisAmbientAnimation.CONCERN_RECEIVE], w[NoxisAmbientAnimation.CONCERN_RECEIVE], f);
+        if (w[NoxisAmbientAnimation.PAINT_LOOK] > 0.0F) this.paintLook(t[NoxisAmbientAnimation.PAINT_LOOK], w[NoxisAmbientAnimation.PAINT_LOOK]);
+        if (w[NoxisAmbientAnimation.PAINT_SETUP] > 0.0F) this.paintBend(t[NoxisAmbientAnimation.PAINT_SETUP], w[NoxisAmbientAnimation.PAINT_SETUP]);
+        if (w[NoxisAmbientAnimation.PAINT_STROKE] > 0.0F) this.paintStroke(t[NoxisAmbientAnimation.PAINT_STROKE], w[NoxisAmbientAnimation.PAINT_STROKE], false);
+        if (w[NoxisAmbientAnimation.PAINT_STEPBACK] > 0.0F) this.paintStepBack(t[NoxisAmbientAnimation.PAINT_STEPBACK], w[NoxisAmbientAnimation.PAINT_STEPBACK]);
+        if (w[NoxisAmbientAnimation.PAINT_RETOUCH] > 0.0F) this.paintStroke(t[NoxisAmbientAnimation.PAINT_RETOUCH], w[NoxisAmbientAnimation.PAINT_RETOUCH], true);
+        if (w[NoxisAmbientAnimation.PAINT_ADMIRE] > 0.0F) this.paintAdmire(t[NoxisAmbientAnimation.PAINT_ADMIRE], w[NoxisAmbientAnimation.PAINT_ADMIRE]);
+        if (w[NoxisAmbientAnimation.PAINT_PACK] > 0.0F) this.paintBend(t[NoxisAmbientAnimation.PAINT_PACK], w[NoxisAmbientAnimation.PAINT_PACK]);
+        if (w[NoxisAmbientAnimation.PLACE_ITEM] > 0.0F) this.placeItem(t[NoxisAmbientAnimation.PLACE_ITEM], w[NoxisAmbientAnimation.PLACE_ITEM]);
+        if (w[NoxisAmbientAnimation.GAZE_ART] > 0.0F) this.gazeArt(t[NoxisAmbientAnimation.GAZE_ART], w[NoxisAmbientAnimation.GAZE_ART]);
+    }
+
+    /** Contemplar el cielo: la cabeza sube despacio, se ladea apenas, orejitas que se mueven de a ratos; sentado, las manitos en la falda. */
+    private void ambientSky(float t, float w, boolean sitting, float phase) {
+        float up = w * NoxisBoredAnimation.smooth(Math.min(1.0F, t / 30.0F));
+        this.head.xRot -= 0.45F * up;
+        this.head.zRot += up * 0.12F * Mth.sin(t * 0.025F + phase);
+        this.body.xRot -= 0.06F * up;
+        float ph = (t + phase * 20.0F) % 90.0F;
+        this.rightEar.zRot -= up * 0.2F * NoxisBoredAnimation.pulse(ph, 30.0F, 3.0F);
+        this.leftEar.zRot += up * 0.2F * NoxisBoredAnimation.pulse(ph, 62.0F, 3.0F);
+        if (!sitting) {
+            this.rightArm.xRot = Mth.lerp(up, this.rightArm.xRot, 0.15F);
+            this.leftArm.xRot = Mth.lerp(up, this.leftArm.xRot, 0.15F);
+        }
+        this.tail.yRot += w * 0.25F * Mth.sin(t * 0.05F);
+    }
+
+    /** Un rato juntos: se mece apenas, y de vez en cuando gira la cabeza hacia el compañero. */
+    private void ambientQuiet(float t, float w, float f, float phase, boolean sitting) {
+        float period = 200.0F + phase * 40.0F;                         // cada uno a su ritmo
+        float glance = NoxisBoredAnimation.env((t + phase * 37.0F) % period, 120, 132, 158, 170);
+        this.head.yRot += w * f * 0.45F * glance;
+        this.head.zRot += w * 0.05F * Mth.sin(t * 0.04F + phase);
+        this.body.zRot += w * 0.025F * Mth.sin(t * 0.04F + phase + 0.6F);
+        this.rightEar.zRot -= w * 0.12F;
+        this.leftEar.zRot += w * 0.12F;
+        if (!sitting) this.playLift(w * 0.15F * Mth.sin(t * 0.08F + phase));
+        this.tail.yRot += w * 0.3F * Mth.sin(t * 0.06F + phase);
+    }
+
+    /** Descubrir (a su altura): se inclina, estira el cuello, ladea la cabeza y para las orejitas. */
+    private void discoverLook(float t, float w) {
+        float on = w * NoxisBoredAnimation.smooth(Math.min(1.0F, t / 10.0F));
+        this.body.xRot += 0.14F * on;
+        this.head.z -= 0.7F * on;
+        this.head.zRot += on * 0.25F * Mth.sin(t * 0.07F);
+        this.rightEar.xRot -= 0.35F * on;
+        this.leftEar.xRot -= 0.35F * on;
+        this.rightArm.xRot = Mth.lerp(on, this.rightArm.xRot, -0.55F);
+        this.rightArm.zRot = Mth.lerp(on, this.rightArm.zRot, 0.15F);
+        this.tail.yRot += on * 0.4F * Mth.sin(t * 0.3F);
+    }
+
+    /** Descubrir algo chiquito o abajo: se agacha y mira para abajo, con las manitos en las rodillas. */
+    private void discoverLow(float t, float w) {
+        float on = w * NoxisBoredAnimation.smooth(Math.min(1.0F, t / 12.0F));
+        this.body.y += 1.2F * on;
+        this.head.y += 1.5F * on;
+        this.rightArm.y += 1.2F * on;
+        this.leftArm.y += 1.2F * on;
+        this.head.xRot += 0.4F * on;
+        this.head.z -= 0.6F * on;
+        this.head.zRot += on * 0.2F * Mth.sin(t * 0.06F);
+        this.body.xRot += 0.25F * on;
+        this.rightArm.xRot = Mth.lerp(on, this.rightArm.xRot, -0.7F);
+        this.leftArm.xRot = Mth.lerp(on, this.leftArm.xRot, -0.7F);
+        this.rightEar.xRot -= 0.3F * on;
+        this.leftEar.xRot -= 0.3F * on;
+    }
+
+    /** Sorpresa breve: respingo con las orejitas paradas y las manitos arriba un instante. */
+    private void discoverSurprise(float t, float w) {
+        float jump = w * NoxisBoredAnimation.pulse(t, 4.0F, 3.0F);
+        this.playLift(1.6F * jump);
+        this.rightEar.xRot -= 0.6F * w;
+        this.leftEar.xRot -= 0.6F * w;
+        this.rightArm.zRot = Mth.lerp(jump, this.rightArm.zRot, 1.2F);
+        this.leftArm.zRot = Mth.lerp(jump, this.leftArm.zRot, -1.2F);
+        this.head.xRot -= 0.15F * w;
+    }
+
+    /** Lugar nuevo: mira a su alrededor (la mirada la gira el servidor), orejitas atentas. */
+    private void discoverScan(float t, float w) {
+        this.rightEar.xRot -= 0.3F * w;
+        this.leftEar.xRot -= 0.3F * w;
+        this.rightEar.zRot -= w * 0.2F * NoxisBoredAnimation.pulse(t % 40.0F, 20.0F, 3.0F);
+        this.head.xRot -= 0.1F * w;
+        this.tail.yRot += w * 0.4F * Mth.sin(t * 0.2F);
+    }
+
+    /** Lo mira desde lejos, preocupado: cabeza ladeada, orejitas un poco caídas, patita en el pecho. */
+    private void concernWatch(float t, float w) {
+        this.head.zRot += 0.22F * w;
+        this.rightEar.zRot += 0.25F * w;
+        this.leftEar.zRot -= 0.25F * w;
+        this.rightArm.xRot = Mth.lerp(w, this.rightArm.xRot, -0.75F);
+        this.rightArm.zRot = Mth.lerp(w, this.rightArm.zRot, -0.25F);
+    }
+
+    /** A su lado: se inclina hacia él, cabeza ladeada, el bracito de adentro cerquita; orejitas suaves. */
+    private void concernBeside(float t, float w, float f, boolean sitting) {
+        ModelPart inner = f > 0 ? this.rightArm : this.leftArm;
+        this.head.yRot += w * f * 0.4F;
+        this.head.zRot += w * -f * 0.2F;
+        this.body.zRot += w * -f * 0.05F;
+        inner.zRot = Mth.lerp(w, inner.zRot, f * 0.55F);
+        inner.xRot = Mth.lerp(w, inner.xRot, sitting ? -0.4F : -0.2F);
+        this.rightEar.zRot += 0.15F * w;
+        this.leftEar.zRot -= 0.15F * w;
+        this.tail.yRot += w * 0.2F * Mth.sin(t * 0.08F);
+    }
+
+    /** El que recibe la compañía: gira la cabeza hacia el que vino y las orejitas vuelven a levantarse de a poco. */
+    private void concernReceive(float t, float w, float f) {
+        float recover = Mth.clamp(t / 80.0F, 0.0F, 1.0F);
+        this.head.yRot += w * f * 0.35F;
+        this.rightEar.zRot += w * 0.35F * (1.0F - recover);
+        this.leftEar.zRot -= w * 0.35F * (1.0F - recover);
+        this.head.xRot += w * 0.15F * (1.0F - recover);
+        this.tail.yRot += w * recover * 0.3F * Mth.sin(t * 0.2F);
+    }
+
+    /** Observar el paisaje antes de pintar: lo encuadra con las dos patitas, la cabeza un poco atrás. */
+    private void paintLook(float t, float w) {
+        float frame = w * NoxisBoredAnimation.env(t % 80.0F, 0, 10, 50, 64);
+        this.rightArm.xRot = Mth.lerp(frame, this.rightArm.xRot, -1.6F);
+        this.leftArm.xRot = Mth.lerp(frame, this.leftArm.xRot, -1.6F);
+        this.rightArm.zRot = Mth.lerp(frame, this.rightArm.zRot, 0.5F);
+        this.leftArm.zRot = Mth.lerp(frame, this.leftArm.zRot, -0.5F);
+        this.head.xRot -= 0.1F * w;
+        this.head.zRot += 0.12F * frame;
+        this.head.z += 0.4F * frame;
+    }
+
+    /** Armar o desarmar el caballete: se agacha un poco hacia adelante con las dos manitos. */
+    private void paintBend(float t, float w) {
+        float bend = w * NoxisBoredAnimation.env(t, 2, 10, 26, 34);
+        this.body.xRot += 0.3F * bend;
+        this.head.xRot += 0.3F * bend;
+        this.head.z -= 0.6F * bend;
+        this.rightArm.xRot = Mth.lerp(bend, this.rightArm.xRot, -1.1F);
+        this.leftArm.xRot = Mth.lerp(bend, this.leftArm.xRot, -1.1F);
+    }
+
+    /** Pintar: pinceladas variadas (largas o de retoque, más chiquitas y precisas) con la paleta en la otra mano. */
+    private void paintStroke(float t, float w, boolean retouch) {
+        float a = retouch ? 0.06F : 0.22F;
+        float stroke = Mth.sin(t * (retouch ? 1.1F : 0.42F)) + 0.4F * Mth.sin(t * (retouch ? 2.3F : 0.97F) + 1.3F);
+        float sweep = Mth.sin(t * (retouch ? 0.6F : 0.17F));
+        this.rightArm.xRot = Mth.lerp(w, this.rightArm.xRot, -1.35F + a * stroke);
+        this.rightArm.zRot = Mth.lerp(w, this.rightArm.zRot, 0.1F + (retouch ? 0.05F : 0.25F) * sweep);
+        this.leftArm.xRot = Mth.lerp(w, this.leftArm.xRot, -0.7F);
+        this.leftArm.zRot = Mth.lerp(w, this.leftArm.zRot, -0.35F);
+        this.head.xRot += w * (retouch ? 0.12F : 0.04F * stroke);
+        this.head.z -= w * (retouch ? 0.6F : 0.2F);
+        this.head.yRot += w * 0.08F * sweep;
+        this.tail.yRot += w * 0.2F * Mth.sin(t * 0.15F);
+    }
+
+    /** Pausa para mirar lo que pintó: se echa atrás, cabeza ladeada, patita en el mentón. */
+    private void paintStepBack(float t, float w) {
+        this.body.xRot -= 0.1F * w;
+        this.head.zRot += w * 0.2F * Mth.sin(t * 0.05F + 1.0F);
+        this.head.z += 0.5F * w;
+        this.rightArm.xRot = Mth.lerp(w, this.rightArm.xRot, -2.0F + 0.1F * Mth.sin(t * 0.7F));
+        this.rightArm.zRot = Mth.lerp(w, this.rightArm.zRot, -0.55F);
+        this.leftArm.xRot = Mth.lerp(w, this.leftArm.xRot, -0.7F);
+        this.leftArm.zRot = Mth.lerp(w, this.leftArm.zRot, -0.35F);
+    }
+
+    /** Terminó: mira su obra contento, dos saltitos, orejitas arriba y colita feliz. */
+    private void paintAdmire(float t, float w) {
+        this.playLift(w * 1.0F * (NoxisBoredAnimation.pulse(t, 10.0F, 3.0F) + NoxisBoredAnimation.pulse(t, 22.0F, 3.0F)));
+        this.rightEar.xRot -= 0.35F * w;
+        this.leftEar.xRot -= 0.35F * w;
+        this.rightArm.zRot = Mth.lerp(w, this.rightArm.zRot, 0.6F);
+        this.leftArm.zRot = Mth.lerp(w, this.leftArm.zRot, -0.6F);
+        this.tail.yRot += w * 0.6F * Mth.sin(t * 0.6F);
+    }
+
+    /** Dejar algo (colgar una pintura o apoyar un documento): lo levanta con las dos manitos, lo acomoda y baja. */
+    private void placeItem(float t, float w) {
+        float up = w * NoxisBoredAnimation.env(t, 0, 8, 18, 26);
+        this.rightArm.xRot = Mth.lerp(up, this.rightArm.xRot, -1.7F);
+        this.leftArm.xRot = Mth.lerp(up, this.leftArm.xRot, -1.7F);
+        this.rightArm.zRot = Mth.lerp(up, this.rightArm.zRot, 0.2F);
+        this.leftArm.zRot = Mth.lerp(up, this.leftArm.zRot, -0.2F);
+        this.playLift(0.6F * w * NoxisBoredAnimation.pulse(t, 14.0F, 3.0F));
+        this.head.xRot -= 0.1F * up;
+    }
+
+    /** Mirar una pintura: patita en el mentón, la cabeza que se ladea despacio de un lado al otro. */
+    private void gazeArt(float t, float w) {
+        this.rightArm.xRot = Mth.lerp(w, this.rightArm.xRot, -1.95F + 0.06F * Mth.sin(t * 0.3F));
+        this.rightArm.zRot = Mth.lerp(w, this.rightArm.zRot, -0.5F);
+        this.head.zRot += w * 0.18F * Mth.sin(t * 0.03F);
+        this.rightEar.xRot -= 0.2F * w;
+        this.leftEar.xRot -= 0.2F * w;
+        this.tail.yRot += w * 0.25F * Mth.sin(t * 0.07F);
+    }
+
+    /** Caballete (en el piso, adelante), pincel (en la manito derecha) y paleta (en la izquierda). */
+    private void placePaintProps(NoxisVillagerRenderState state) {
+        float k = state.easelScale;
+        this.propEasel.xScale = 0.5F * k;
+        this.propEasel.yScale = 0.5F * k;
+        this.propEasel.zScale = 0.5F * k;
+        if (state.brushShown) {
+            float[] h = handTip(this.rightArm);
+            this.propBrush.x = h[0];
+            this.propBrush.y = h[1];
+            this.propBrush.z = h[2];
+            this.propBrush.xRot = this.rightArm.xRot;
+            this.propBrush.yRot = this.rightArm.yRot;
+            this.propBrush.zRot = this.rightArm.zRot;
+            this.propBrush.xScale = 0.5F;
+            this.propBrush.yScale = 0.5F;
+            this.propBrush.zScale = 0.5F;
+        }
+        if (state.paletteShown) {
+            float[] h = handTip(this.leftArm);
+            this.propPalette.x = h[0];
+            this.propPalette.y = h[1] - 0.3F;
+            this.propPalette.z = h[2];
+            this.propPalette.xRot = 0.0F;
+            this.propPalette.yRot = 0.0F;
+            this.propPalette.zRot = 0.0F;
+            this.propPalette.xScale = 0.5F;
+            this.propPalette.yScale = 0.5F;
+            this.propPalette.zScale = 0.5F;
+        }
     }
 
     // ================================================================== melodías espontáneas
