@@ -102,6 +102,8 @@ public class NoxisVillagerRenderState extends LivingEntityRenderState {
     public float humWeight;
     public float humBeatTime;
     public boolean humEyesHalf;
+    /** Silbando: se ve la boquita en "o". */
+    public boolean whistleMouth;
     /** Sentado mirando un animal (0-1). */
     public float watchSit;
     /** Gesto de la personalidad: cuál, tiempo, cuánto se ve y ojitos. */

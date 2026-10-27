@@ -133,6 +133,7 @@ public class NoxisVillagerRenderer extends MobRenderer<NoxisVillager, NoxisVilla
         state.humWeight = humAnim.isBusy() ? humAnim.getWeight(partialTick) : 0.0F;
         state.humBeatTime = entity.level().getGameTime() + partialTick;
         state.humEyesHalf = state.humWeight > 0.5F && state.hum >= 1 && state.hum <= 3;   // tarareando: ojitos entornados
+        state.whistleMouth = state.humWeight > 0.35F && com.noxisculture.entity.idle.NoxisHumAnimation.isWhistle(state.hum);
         byte playState = play.getState();
         boolean playShown = playState != 0 && state.playWeight[playState] > 0.5F;
         state.playSly = playShown && com.noxisculture.entity.idle.NoxisPlayAnimation.slyEyes(playState);

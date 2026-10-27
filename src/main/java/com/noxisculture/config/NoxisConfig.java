@@ -45,6 +45,11 @@ public final class NoxisConfig {
     public int humming = 100;
     public boolean humReactions = true;
     public int readingWriting = 100;
+    // Etapa 2 (servidor)
+    public int skyGazing = 100;
+    public int quietMoments = 100;
+    public int discoveries = 100;
+    public int painting = 100;
     // ---- Efectos (cliente)
     public boolean decorativeParticles = true;
     public int particleAmount = 100;
@@ -79,6 +84,10 @@ public final class NoxisConfig {
                 if (o.has("humming")) cfg.humming = o.get("humming").getAsInt();
                 if (o.has("humReactions")) cfg.humReactions = o.get("humReactions").getAsBoolean();
                 if (o.has("readingWriting")) cfg.readingWriting = o.get("readingWriting").getAsInt();
+                if (o.has("skyGazing")) cfg.skyGazing = o.get("skyGazing").getAsInt();
+                if (o.has("quietMoments")) cfg.quietMoments = o.get("quietMoments").getAsInt();
+                if (o.has("discoveries")) cfg.discoveries = o.get("discoveries").getAsInt();
+                if (o.has("painting")) cfg.painting = o.get("painting").getAsInt();
                 if (o.has("decorativeParticles")) cfg.decorativeParticles = o.get("decorativeParticles").getAsBoolean();
                 if (o.has("particleAmount")) cfg.particleAmount = o.get("particleAmount").getAsInt();
                 if (o.has("ambientSounds")) cfg.ambientSounds = o.get("ambientSounds").getAsBoolean();
@@ -101,6 +110,10 @@ public final class NoxisConfig {
         o.addProperty("humming", cfg.humming);
         o.addProperty("humReactions", cfg.humReactions);
         o.addProperty("readingWriting", cfg.readingWriting);
+        o.addProperty("skyGazing", cfg.skyGazing);
+        o.addProperty("quietMoments", cfg.quietMoments);
+        o.addProperty("discoveries", cfg.discoveries);
+        o.addProperty("painting", cfg.painting);
         o.addProperty("decorativeParticles", cfg.decorativeParticles);
         o.addProperty("particleAmount", cfg.particleAmount);
         o.addProperty("ambientSounds", cfg.ambientSounds);
@@ -128,6 +141,10 @@ public final class NoxisConfig {
         c.humming = this.humming;
         c.humReactions = this.humReactions;
         c.readingWriting = this.readingWriting;
+        c.skyGazing = this.skyGazing;
+        c.quietMoments = this.quietMoments;
+        c.discoveries = this.discoveries;
+        c.painting = this.painting;
         c.decorativeParticles = this.decorativeParticles;
         c.particleAmount = this.particleAmount;
         c.ambientSounds = this.ambientSounds;
@@ -138,6 +155,10 @@ public final class NoxisConfig {
         this.animalWatching = Mth.clamp(this.animalWatching, MIN_FREQ, MAX_FREQ);
         this.humming = Mth.clamp(this.humming, MIN_FREQ, MAX_FREQ);
         this.readingWriting = Mth.clamp(this.readingWriting, MIN_FREQ, MAX_FREQ);
+        this.skyGazing = Mth.clamp(this.skyGazing, MIN_FREQ, MAX_FREQ);
+        this.quietMoments = Mth.clamp(this.quietMoments, MIN_FREQ, MAX_FREQ);
+        this.discoveries = Mth.clamp(this.discoveries, MIN_FREQ, MAX_FREQ);
+        this.painting = Mth.clamp(this.painting, MIN_FREQ, MAX_FREQ);
         this.particleAmount = Mth.clamp(this.particleAmount, MIN_PARTICLES, MAX_PARTICLES);
     }
 

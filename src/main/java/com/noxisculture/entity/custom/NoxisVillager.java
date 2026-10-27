@@ -1715,6 +1715,16 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         this.playAnimation.tick(this.entityData.get(PLAY_ANIM));
         this.personaAnimation.tick(this.entityData.get(PERSONA_GESTURE));
         this.humAnimation.tick(this.entityData.get(HUM));
+        // Silbando: una notita musical que sale de la boquita cada dos pulsos (decorativa: se puede apagar).
+        byte humState = this.entityData.get(HUM);
+        if (com.noxisculture.entity.idle.NoxisHumAnimation.isWhistle(humState)
+                && this.level().getGameTime() % (com.noxisculture.entity.idle.NoxisHumAnimation.BEAT * 2L) == 0L
+                && com.noxisculture.config.NoxisConfig.decorativeParticle(this.random)) {
+            float yaw = this.yHeadRot * net.minecraft.util.Mth.DEG_TO_RAD;
+            double fx = -net.minecraft.util.Mth.sin(yaw) * 0.35D, fz = net.minecraft.util.Mth.cos(yaw) * 0.35D;
+            this.level().addParticle(net.minecraft.core.particles.ParticleTypes.NOTE, this.getX() + fx, this.getEyeY() - 0.05D,
+                    this.getZ() + fz, (humState * 5 % 24) / 24.0D, 0.0D, 0.0D);
+        }
         this.keepsakeAnimation.tick(this.entityData.get(KEEPSAKE_ANIM));
         this.listenAnimation.tick(this.entityData.get(LISTEN_ANIM), this.entityData.get(LISTEN_DIR));
         this.danceAnimation.tick(this.entityData.get(DANCE), this.entityData.get(DANCE_STYLE));

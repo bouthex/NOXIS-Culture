@@ -73,6 +73,8 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
     private static final String SLEEP_BUBBLE = "sleep_bubble";
     /** Mechoncito de pelo verde (solo se ve cuando no tiene sombrero). */
     private static final String HAIR_TUFT = "hair_tuft";
+    /** Boquita en "o" para silbar (solo se ve mientras silba). */
+    private static final String WHISTLE_MOUTH = "whistle_mouth";
     private static final String UMBRELLA = "umbrella";
     private static final String UMBRELLA_CANOPY = "umbrella_canopy";
     private static final float HAT_Y = -8.0F;
@@ -114,6 +116,7 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
     private final ModelPart flowerAnchor;
     private final ModelPart propBook;
     private final ModelPart propPencil;
+    private final ModelPart whistleMouth;
 
     public NoxisVillagerModel(ModelPart root) {
         this(root, PASS_NORMAL);
@@ -139,6 +142,7 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         this.eyesBig = this.head.getChild(EYES_BIG);
         this.sleepBubble = this.head.getChild(SLEEP_BUBBLE);
         this.hairTuft = this.head.getChild(HAIR_TUFT);
+        this.whistleMouth = this.head.getChild(WHISTLE_MOUTH);
         this.flowerAnchor = root.getChild(FLOWER_ANCHOR);
         this.propBook = root.getChild(PROP_BOOK);
         this.propPencil = root.getChild(PROP_PENCIL);
@@ -194,6 +198,10 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
                         .texOffs(27, 30).addBox(-0.5F, -10.0F, -0.5F, 1.0F, 2.0F, 1.0F)
                         .texOffs(28, 31).addBox(0.5F, -10.8F, -0.5F, 1.0F, 1.0F, 1.0F)
                         .texOffs(30, 31).addBox(-1.5F, -9.0F, -0.5F, 1.0F, 1.0F, 1.0F),
+                PartPose.ZERO);
+        // Boquita de silbar: un cubito chiquito que asoma de la cara, debajo de los ojos (u=100 v=100).
+        head.addOrReplaceChild(WHISTLE_MOUTH,
+                CubeListBuilder.create().texOffs(100, 100).addBox(-0.5F, -2.7F, -4.6F, 1.0F, 1.0F, 0.6F),
                 PartPose.ZERO);
         head.addOrReplaceChild(SLEEP_BUBBLE,
                 CubeListBuilder.create().texOffs(64, 64).addBox(-2.0F, -2.0F, -4.0F, 4.0F, 4.0F, 4.0F),
@@ -712,6 +720,8 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
             this.eyesBig.visible = false;
         }
 
+        // ---- Boquita de silbar (solo en el Noxis normal) ----
+        this.whistleMouth.visible = this.pass == PASS_NORMAL && state.whistleMouth;
         // ---- Libro y lápiz: solo los dibuja la copia PASS_PROPS (con su textura) ----
         this.propBook.visible = this.pass == PASS_PROPS && state.bookShown;
         this.propPencil.visible = this.pass == PASS_PROPS && state.pencilShown;
@@ -2126,12 +2136,30 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         float bar = (gameTime % (NoxisHumAnimation.BEAT * 2)) / (NoxisHumAnimation.BEAT * 2);   // 0-1 cada dos pulsos
         float onBeat = Mth.sin(beat * Mth.PI);                                               // 0 → 1 → 0 en cada pulso
         float side = Mth.sin(bar * (2.0F * Mth.PI));
-        if (NoxisHumAnimation.isHumming(s)) {
-            this.head.xRot += w * (0.07F * onBeat - (NoxisHumAnimation.isWhistle(s) ? 0.14F : 0.0F));
+        if (NoxisHumAnimation.isWhistle(s)) {
+            // SILBAR: boquita en "o" (pieza propia), cabeza un poco levantada que va y viene despacio,
+            // una manito en la cintura y la otra marcando el compás; rebotito en cada pulso, ojos abiertos.
+            this.head.xRot += w * (-0.16F + 0.05F * onBeat);
+            this.head.yRot += w * 0.18F * Mth.sin(bar * (2.0F * Mth.PI) * 0.5F);
+            this.rightEar.xRot -= w * 0.25F;
+            this.leftEar.xRot -= w * 0.25F;
+            this.leftArm.xRot = Mth.lerp(w, this.leftArm.xRot, 0.35F);
+            this.leftArm.zRot = Mth.lerp(w, this.leftArm.zRot, -0.75F);
+            this.rightArm.xRot = Mth.lerp(w, this.rightArm.xRot, -0.35F - 0.25F * onBeat);
+            this.rightArm.zRot = Mth.lerp(w, this.rightArm.zRot, 0.2F);
+            this.playLift(w * 0.3F * onBeat);
+            this.tail.yRot += w * 0.45F * side;
+        } else if (NoxisHumAnimation.isHumming(s)) {
+            // TARAREAR: ojitos entornados, manitos juntas adelante, la cabecita marca el pulso y se mece.
+            this.head.xRot += w * 0.07F * onBeat;
             this.head.zRot += w * 0.09F * side;
             this.body.zRot += w * 0.03F * side;
             this.rightEar.zRot -= w * 0.18F * onBeat * (side > 0 ? 1.0F : 0.4F);
             this.leftEar.zRot += w * 0.18F * onBeat * (side < 0 ? 1.0F : 0.4F);
+            this.rightArm.xRot = Mth.lerp(w, this.rightArm.xRot, -0.55F);
+            this.rightArm.zRot = Mth.lerp(w, this.rightArm.zRot, 0.35F);
+            this.leftArm.xRot = Mth.lerp(w, this.leftArm.xRot, -0.55F);
+            this.leftArm.zRot = Mth.lerp(w, this.leftArm.zRot, -0.35F);
             this.tail.yRot += w * 0.35F * side;
         } else if (NoxisHumAnimation.isSway(s)) {
             this.body.zRot += w * 0.08F * side;
