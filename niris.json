@@ -1,11 +1,19 @@
 {
-  "variants": {
-    "": [
-      { "model": "noxis_culture:block/niris", "weight": 3 },
-      { "model": "noxis_culture:block/niris_2", "weight": 2 },
-      { "model": "noxis_culture:block/niris_2", "y": 90, "weight": 1 },
-      { "model": "noxis_culture:block/niris_3", "weight": 2 },
-      { "model": "noxis_culture:block/niris_3", "y": 180, "weight": 1 }
-    ]
-  }
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "noxis_culture:niris"
+        }
+      ],
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ]
+    }
+  ]
 }
