@@ -1,12 +1,6 @@
 {
-  "type": "minecraft:crafting_shapeless",
-  "category": "building",
-  "ingredients": [
-    "noxis_culture:noxite_bricks",
-    "minecraft:amethyst_shard"
-  ],
-  "result": {
-    "count": 1,
-    "id": "noxis_culture:glowing_noxite_bricks"
+  "model": {
+    "type": "minecraft:model",
+    "model": "noxis_culture:block/glowing_noxite_bricks"
   }
 }

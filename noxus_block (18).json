@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "top": "noxis_culture:block/noxus_block_top",
+    "bottom": "noxis_culture:block/noxus_block_top",
+    "side": "noxis_culture:block/noxus_block"
+  }
+}

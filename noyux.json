@@ -1,6 +1,7 @@
 {
-  "values": [
-    "noxis_culture:noyux",
-    "noxis_culture:flowing_noyux"
-  ]
+  "variants": {
+    "": {
+      "model": "noxis_culture:block/noyux"
+    }
+  }
 }

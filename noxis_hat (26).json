@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "noxis_culture:item/noxis_hat_crown",
+    "layer1": "noxis_culture:item/noxis_hat_band",
+    "layer2": "noxis_culture:item/noxis_hat_fixed"
+  }
+}
