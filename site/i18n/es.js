@@ -67,7 +67,8 @@ window.NOXIS_I18N.es = {
     paras: [
       "Cada Noxis nace con uno de cinco temperamentos. Define cómo juega, cómo quiere y cuán a menudo se mete en problemas.",
       "Sus orejas dicen lo que sus caras callan. Algunos llevan capa. Otros llevan una luz hacia la oscuridad. Cuando llega la lluvia, tienen un plan.",
-      "Se acomodan antes de dormir y se estiran al despertar. Guardan pequeños tesoros, devuelven las cosas a su lugar y dejan regalos a quienes quieren. De vez en cuando se detienen a mirar a un animal, en silencio y a una distancia respetuosa. Algunos tararean o silban una melodía propia, y un amigo puede mecerse al compás."
+      "Se acomodan antes de dormir y se estiran al despertar. Guardan pequeños tesoros, devuelven las cosas a su lugar y dejan regalos a quienes quieren. De vez en cuando se detienen a mirar a un animal, en silencio y a una distancia respetuosa. Algunos tararean o silban una melodía propia, y un amigo puede mecerse al compás.",
+      "Cuando el cielo se pone naranja o se llena de estrellas, algunos se detienen y lo miran un rato. Dos amigos pueden sentarse uno al lado del otro sin decir nada. Se agachan ante una flor nueva o el brillo de un cristal, y cuando a uno lo lastiman, otro viene a quedarse cerca. Algunos caminan de la mano un buen trecho, y otros silban mientras andan. Y los Artistas arman un pequeño caballete, pintan lo que ven y dejan sus obras para que otros las encuentren."
     ],
     whisper: "Algunas cosas solo pasan cuando no estás mirando. Otras, solo cuando sí.",
     tagline: "Dicen que el mundo se ve distinto a través de sus ojos."

@@ -68,7 +68,8 @@ window.NOXIS_I18N.en = {
     paras: [
       "Every Noxis is born with one of five temperaments. It shapes how they play, how they love and how often they get into trouble.",
       "Their ears say what their faces won't. Some wear capes. Some carry a light into the dark. When the rain comes, they have a plan.",
-      "They settle in before they sleep and stretch when they wake. They keep small treasures, put things back where they belong, and leave gifts for the ones they care about. Now and then they stop to watch an animal, quietly, from a respectful distance. Some hum or whistle a little tune of their own, and a friend may sway along."
+      "They settle in before they sleep and stretch when they wake. They keep small treasures, put things back where they belong, and leave gifts for the ones they care about. Now and then they stop to watch an animal, quietly, from a respectful distance. Some hum or whistle a little tune of their own, and a friend may sway along.",
+      "When the sky turns orange or fills with stars, some stop beneath it and look up for a while. Two friends may sit side by side, saying nothing at all. They stoop over a new flower or a glint of crystal, and when one of them gets hurt, someone comes to stay close. Some walk hand in hand for a long stretch, and some whistle as they go. And the Artists set up a small easel, paint what they see, and leave their work for others to find."
     ],
     whisper: "Some things only happen when you are not looking. Others, only when you are.",
     tagline: "Some say the world looks different through their eyes."
