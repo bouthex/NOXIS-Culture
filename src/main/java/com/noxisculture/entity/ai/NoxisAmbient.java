@@ -11,6 +11,11 @@ public interface NoxisAmbient extends NoxisCurious, NoxisKeeper, NoxisFriend, No
     /** ¿Libre para un momento tranquilo? (sin otra actividad, sin objetos en la mano, tranquilo). */
     boolean canDoAmbient();
 
+    /** ¿Libre para mirar el cielo? (como {@link #canDoAmbient()}, pero la antorcha de la noche no lo impide). */
+    default boolean canGazeSky() {
+        return this.canDoAmbient();
+    }
+
     /** Estado del momento ({@code NoxisAmbientAnimation}, sincronizado). */
     byte getAmbientAnim();
 

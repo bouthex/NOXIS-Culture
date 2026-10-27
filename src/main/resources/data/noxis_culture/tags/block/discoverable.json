@@ -1,0 +1,30 @@
+{
+  "replace": false,
+  "values": [
+    "#minecraft:flowers",
+    { "id": "#c:ores", "required": false },
+    "minecraft:amethyst_cluster",
+    "minecraft:large_amethyst_bud",
+    "minecraft:medium_amethyst_bud",
+    "minecraft:budding_amethyst",
+    "minecraft:glow_lichen",
+    "minecraft:red_mushroom",
+    "minecraft:brown_mushroom",
+    "minecraft:lantern",
+    "minecraft:soul_lantern",
+    "minecraft:bell",
+    "minecraft:sea_pickle",
+    "minecraft:spore_blossom",
+    "minecraft:pointed_dripstone",
+    "minecraft:sweet_berry_bush",
+    "minecraft:moss_carpet",
+    "minecraft:decorated_pot",
+    "minecraft:campfire",
+    "noxis_culture:noxus_ore",
+    "noxis_culture:deepslate_noxus_ore",
+    "noxis_culture:noxus_block",
+    "noxis_culture:niris",
+    "noxis_culture:ignyx",
+    "noxis_culture:glowing_noxite_bricks"
+  ]
+}

@@ -1178,7 +1178,9 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
     @Override
     public boolean appreciates(ItemStack stack) {
         return com.noxisculture.entity.nature.NoxisTreasures.isTreasure(stack, this.giftMemory)
-                || (this.isScholar() && stack.is(net.minecraft.world.item.Items.BOOK));   // su libro
+                || (this.isScholar() && stack.is(net.minecraft.world.item.Items.BOOK))    // su libro
+                || com.noxisculture.art.NoxisPaintings.isPainting(stack)                   // obras (propias o regaladas)
+                || com.noxisculture.document.NoxisDocuments.isDocument(stack);             // sus escritos
     }
 
     @Override
@@ -1298,6 +1300,16 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
     public boolean canDoAmbient() {
         return this.canHum() && this.getHum() == com.noxisculture.entity.idle.NoxisHumAnimation.NONE
                 && this.getHeldFlower().isEmpty() && !this.isBaby();
+    }
+
+    @Override
+    public boolean canGazeSky() {
+        this.studyCheck = true;            // de noche lleva la antorcha: igual puede mirar las estrellas
+        try {
+            return this.canDoAmbient();
+        } finally {
+            this.studyCheck = false;
+        }
     }
 
     @Override
@@ -1541,6 +1553,14 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         // Espacio personal: si hay 4 o más parados en el mismo lugar, algunos se corren un poquito.
         this.goalSelector.addGoal(5, new com.noxisculture.entity.ai.NoxisMakeRoomGoal<>(this));
         // Pasear por su zona (su pecera o donde apareció): tramos cortos con paradas para observar.
+        // Momentos tranquilos (etapa 2): preocuparse por un compañero va antes (es más importante).
+        this.goalSelector.addGoal(4, new com.noxisculture.entity.ai.NoxisConcernGoal<>(this));
+        this.goalSelector.addGoal(5, new com.noxisculture.entity.ai.NoxisPlaceWorkGoal<>(this));
+        this.goalSelector.addGoal(5, new com.noxisculture.entity.ai.NoxisPaintGoal<>(this));
+        this.goalSelector.addGoal(5, new com.noxisculture.entity.ai.NoxisQuietMomentGoal<>(this));
+        this.goalSelector.addGoal(5, new com.noxisculture.entity.ai.NoxisSkyGazeGoal<>(this));
+        this.goalSelector.addGoal(5, new com.noxisculture.entity.ai.NoxisGazeArtGoal<>(this));
+        this.goalSelector.addGoal(5, new com.noxisculture.entity.ai.NoxisDiscoverGoal<>(this));
         // Melodías espontáneas: reaccionar a la de otro (escuchar o mecerse) y tararear o silbar.
         this.goalSelector.addGoal(5, new com.noxisculture.entity.ai.NoxisHumListenGoal<>(this));
         this.goalSelector.addGoal(5, new com.noxisculture.entity.ai.NoxisHumGoal<>(this));

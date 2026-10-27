@@ -206,6 +206,18 @@ public class NoxisScholarGoal<T extends PathfinderMob & NoxisKeeper> extends Goa
         }
     }
 
+    /** Guarda el documento recién escrito (como mucho uno a la vez; si no entra, no se crea). */
+    private void keepDocument() {
+        SimpleContainer inv = this.mob.getPrivateInventory();
+        for (int i = 0; i < inv.getContainerSize(); i++) {
+            if (com.noxisculture.document.NoxisDocuments.isDocument(inv.getItem(i))) return;
+        }
+        int roll = this.mob.getRandom().nextInt(10);
+        int kind = roll < 5 ? com.noxisculture.document.NoxisDocuments.NOTEBOOK
+                : roll < 8 ? com.noxisculture.document.NoxisDocuments.SHEET : com.noxisculture.document.NoxisDocuments.BOOK;
+        inv.addItem(com.noxisculture.document.NoxisDocuments.create(kind, this.mob.getUUID().toString(), this.mob.level().getGameTime()));
+    }
+
     private void enter(Phase next, byte anim) {
         this.phase = next;
         this.ticks = 0;
@@ -215,6 +227,11 @@ public class NoxisScholarGoal<T extends PathfinderMob & NoxisKeeper> extends Goa
 
     @Override
     public void stop() {
+        // Terminó de escribir (no lo interrumpieron): a veces lo que escribió queda como un documento suyo
+        // (un cuaderno, una hoja o un libro, con las páginas en blanco: el idioma llega en otra etapa).
+        if (this.done && this.writing && this.phase == Phase.CLOSE && this.mob.getRandom().nextFloat() < 0.35F) {
+            this.keepDocument();
+        }
         this.mob.showKeepsake(ItemStack.EMPTY);
         this.mob.setKeepsakeAnim(NoxisKeepsakeAnimation.NONE);
         this.mob.getNavigation().stop();

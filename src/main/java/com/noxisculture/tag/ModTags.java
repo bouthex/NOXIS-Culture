@@ -14,6 +14,10 @@ public final class ModTags {
     public static final class Blocks {
         /** Bloques que el material Cosmos NO puede cosechar (hereda del diamante). */
         public static final TagKey<Block> INCORRECT_FOR_COSMOS_TOOL = create("incorrect_for_cosmos_tool");
+        /** Cosas del mundo que a un Noxis le llaman la atención (flores, cristales, menas, luces, rarezas). */
+        public static final TagKey<Block> DISCOVERABLE = create("discoverable");
+        /** Muebles donde un Noxis puede dejar un documento (mesas, barriles, cofres, estantes...). */
+        public static final TagKey<Block> DOCUMENT_SURFACES = create("document_surfaces");
 
         private static TagKey<Block> create(String name) {
             return TagKey.create(Registries.BLOCK, NoxisCulture.id(name));
