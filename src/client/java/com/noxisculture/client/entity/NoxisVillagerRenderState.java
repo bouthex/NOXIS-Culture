@@ -92,11 +92,18 @@ public class NoxisVillagerRenderState extends LivingEntityRenderState {
     public boolean affectionEyesClosed;
     public boolean affectionPupils;
     /** Curiosidad / travesura: peso y tiempo de cada estado (índice = NoxisPlayAnimation) y ojitos. */
-    public final float[] playWeight = new float[9];
-    public final float[] playTime = new float[9];
+    public final float[] playWeight = new float[com.noxisculture.entity.idle.NoxisPlayAnimation.COUNT];
+    public final float[] playTime = new float[com.noxisculture.entity.idle.NoxisPlayAnimation.COUNT];
     public boolean playSly;
     public boolean playPupils;
     public boolean playLaugh;
+    /** Melodía espontánea: estado (NoxisHumAnimation), cuánto se ve y la hora del mundo (para el compás). */
+    public byte hum;
+    public float humWeight;
+    public float humBeatTime;
+    public boolean humEyesHalf;
+    /** Sentado mirando un animal (0-1). */
+    public float watchSit;
     /** Gesto de la personalidad: cuál, tiempo, cuánto se ve y ojitos. */
     public byte persona;
     public float personaTime;

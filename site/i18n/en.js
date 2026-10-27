@@ -68,7 +68,7 @@ window.NOXIS_I18N.en = {
     paras: [
       "Every Noxis is born with one of five temperaments. It shapes how they play, how they love and how often they get into trouble.",
       "Their ears say what their faces won't. Some wear capes. Some carry a light into the dark. When the rain comes, they have a plan.",
-      "They settle in before they sleep and stretch when they wake. They keep small treasures, put things back where they belong, and leave gifts for the ones they care about. Now and then they stop to watch an animal, quietly, from a respectful distance."
+      "They settle in before they sleep and stretch when they wake. They keep small treasures, put things back where they belong, and leave gifts for the ones they care about. Now and then they stop to watch an animal, quietly, from a respectful distance. Some hum or whistle a little tune of their own, and a friend may sway along."
     ],
     whisper: "Some things only happen when you are not looking. Others, only when you are.",
     tagline: "Some say the world looks different through their eyes."
@@ -94,7 +94,7 @@ window.NOXIS_I18N.en = {
       "Place both <code>.jar</code> files in your <code>.minecraft/mods</code> folder.",
       "Start the game with the <b>Fabric</b> profile."
     ],
-    meet: "To meet your first Noxis, open the <b>Noxis Culture</b> creative tab and use the <b>Noxis Villager Spawn Egg</b>.",
+    meet: "To meet your first Noxis, open the <b>Noxis Culture</b> creative tab and use the <b>Noxis Villager Spawn Egg</b>. Optional: with <b>Mod Menu</b> installed, the mod has its own settings screen.",
     build: {
       summary: "Building from source",
       text: "Every push is built automatically by GitHub Actions. To build it yourself on a machine with Java 25:",

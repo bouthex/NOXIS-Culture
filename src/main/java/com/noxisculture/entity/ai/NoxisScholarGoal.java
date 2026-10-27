@@ -71,7 +71,11 @@ public class NoxisScholarGoal<T extends PathfinderMob & NoxisKeeper> extends Goa
         RandomSource random = this.mob.getRandom();
         this.nextCheckTick = this.mob.tickCount + 100 + random.nextInt(60);
         long now = this.mob.level().getGameTime();
-        if (this.nextAllowedTime < 0L) this.nextAllowedTime = now + 1200 + random.nextInt(2400);   // el primero: 1 a 3 min
+        int freq = com.noxisculture.config.NoxisConfig.get().readingWriting;
+        if (!com.noxisculture.config.NoxisConfig.enabled(freq)) return false;
+        if (this.nextAllowedTime < 0L) {
+            this.nextAllowedTime = now + com.noxisculture.config.NoxisConfig.scaleCooldown(1200 + random.nextInt(2400), freq);   // el primero: 1 a 3 min
+        }
         if (now < this.nextAllowedTime || !this.mob.isScholar()) return false;
         if (!this.mob.canStudy()) return this.why("ocupado con otra cosa o no está tranquilo");
         if (!this.mob.onGround() || this.mob.isInWater()) return this.why("no está en suelo firme");
@@ -215,6 +219,7 @@ public class NoxisScholarGoal<T extends PathfinderMob & NoxisKeeper> extends Goa
         this.mob.setKeepsakeAnim(NoxisKeepsakeAnimation.NONE);
         this.mob.getNavigation().stop();
         this.spot = null;
-        this.nextAllowedTime = this.mob.level().getGameTime() + COOLDOWN + this.mob.getRandom().nextInt(COOLDOWN_RANDOM);
+        this.nextAllowedTime = this.mob.level().getGameTime() + com.noxisculture.config.NoxisConfig.scaleCooldown(
+                COOLDOWN + this.mob.getRandom().nextInt(COOLDOWN_RANDOM), com.noxisculture.config.NoxisConfig.get().readingWriting);
     }
 }

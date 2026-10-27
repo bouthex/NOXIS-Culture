@@ -1,8 +1,0 @@
-{
-  "sound_event": "noxis_culture:music_disc.night_rift",
-  "description": {
-    "translate": "jukebox_song.noxis_culture.night_rift"
-  },
-  "length_in_seconds": 124.5,
-  "comparator_output": 12
-}

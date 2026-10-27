@@ -1,5 +1,5 @@
 {
-  "parent": "minecraft:block/template_fire_floor",
+  "parent": "noxis_culture:block/noyux_fire_template",
   "textures": {
     "particle": "noxis_culture:block/noyux_fire_0",
     "fire": "noxis_culture:block/noyux_fire_1"

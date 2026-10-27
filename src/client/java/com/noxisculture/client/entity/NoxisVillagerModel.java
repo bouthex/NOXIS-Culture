@@ -5,6 +5,7 @@ import com.noxisculture.entity.idle.NoxisBoredAnimation;
 import com.noxisculture.entity.idle.NoxisBowlHop;
 import com.noxisculture.entity.idle.NoxisKeepsakeAnimation;
 import com.noxisculture.entity.idle.NoxisPersonaAnimation;
+import com.noxisculture.entity.idle.NoxisHumAnimation;
 import com.noxisculture.entity.idle.NoxisListenAnimation;
 import com.noxisculture.entity.idle.NoxisDanceAnimation;
 import com.noxisculture.entity.idle.NoxisPlayAnimation;
@@ -373,7 +374,7 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         float rest = state.restAnim;
         // Sentarse: el descanso o la contemplación de la naturaleza usan la misma postura
         // (la carita de sueño, las orejas caídas y el sombrero son SOLO del descanso).
-        float sit = Math.max(rest, Math.max(state.natureSit, state.scholarSit));
+        float sit = Math.max(Math.max(rest, state.watchSit), Math.max(state.natureSit, state.scholarSit));
 
         // ---- Bamboleo cartoon al caminar ----
         float[] waddle = NoxisMoodAnimator.waddle(pos, amount, happy);
@@ -438,7 +439,7 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         //  · Antorcha de noche: ojitos cansados pero vigilando (2 px amarillos + pupila bizca).
         //  · Sentado: los mismos ojitos de sueño, que se cierran al cabecear.
         //  · Siempre: parpadeo normal cada tanto; cansado, parpadeo LENTO con cabeceo.
-        boolean sleepy = torchAnim > 0.5F || rest > 0.5F || state.boredTired || state.playSly || state.personaHalf || state.scholarFocused || state.danceHalf;
+        boolean sleepy = torchAnim > 0.5F || rest > 0.5F || state.boredTired || state.playSly || state.personaHalf || state.humEyesHalf || state.scholarFocused || state.danceHalf;
         boolean slowBlink = sleepy && (t % 110) < 8;
         boolean normalBlink = (t % 83) < 3;
         // Fascinado con un cristal no parpadea: lo mira con los ojos bien abiertos (escuchando, tampoco).
@@ -624,6 +625,10 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         // ---- Gesto propio de la personalidad ----
         if (state.persona != NoxisPersonaAnimation.NONE && state.personaWeight > 0.0F) {
             this.applyPersona(state.persona, state.personaTime, state.personaWeight);
+        }
+        // ---- Melodías espontáneas: tararear o silbar, mecerse al compás o escuchar ----
+        if (state.hum != NoxisHumAnimation.NONE && state.humWeight > 0.0F) {
+            this.applyHum(state.hum, state.humWeight, state.humBeatTime);
         }
         // ---- Curiosidad y travesuras (seguir, observar, acercarse agachadito, ¡salto!, susto y juego) ----
         this.applyPlay(state.playWeight, state.playTime);
@@ -2104,6 +2109,49 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
         if (w[NoxisPlayAnimation.CHEER] > 0.0F) this.playCheer(t[NoxisPlayAnimation.CHEER], w[NoxisPlayAnimation.CHEER]);
         if (w[NoxisPlayAnimation.STARTLED] > 0.0F) this.playStartled(t[NoxisPlayAnimation.STARTLED], w[NoxisPlayAnimation.STARTLED]);
         if (w[NoxisPlayAnimation.PLAYFUL] > 0.0F) this.playPlayful(t[NoxisPlayAnimation.PLAYFUL], w[NoxisPlayAnimation.PLAYFUL]);
+        // Sentado mirando un animal: la misma atención que al observar, más suave (la postura sentada la pone "sit").
+        if (w[NoxisPlayAnimation.SIT_WATCH] > 0.0F) this.playWatch(t[NoxisPlayAnimation.SIT_WATCH] * 0.7F, w[NoxisPlayAnimation.SIT_WATCH] * 0.6F);
+    }
+
+    // ================================================================== melodías espontáneas
+
+    /**
+     * Tararear / silbar: la cabecita marca el pulso (100 BPM = un pulso cada 12 ticks), se mece de lado
+     * cada dos pulsos y las orejitas se mueven a tiempo; silbando, la cabeza un poco levantada.
+     * Mecerse (otro Noxis): balanceo suave del cuerpo y los bracitos al mismo compás, con un rebote
+     * mínimo en cada pulso. Escuchar: cabeza ladeada, orejitas paradas y patita en el pecho.
+     */
+    private void applyHum(byte s, float w, float gameTime) {
+        float beat = (gameTime % NoxisHumAnimation.BEAT) / NoxisHumAnimation.BEAT;           // 0-1 dentro del pulso
+        float bar = (gameTime % (NoxisHumAnimation.BEAT * 2)) / (NoxisHumAnimation.BEAT * 2);   // 0-1 cada dos pulsos
+        float onBeat = Mth.sin(beat * Mth.PI);                                               // 0 → 1 → 0 en cada pulso
+        float side = Mth.sin(bar * (2.0F * Mth.PI));
+        if (NoxisHumAnimation.isHumming(s)) {
+            this.head.xRot += w * (0.07F * onBeat - (NoxisHumAnimation.isWhistle(s) ? 0.14F : 0.0F));
+            this.head.zRot += w * 0.09F * side;
+            this.body.zRot += w * 0.03F * side;
+            this.rightEar.zRot -= w * 0.18F * onBeat * (side > 0 ? 1.0F : 0.4F);
+            this.leftEar.zRot += w * 0.18F * onBeat * (side < 0 ? 1.0F : 0.4F);
+            this.tail.yRot += w * 0.35F * side;
+        } else if (NoxisHumAnimation.isSway(s)) {
+            this.body.zRot += w * 0.08F * side;
+            this.head.zRot += w * 0.12F * Mth.sin(bar * (2.0F * Mth.PI) + 0.5F);
+            this.rightArm.zRot += w * (0.18F + 0.14F * side);
+            this.leftArm.zRot -= w * (0.18F - 0.14F * side);
+            this.playLift(w * 0.35F * onBeat);
+            this.rightEar.zRot -= w * 0.12F * onBeat;
+            this.leftEar.zRot += w * 0.12F * onBeat;
+            this.tail.yRot += w * 0.5F * side;
+        } else if (NoxisHumAnimation.isListen(s)) {
+            this.head.zRot += w * 0.24F;
+            this.head.z -= 0.3F * w;
+            this.rightEar.xRot -= 0.35F * w;
+            this.leftEar.xRot -= 0.35F * w;
+            this.rightEar.zRot += w * 0.15F * onBeat;
+            this.rightArm.xRot = Mth.lerp(w, this.rightArm.xRot, -0.75F);
+            this.rightArm.zRot = Mth.lerp(w, this.rightArm.zRot, -0.25F);
+            this.tail.yRot += w * 0.2F * side;
+        }
     }
 
     private void playLift(float amount) {

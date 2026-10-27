@@ -81,7 +81,7 @@ import org.jspecify.annotations.Nullable;
  * nos da gratis el menú de comercio vanilla, el guardado de ofertas y la
  * integración con TradeWithPlayerGoal, sin el sistema de profesiones/cerebro.
  */
-public class NoxisVillager extends AbstractVillager implements com.noxisculture.entity.NoxisSpecies, NoxisLightSource, NoxisRestful, NoxisWorker, NoxisFascinatable, NoxisNatureLover, NoxisSocial, NoxisBowlSleeper, com.noxisculture.entity.ai.NoxisBored, com.noxisculture.entity.ai.NoxisFriend, com.noxisculture.entity.ai.NoxisCurious, com.noxisculture.entity.ai.NoxisKeeper, com.noxisculture.entity.ai.NoxisListener, com.noxisculture.entity.ai.NoxisDancer, com.noxisculture.entity.ai.NoxisRoamer {
+public class NoxisVillager extends AbstractVillager implements com.noxisculture.entity.NoxisSpecies, NoxisLightSource, NoxisRestful, NoxisWorker, NoxisFascinatable, NoxisNatureLover, NoxisSocial, NoxisBowlSleeper, com.noxisculture.entity.ai.NoxisBored, com.noxisculture.entity.ai.NoxisFriend, com.noxisculture.entity.ai.NoxisCurious, com.noxisculture.entity.ai.NoxisKeeper, com.noxisculture.entity.ai.NoxisListener, com.noxisculture.entity.ai.NoxisDancer, com.noxisculture.entity.ai.NoxisRoamer, com.noxisculture.entity.ai.NoxisMusical {
     /** Puede reponer en su mesa como mucho cada medio día (~2 veces por día, como vanilla). */
     private static final long RESTOCK_INTERVAL_TICKS = 12_000L;
     /** Espera tras cerrar el menú antes de subir de nivel (vanilla: 40 ticks = 2 s). */
@@ -145,6 +145,9 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
             SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BYTE);
     /** Gesto propio de la personalidad (lo decide el servidor; no se guarda). */
     private static final EntityDataAccessor<Byte> PERSONA_GESTURE =
+            SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BYTE);
+    /** Melodía espontánea: tararea, silba, se mece o escucha (NoxisHumAnimation; no se guarda). */
+    private static final EntityDataAccessor<Byte> HUM =
             SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BYTE);
     /** Objetos personales: gesto en curso y lo que se ve en sus manitos al contemplar (no se guardan). */
     private static final EntityDataAccessor<Byte> KEEPSAKE_ANIM =
@@ -338,6 +341,7 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         builder.define(AFFECTION_ANIM, com.noxisculture.entity.idle.NoxisAffectionAnimation.NONE);
         builder.define(PLAY_ANIM, com.noxisculture.entity.idle.NoxisPlayAnimation.NONE);
         builder.define(PERSONA_GESTURE, com.noxisculture.entity.idle.NoxisPersonaAnimation.NONE);
+        builder.define(HUM, com.noxisculture.entity.idle.NoxisHumAnimation.NONE);
         builder.define(KEEPSAKE_ANIM, com.noxisculture.entity.idle.NoxisKeepsakeAnimation.NONE);
         builder.define(KEEPSAKE_ITEM, ItemStack.EMPTY);
         builder.define(LISTEN_ANIM, com.noxisculture.entity.idle.NoxisListenAnimation.NONE);
@@ -1265,6 +1269,29 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
     }
 
     /** Gesto de la personalidad (solo visual, cliente). */
+    public com.noxisculture.entity.idle.NoxisHumAnimation getHumAnimation() {
+        return this.humAnimation;
+    }
+
+    private final com.noxisculture.entity.idle.NoxisHumAnimation humAnimation = new com.noxisculture.entity.idle.NoxisHumAnimation();
+
+    // ---------------- Melodías espontáneas (NoxisMusical) ----------------
+
+    @Override
+    public boolean canHum() {
+        return this.canDoPersonaGesture() && this.noPersonaGesture() && this.notListening() && this.onGround() && !this.isInWater();
+    }
+
+    @Override
+    public byte getHum() {
+        return this.entityData.get(HUM);
+    }
+
+    @Override
+    public void setHum(byte state) {
+        this.entityData.set(HUM, state);
+    }
+
     public com.noxisculture.entity.idle.NoxisPersonaAnimation getPersonaAnimation() {
         return this.personaAnimation;
     }
@@ -1440,6 +1467,9 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         // Espacio personal: si hay 4 o más parados en el mismo lugar, algunos se corren un poquito.
         this.goalSelector.addGoal(5, new com.noxisculture.entity.ai.NoxisMakeRoomGoal<>(this));
         // Pasear por su zona (su pecera o donde apareció): tramos cortos con paradas para observar.
+        // Melodías espontáneas: reaccionar a la de otro (escuchar o mecerse) y tararear o silbar.
+        this.goalSelector.addGoal(5, new com.noxisculture.entity.ai.NoxisHumListenGoal<>(this));
+        this.goalSelector.addGoal(5, new com.noxisculture.entity.ai.NoxisHumGoal<>(this));
         // Observar animales con calma (prioridad baja: cualquier otra actividad lo corta).
         this.goalSelector.addGoal(5, new com.noxisculture.entity.ai.NoxisAnimalWatchGoal<>(this));
         this.goalSelector.addGoal(5, new com.noxisculture.entity.ai.NoxisWanderGoal<>(this));
@@ -1684,6 +1714,7 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         this.affectionAnimation.tick(this.entityData.get(AFFECTION_ANIM));
         this.playAnimation.tick(this.entityData.get(PLAY_ANIM));
         this.personaAnimation.tick(this.entityData.get(PERSONA_GESTURE));
+        this.humAnimation.tick(this.entityData.get(HUM));
         this.keepsakeAnimation.tick(this.entityData.get(KEEPSAKE_ANIM));
         this.listenAnimation.tick(this.entityData.get(LISTEN_ANIM), this.entityData.get(LISTEN_DIR));
         this.danceAnimation.tick(this.entityData.get(DANCE), this.entityData.get(DANCE_STYLE));

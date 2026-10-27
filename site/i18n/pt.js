@@ -67,7 +67,7 @@ window.NOXIS_I18N.pt = {
     paras: [
       "Todo Noxis nasce com um de cinco temperamentos. Ele define como brinca, como ama e com que frequência se mete em encrenca.",
       "As orelhas dizem o que o rosto não diz. Alguns usam capa. Alguns levam uma luz para a escuridão. Quando a chuva chega, eles têm um plano.",
-      "Eles se ajeitam antes de dormir e se espreguiçam ao acordar. Guardam pequenos tesouros, colocam as coisas de volta no lugar e deixam presentes para quem amam. De vez em quando, param para observar um animal, em silêncio e a uma distância respeitosa."
+      "Eles se ajeitam antes de dormir e se espreguiçam ao acordar. Guardam pequenos tesouros, colocam as coisas de volta no lugar e deixam presentes para quem amam. De vez em quando, param para observar um animal, em silêncio e a uma distância respeitosa. Alguns cantarolam ou assobiam uma melodia própria, e um amigo pode balançar no ritmo."
     ],
     whisper: "Algumas coisas só acontecem quando você não está olhando. Outras, só quando está.",
     tagline: "Dizem que o mundo parece diferente através dos olhos deles."
@@ -93,7 +93,7 @@ window.NOXIS_I18N.pt = {
       "Coloque os dois arquivos <code>.jar</code> na pasta <code>.minecraft/mods</code>.",
       "Inicie o jogo com o perfil <b>Fabric</b>."
     ],
-    meet: "Para conhecer seu primeiro Noxis, abra a aba criativa <b>Noxis Culture</b> e use o ovo gerador <b>Noxis Villager Spawn Egg</b>.",
+    meet: "Para conhecer seu primeiro Noxis, abra a aba criativa <b>Noxis Culture</b> e use o ovo gerador <b>Noxis Villager Spawn Egg</b>. Opcional: com o <b>Mod Menu</b> instalado, o mod tem sua própria tela de configurações.",
     build: {
       summary: "Compilar a partir do código-fonte",
       text: "Cada push é compilado automaticamente pelo GitHub Actions. Para compilar você mesmo, em uma máquina com Java 25:",

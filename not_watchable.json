@@ -1,7 +1,0 @@
-{
-  "replace": false,
-  "values": [
-    { "id": "minecraft:hoglin", "required": false },
-    { "id": "minecraft:zoglin", "required": false }
-  ]
-}

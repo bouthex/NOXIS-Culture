@@ -1,7 +1,0 @@
-{
-  "parent": "noxis_culture:block/noyux_fire_template",
-  "textures": {
-    "particle": "noxis_culture:block/noyux_fire_0",
-    "fire": "noxis_culture:block/noyux_fire_1"
-  }
-}

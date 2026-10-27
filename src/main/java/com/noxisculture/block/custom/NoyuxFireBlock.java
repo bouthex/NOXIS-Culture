@@ -1,6 +1,7 @@
 package com.noxisculture.block.custom;
 
 import com.mojang.serialization.MapCodec;
+import com.noxisculture.config.NoxisConfig;
 import com.noxisculture.fluid.ModFluidTags;
 import com.noxisculture.fluid.custom.NoyuxFluid;
 import com.noxisculture.particle.ModParticles;
@@ -115,8 +116,9 @@ public class NoyuxFireBlock extends Block {
         // Quema a quien esté adentro (una vez por segundo).
         for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, new AABB(pos))) {
             if (living instanceof Player player && (player.isCreative() || player.isSpectator())) continue;
+            if (living instanceof com.noxisculture.entity.NoxisSpecies) continue;              // lore: inmunes al Noyux
             if (level.getFluidState(living.blockPosition()).is(ModFluidTags.NOYUX)) continue; // ya lo quema el líquido
-            living.hurtServer(level, level.damageSources().magic(), DAMAGE);
+            if (living.hurtServer(level, level.damageSources().magic(), DAMAGE)) NoyuxBurn.touched(living, level);
         }
         int age = state.getValue(AGE);
         if (random.nextFloat() < AGE_CHANCE) age++;
@@ -150,20 +152,21 @@ public class NoyuxFireBlock extends Block {
     @Override
     public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource random) {
         double x = pos.getX(), y = pos.getY(), z = pos.getZ();
-        if (random.nextInt(18) == 0) {
+        if (random.nextInt(18) == 0 && NoxisConfig.ambientSounds()) {
             level.playLocalSound(x + 0.5D, y + 0.5D, z + 0.5D, ModSounds.NOYUX_FIRE_CRACKLE, SoundSource.BLOCKS,
                     0.6F + random.nextFloat() * 0.3F, 0.85F + random.nextFloat() * 0.3F, false);
         }
-        if (random.nextInt(3) == 0) {
+        if (random.nextInt(3) == 0 && NoxisConfig.decorativeParticle(random)) {
             level.addParticle(ModParticles.NOYUX_SMOKE, x + 0.2D + random.nextDouble() * 0.6D, y + 0.5D + random.nextDouble() * 0.4D,
                     z + 0.2D + random.nextDouble() * 0.6D, (random.nextDouble() - 0.5D) * 0.01D, 0.03D + random.nextDouble() * 0.02D,
                     (random.nextDouble() - 0.5D) * 0.01D);
         }
-        if (random.nextInt(5) == 0) {
-            level.addParticle(ModParticles.NOYUX_SPARK, x + random.nextDouble(), y + 0.3D + random.nextDouble() * 0.8D,
-                    z + random.nextDouble(), 0.0D, 0.015D, 0.0D);
+        // Destellos (estrellitas magenta): menos y por encima de las lenguas, para no tapar la llama.
+        if (random.nextInt(9) == 0 && NoxisConfig.decorativeParticle(random)) {
+            level.addParticle(ModParticles.NOYUX_SPARK, x + 0.25D + random.nextDouble() * 0.5D, y + 0.95D + random.nextDouble() * 0.35D,
+                    z + 0.25D + random.nextDouble() * 0.5D, 0.0D, 0.02D, 0.0D);
         }
-        if (random.nextInt(4) == 0) {
+        if (random.nextInt(4) == 0 && NoxisConfig.decorativeParticle(random)) {
             level.addParticle(ModParticles.NOYUX_MOTE, x + 0.15D + random.nextDouble() * 0.7D, y + 0.2D,
                     z + 0.15D + random.nextDouble() * 0.7D, 0.0D, 0.04D + random.nextDouble() * 0.03D, 0.0D);
         }

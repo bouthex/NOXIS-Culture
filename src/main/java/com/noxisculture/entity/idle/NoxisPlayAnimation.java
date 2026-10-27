@@ -26,7 +26,9 @@ public final class NoxisPlayAnimation {
     public static final byte CHEER = 6;
     public static final byte STARTLED = 7;
     public static final byte PLAYFUL = 8;
-    private static final int COUNT = 9;
+    /** Sentado tranquilo mirando un animal (observar animales: cariñosos y tranquilos). */
+    public static final byte SIT_WATCH = 9;
+    public static final int COUNT = 10;
 
     /** Largos (ticks) de los gestos con duración fija. */
     public static final int POUNCE_LENGTH = 14;
@@ -49,8 +51,8 @@ public final class NoxisPlayAnimation {
             this.weightO[i] = this.weight[i];
             boolean on = i == this.state;
             // Los gestos repentinos (salto, susto) entran rápido; el resto, suave.
-            float speed = on && (i == POUNCE || i == STARTLED) ? 0.5F : 0.18F;
-            this.weight[i] = on ? Math.min(1.0F, this.weight[i] + speed) : Math.max(0.0F, this.weight[i] - 0.18F);
+            float speed = on && (i == POUNCE || i == STARTLED) ? 0.5F : i == SIT_WATCH ? 0.08F : 0.18F;
+            this.weight[i] = on ? Math.min(1.0F, this.weight[i] + speed) : Math.max(0.0F, this.weight[i] - (i == SIT_WATCH ? 0.08F : 0.18F));
             if (on || this.weight[i] > 0.0F) this.time[i]++;
         }
     }

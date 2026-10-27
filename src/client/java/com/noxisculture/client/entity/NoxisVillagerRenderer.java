@@ -123,10 +123,16 @@ public class NoxisVillagerRenderer extends MobRenderer<NoxisVillager, NoxisVilla
         state.personaHalf = personaShown && com.noxisculture.entity.idle.NoxisPersonaAnimation.halfClosed(state.persona, state.personaTime);
         state.personaClosed = personaShown && com.noxisculture.entity.idle.NoxisPersonaAnimation.closed(state.persona, state.personaTime);
         com.noxisculture.entity.idle.NoxisPlayAnimation play = entity.getPlayAnimation();
-        for (byte i = 1; i < 9; i++) {
+        for (byte i = 1; i < com.noxisculture.entity.idle.NoxisPlayAnimation.COUNT; i++) {
             state.playWeight[i] = play.getWeight(i, partialTick);
             state.playTime[i] = play.getTime(i, partialTick);
         }
+        state.watchSit = state.playWeight[com.noxisculture.entity.idle.NoxisPlayAnimation.SIT_WATCH];
+        com.noxisculture.entity.idle.NoxisHumAnimation humAnim = entity.getHumAnimation();
+        state.hum = humAnim.getState();
+        state.humWeight = humAnim.isBusy() ? humAnim.getWeight(partialTick) : 0.0F;
+        state.humBeatTime = entity.level().getGameTime() + partialTick;
+        state.humEyesHalf = state.humWeight > 0.5F && state.hum >= 1 && state.hum <= 3;   // tarareando: ojitos entornados
         byte playState = play.getState();
         boolean playShown = playState != 0 && state.playWeight[playState] > 0.5F;
         state.playSly = playShown && com.noxisculture.entity.idle.NoxisPlayAnimation.slyEyes(playState);

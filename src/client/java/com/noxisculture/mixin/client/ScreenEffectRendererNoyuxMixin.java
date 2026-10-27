@@ -14,8 +14,8 @@ import org.spongepowered.asm.mixin.injection.At;
 /**
  * Llamas en primera persona al quemarse con Noyux: el juego dibuja las llamas cuando el jugador está
  * prendido fuego; acá también mientras toca Noyux o su fuego, y con la textura del fuego violeta en
- * vez de la del fuego común. Al salir, desaparecen solas (se revisa en cada cuadro). El fuego normal
- * no cambia. Opcional: si algo cambiara en otra versión, el enganche no se aplica.
+ * vez de la del fuego común. Al salir siguen un instante (1,5 s) si el Noyux llegó a lastimarlo; el
+ * agua las apaga y la lava pone las suyas. El fuego normal no cambia. Opcional: si algo cambiara en otra versión, el enganche no se aplica.
  */
 @Mixin(ScreenEffectRenderer.class)
 public abstract class ScreenEffectRendererNoyuxMixin {
@@ -30,7 +30,10 @@ public abstract class ScreenEffectRendererNoyuxMixin {
             require = 0)
     private void noxisCulture$violetFlames(PoseStack poseStack, SubmitNodeCollector collector, TextureAtlasSprite sprite,
                                            Operation<Void> original) {
-        TextureAtlasSprite violet = NoyuxClientEffects.isPlayerBurningInNoyux() ? NoyuxClientEffects.fireSprite() : null;
+        // Si el jugador arde con fuego común (lava, fuego vanilla), se ven esas llamas: las violetas no lo tapan.
+        var player = net.minecraft.client.Minecraft.getInstance().player;
+        boolean vanillaFire = player != null && player.isOnFire();
+        TextureAtlasSprite violet = !vanillaFire && NoyuxClientEffects.isPlayerBurningInNoyux() ? NoyuxClientEffects.fireSprite() : null;
         original.call(poseStack, collector, violet != null ? violet : sprite);
     }
 }

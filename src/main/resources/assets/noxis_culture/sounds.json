@@ -162,5 +162,41 @@
     "sounds": [
       "noxis_culture:noyux/noyux_fizz"
     ]
+  },
+  "entity.noxis.melody_1": {
+    "subtitle": "subtitles.noxis_culture.noxis.hum",
+    "sounds": [
+      "noxis_culture:noxis/melody1"
+    ]
+  },
+  "entity.noxis.melody_2": {
+    "subtitle": "subtitles.noxis_culture.noxis.hum",
+    "sounds": [
+      "noxis_culture:noxis/melody2"
+    ]
+  },
+  "entity.noxis.melody_3": {
+    "subtitle": "subtitles.noxis_culture.noxis.hum",
+    "sounds": [
+      "noxis_culture:noxis/melody3"
+    ]
+  },
+  "entity.noxis.melody_4": {
+    "subtitle": "subtitles.noxis_culture.noxis.whistle",
+    "sounds": [
+      "noxis_culture:noxis/melody4"
+    ]
+  },
+  "entity.noxis.melody_5": {
+    "subtitle": "subtitles.noxis_culture.noxis.whistle",
+    "sounds": [
+      "noxis_culture:noxis/melody5"
+    ]
+  },
+  "entity.noxis.melody_6": {
+    "subtitle": "subtitles.noxis_culture.noxis.whistle",
+    "sounds": [
+      "noxis_culture:noxis/melody6"
+    ]
   }
 }

@@ -3,6 +3,7 @@ package com.noxisculture.fluid.custom;
 import com.noxisculture.block.ModBlocks;
 import com.noxisculture.block.custom.NoyuxBurning;
 import com.noxisculture.sound.ModSounds;
+import com.noxisculture.config.NoxisConfig;
 import com.noxisculture.fluid.ModFluidTags;
 import com.noxisculture.fluid.ModFluids;
 import com.noxisculture.item.ModItems;
@@ -79,12 +80,13 @@ public abstract class NoyuxFluid extends FlowingFluid {
 
     @Override
     public void animateTick(Level level, BlockPos pos, FluidState state, RandomSource random) {
-        if (random.nextInt(12) == 0) {
+        if (random.nextInt(12) == 0 && NoxisConfig.decorativeParticle(random)) {
             level.addParticle(ParticleTypes.PORTAL, pos.getX() + random.nextDouble(), pos.getY() + 0.9D,
                     pos.getZ() + random.nextDouble(), 0.0D, 0.04D, 0.0D);
         }
         // Sonido propio: quieto burbujea grave; fluyendo o cayendo suena a una masa pesada que corre.
         // Pocas veces y con variaciones de tono, para que no se repita de forma molesta.
+        if (!NoxisConfig.ambientSounds()) return;
         if (!state.isSource()) {
             if (random.nextInt(100) == 0) {
                 level.playLocalSound(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D,
@@ -120,8 +122,15 @@ public abstract class NoyuxFluid extends FlowingFluid {
         if (living instanceof Player player && (player.isCreative() || player.isSpectator())) {
             return;
         }
+        // Lore (canon ampliado): los Noxis pueden tocar el Noyux y bañarse en él sin sufrir daño.
+        if (living instanceof com.noxisculture.entity.NoxisSpecies) {
+            return;
+        }
         if (level.getGameTime() % 20 == 0) {
-            living.hurtServer(serverLevel, level.damageSources().magic(), BURN_DAMAGE);
+            // Solo si el daño se aplicó de verdad queda la quemadura residual (el waterdrop rápido sigue sin daño).
+            if (living.hurtServer(serverLevel, level.damageSources().magic(), BURN_DAMAGE)) {
+                com.noxisculture.block.custom.NoyuxBurn.touched(living, serverLevel);
+            }
         }
     }
 
