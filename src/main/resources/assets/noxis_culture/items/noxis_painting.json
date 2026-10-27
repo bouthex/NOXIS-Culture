@@ -1,0 +1,384 @@
+{
+ "model": {
+  "type": "minecraft:range_dispatch",
+  "property": "minecraft:custom_model_data",
+  "index": 0,
+  "entries": [
+   {
+    "threshold": 0.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_00"
+    }
+   },
+   {
+    "threshold": 1.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_01"
+    }
+   },
+   {
+    "threshold": 2.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_02"
+    }
+   },
+   {
+    "threshold": 3.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_03"
+    }
+   },
+   {
+    "threshold": 4.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_04"
+    }
+   },
+   {
+    "threshold": 5.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_05"
+    }
+   },
+   {
+    "threshold": 6.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_06"
+    }
+   },
+   {
+    "threshold": 7.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_07"
+    }
+   },
+   {
+    "threshold": 8.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_08"
+    }
+   },
+   {
+    "threshold": 9.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_09"
+    }
+   },
+   {
+    "threshold": 10.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_10"
+    }
+   },
+   {
+    "threshold": 11.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_11"
+    }
+   },
+   {
+    "threshold": 12.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_12"
+    }
+   },
+   {
+    "threshold": 13.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_13"
+    }
+   },
+   {
+    "threshold": 14.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_14"
+    }
+   },
+   {
+    "threshold": 15.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_15"
+    }
+   },
+   {
+    "threshold": 16.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_16"
+    }
+   },
+   {
+    "threshold": 17.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_17"
+    }
+   },
+   {
+    "threshold": 18.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_18"
+    }
+   },
+   {
+    "threshold": 19.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_19"
+    }
+   },
+   {
+    "threshold": 20.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_20"
+    }
+   },
+   {
+    "threshold": 21.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_21"
+    }
+   },
+   {
+    "threshold": 22.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_22"
+    }
+   },
+   {
+    "threshold": 23.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_23"
+    }
+   },
+   {
+    "threshold": 24.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_24"
+    }
+   },
+   {
+    "threshold": 25.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_25"
+    }
+   },
+   {
+    "threshold": 26.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_26"
+    }
+   },
+   {
+    "threshold": 27.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_27"
+    }
+   },
+   {
+    "threshold": 28.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_28"
+    }
+   },
+   {
+    "threshold": 29.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_29"
+    }
+   },
+   {
+    "threshold": 30.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_30"
+    }
+   },
+   {
+    "threshold": 31.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_31"
+    }
+   },
+   {
+    "threshold": 32.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_32"
+    }
+   },
+   {
+    "threshold": 33.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_33"
+    }
+   },
+   {
+    "threshold": 34.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_34"
+    }
+   },
+   {
+    "threshold": 35.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_35"
+    }
+   },
+   {
+    "threshold": 36.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_36"
+    }
+   },
+   {
+    "threshold": 37.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_37"
+    }
+   },
+   {
+    "threshold": 38.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_38"
+    }
+   },
+   {
+    "threshold": 39.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_39"
+    }
+   },
+   {
+    "threshold": 40.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_40"
+    }
+   },
+   {
+    "threshold": 41.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_41"
+    }
+   },
+   {
+    "threshold": 42.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_42"
+    }
+   },
+   {
+    "threshold": 43.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_43"
+    }
+   },
+   {
+    "threshold": 44.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_44"
+    }
+   },
+   {
+    "threshold": 45.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_45"
+    }
+   },
+   {
+    "threshold": 46.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_46"
+    }
+   },
+   {
+    "threshold": 47.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_47"
+    }
+   },
+   {
+    "threshold": 48.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_48"
+    }
+   },
+   {
+    "threshold": 49.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_49"
+    }
+   },
+   {
+    "threshold": 50.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_50"
+    }
+   },
+   {
+    "threshold": 51.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_51"
+    }
+   },
+   {
+    "threshold": 52.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:item/noxis_painting/art_52"
+    }
+   }
+  ],
+  "fallback": {
+   "type": "minecraft:model",
+   "model": "noxis_culture:item/noxis_painting/art_00"
+  }
+ }
+}

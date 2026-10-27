@@ -32,6 +32,7 @@ public final class NoxisCulture implements ModInitializer {
         ModBlocks.initialize();
         ModItems.initialize();
         ModBlockEntities.initialize();
+        com.noxisculture.world.ModPoi.initialize();
         ModEntityTypes.initialize();
         ModCreativeTabs.initialize();
         com.noxisculture.item.NoxisHatInteractions.register();

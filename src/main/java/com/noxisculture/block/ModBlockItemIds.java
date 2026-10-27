@@ -22,7 +22,11 @@ public final class ModBlockItemIds {
 
     // Reacciones del Noyux
     public static final BlockItemId NIRIS = create("niris");
-    public static final BlockItemId IGNYX = create("ignyx");   // nombre pendiente de aprobación
+    public static final BlockItemId IGNYX = create("ignyx");
+
+    // Obras y documentos de los Noxis
+    public static final BlockItemId NOXIS_PAINTING = create("noxis_painting");
+    public static final BlockItemId NOXIS_DOCUMENT = create("noxis_document");   // nombre pendiente de aprobación
 
     // Vida Noxis
     public static final BlockItemId NOXIS_BOWL = create("noxis_bowl");

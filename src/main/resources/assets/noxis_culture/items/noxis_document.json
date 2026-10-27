@@ -1,0 +1,34 @@
+{
+ "model": {
+  "type": "minecraft:range_dispatch",
+  "property": "minecraft:custom_model_data",
+  "index": 0,
+  "entries": [
+   {
+    "threshold": 0.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:block/noxis_book"
+    }
+   },
+   {
+    "threshold": 1.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:block/noxis_notebook"
+    }
+   },
+   {
+    "threshold": 2.0,
+    "model": {
+     "type": "minecraft:model",
+     "model": "noxis_culture:block/noxis_sheet"
+    }
+   }
+  ],
+  "fallback": {
+   "type": "minecraft:model",
+   "model": "noxis_culture:block/noxis_book"
+  }
+ }
+}

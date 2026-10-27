@@ -2321,6 +2321,10 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
     private void applyAffection(byte anim, float t, float w) {
         boolean lead = NoxisAffectionAnimation.roleOf(anim) == NoxisAffectionAnimation.LEAD;
         float f = NoxisAffectionAnimation.friendOnRight(anim) ? 1.0F : -1.0F;
+        if (NoxisAffectionAnimation.isWalking(anim)) {
+            this.affectionHandWalk(f, t, w);
+            return;
+        }
         switch (NoxisAffectionAnimation.gestureOf(anim)) {
             case NoxisAffectionAnimation.HANDS -> this.affectionHands(f, t, w);
             case NoxisAffectionAnimation.CHEEK -> this.affectionCheek(lead, f, t, w);
@@ -2330,6 +2334,22 @@ public class NoxisVillagerModel extends EntityModel<NoxisVillagerRenderState> {
             }
             default -> { }
         }
+    }
+
+    /**
+     * Caminando de la mano: el bracito de adentro queda estirado hacia el amigo, tomado a la altura
+     * de las manitos y con un balanceo chiquito al paso; el de afuera sigue el vaivén normal de la
+     * caminata (no se toca). La cabecita a veces se gira hacia el amigo y la colita se mueve contenta.
+     */
+    private void affectionHandWalk(float f, float t, float w) {
+        ModelPart inner = f > 0 ? this.rightArm : this.leftArm;
+        float sw = Mth.sin(t * 0.3F);
+        inner.zRot = Mth.lerp(w, inner.zRot, f * 1.1F);
+        inner.xRot = Mth.lerp(w, inner.xRot, -0.1F + 0.12F * sw);
+        inner.yScale *= 1.0F + 0.12F * w;
+        float glance = NoxisBoredAnimation.env(t % 160.0F, 100, 110, 130, 140);
+        this.head.yRot += w * f * 0.35F * glance;
+        this.tail.yRot += w * Mth.sin(t * 0.35F) * 0.35F;
     }
 
     private void affectionHop(float amount) {

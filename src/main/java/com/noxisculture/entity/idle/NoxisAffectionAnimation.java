@@ -31,6 +31,11 @@ public final class NoxisAffectionAnimation {
     public static final byte HUG = 3;
     /** Bit: el amigo está a SU derecha (si no, a su izquierda). */
     private static final int FRIEND_RIGHT = 0x10;
+    /**
+     * Bit: siguen CAMINANDO de la mano (después del gesto de las manitos). Mientras está puesto, el
+     * bracito de adentro queda tomado del amigo y el de afuera se balancea al caminar.
+     */
+    public static final int WALKING = 0x20;
 
     public static final int HANDS_LENGTH = 96;
     public static final int CHEEK_LENGTH = 90;
@@ -75,6 +80,14 @@ public final class NoxisAffectionAnimation {
         return (anim & FRIEND_RIGHT) != 0;
     }
 
+    public static boolean isWalking(byte anim) {
+        return (anim & WALKING) != 0;
+    }
+
+    public static byte withWalking(byte anim) {
+        return (byte) (anim | WALKING);
+    }
+
     public static int length(byte anim) {
         return switch (gestureOf(anim)) {
             case HANDS -> HANDS_LENGTH;
@@ -96,7 +109,7 @@ public final class NoxisAffectionAnimation {
         }
         if (this.anim == NONE) return;
         if (serverAnim == NONE || this.fading) {
-            if (!this.fading && this.t >= length(this.anim) - 2) {
+            if (!this.fading && !isWalking(this.anim) && this.t >= length(this.anim) - 2) {
                 this.reset();
                 return;
             }
@@ -105,7 +118,7 @@ public final class NoxisAffectionAnimation {
             if (this.weight <= 0.0F) this.reset();
             return;
         }
-        if (this.t < length(this.anim)) this.t++;
+        if (isWalking(this.anim) || this.t < length(this.anim)) this.t++;     // caminando: el tiempo sigue corriendo
     }
 
     private void reset() {
@@ -126,6 +139,7 @@ public final class NoxisAffectionAnimation {
 
     public float getTime(float pt) {
         if (this.anim == NONE) return 0.0F;
+        if (isWalking(this.anim)) return this.fading ? this.t : this.t + pt;
         return this.fading ? this.t : Math.min(length(this.anim), this.t + pt);
     }
 

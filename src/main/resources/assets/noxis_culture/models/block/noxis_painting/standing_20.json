@@ -1,0 +1,332 @@
+{
+ "parent": "minecraft:block/block",
+ "textures": {
+  "particle": "noxis_culture:block/noxis_painting/art_20",
+  "art": "noxis_culture:block/noxis_painting/art_20",
+  "frame": "noxis_culture:block/noxis_painting/frame"
+ },
+ "elements": [
+  {
+   "from": [
+    3,
+    0,
+    6
+   ],
+   "to": [
+    4,
+    11,
+    7
+   ],
+   "rotation": {
+    "angle": -22.5,
+    "axis": "x",
+    "origin": [
+     3.5,
+     0,
+     6.5
+    ]
+   },
+   "faces": {
+    "north": {
+     "texture": "#frame",
+     "uv": [
+      0,
+      0,
+      1,
+      11
+     ]
+    },
+    "south": {
+     "texture": "#frame",
+     "uv": [
+      0,
+      0,
+      1,
+      11
+     ]
+    },
+    "east": {
+     "texture": "#frame",
+     "uv": [
+      0,
+      0,
+      1,
+      11
+     ]
+    },
+    "west": {
+     "texture": "#frame",
+     "uv": [
+      0,
+      0,
+      1,
+      11
+     ]
+    }
+   }
+  },
+  {
+   "from": [
+    12,
+    0,
+    6
+   ],
+   "to": [
+    13,
+    11,
+    7
+   ],
+   "rotation": {
+    "angle": -22.5,
+    "axis": "x",
+    "origin": [
+     12.5,
+     0,
+     6.5
+    ]
+   },
+   "faces": {
+    "north": {
+     "texture": "#frame",
+     "uv": [
+      0,
+      0,
+      1,
+      11
+     ]
+    },
+    "south": {
+     "texture": "#frame",
+     "uv": [
+      0,
+      0,
+      1,
+      11
+     ]
+    },
+    "east": {
+     "texture": "#frame",
+     "uv": [
+      0,
+      0,
+      1,
+      11
+     ]
+    },
+    "west": {
+     "texture": "#frame",
+     "uv": [
+      0,
+      0,
+      1,
+      11
+     ]
+    }
+   }
+  },
+  {
+   "from": [
+    7.5,
+    0,
+    10
+   ],
+   "to": [
+    8.5,
+    12,
+    11
+   ],
+   "rotation": {
+    "angle": 22.5,
+    "axis": "x",
+    "origin": [
+     8,
+     0,
+     10.5
+    ]
+   },
+   "faces": {
+    "north": {
+     "texture": "#frame",
+     "uv": [
+      0,
+      0,
+      1,
+      12
+     ]
+    },
+    "south": {
+     "texture": "#frame",
+     "uv": [
+      0,
+      0,
+      1,
+      12
+     ]
+    },
+    "east": {
+     "texture": "#frame",
+     "uv": [
+      0,
+      0,
+      1,
+      12
+     ]
+    },
+    "west": {
+     "texture": "#frame",
+     "uv": [
+      0,
+      0,
+      1,
+      12
+     ]
+    }
+   }
+  },
+  {
+   "from": [
+    2,
+    3,
+    4
+   ],
+   "to": [
+    14,
+    4,
+    6
+   ],
+   "faces": {
+    "north": {
+     "texture": "#frame",
+     "uv": [
+      0,
+      0,
+      12,
+      1
+     ]
+    },
+    "south": {
+     "texture": "#frame",
+     "uv": [
+      0,
+      0,
+      12,
+      1
+     ]
+    },
+    "up": {
+     "texture": "#frame",
+     "uv": [
+      0,
+      0,
+      12,
+      1
+     ]
+    },
+    "down": {
+     "texture": "#frame",
+     "uv": [
+      0,
+      0,
+      12,
+      1
+     ]
+    },
+    "east": {
+     "texture": "#frame",
+     "uv": [
+      0,
+      0,
+      2,
+      1
+     ]
+    },
+    "west": {
+     "texture": "#frame",
+     "uv": [
+      0,
+      0,
+      2,
+      1
+     ]
+    }
+   }
+  },
+  {
+   "from": [
+    2,
+    4,
+    5
+   ],
+   "to": [
+    14,
+    16,
+    6
+   ],
+   "rotation": {
+    "angle": -22.5,
+    "axis": "x",
+    "origin": [
+     8,
+     4,
+     5.5
+    ]
+   },
+   "faces": {
+    "north": {
+     "texture": "#art",
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ]
+    },
+    "south": {
+     "texture": "#frame",
+     "uv": [
+      0,
+      0,
+      12,
+      12
+     ]
+    },
+    "east": {
+     "texture": "#frame",
+     "uv": [
+      0,
+      0,
+      1,
+      12
+     ]
+    },
+    "west": {
+     "texture": "#frame",
+     "uv": [
+      0,
+      0,
+      1,
+      12
+     ]
+    },
+    "up": {
+     "texture": "#frame",
+     "uv": [
+      0,
+      0,
+      12,
+      1
+     ]
+    },
+    "down": {
+     "texture": "#frame",
+     "uv": [
+      0,
+      0,
+      12,
+      1
+     ]
+    }
+   }
+  }
+ ]
+}

@@ -1,0 +1,49 @@
+{
+ "variants": {
+  "facing=north,kind=0": {
+   "model": "noxis_culture:block/noxis_book"
+  },
+  "facing=east,kind=0": {
+   "model": "noxis_culture:block/noxis_book",
+   "y": 90
+  },
+  "facing=south,kind=0": {
+   "model": "noxis_culture:block/noxis_book",
+   "y": 180
+  },
+  "facing=west,kind=0": {
+   "model": "noxis_culture:block/noxis_book",
+   "y": 270
+  },
+  "facing=north,kind=1": {
+   "model": "noxis_culture:block/noxis_notebook"
+  },
+  "facing=east,kind=1": {
+   "model": "noxis_culture:block/noxis_notebook",
+   "y": 90
+  },
+  "facing=south,kind=1": {
+   "model": "noxis_culture:block/noxis_notebook",
+   "y": 180
+  },
+  "facing=west,kind=1": {
+   "model": "noxis_culture:block/noxis_notebook",
+   "y": 270
+  },
+  "facing=north,kind=2": {
+   "model": "noxis_culture:block/noxis_sheet"
+  },
+  "facing=east,kind=2": {
+   "model": "noxis_culture:block/noxis_sheet",
+   "y": 90
+  },
+  "facing=south,kind=2": {
+   "model": "noxis_culture:block/noxis_sheet",
+   "y": 180
+  },
+  "facing=west,kind=2": {
+   "model": "noxis_culture:block/noxis_sheet",
+   "y": 270
+  }
+ }
+}

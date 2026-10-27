@@ -109,6 +109,30 @@ public final class ModBlocks {
                     .isSuffocating((state, level, pos) -> false)
                     .isViewBlocking((state, level, pos) -> false));
 
+    // ---------------- Obras y documentos de los Noxis ----------------
+
+    /** Pintura de un Noxis artista: colgada en la pared o apoyada en un caballetito (ver NoxisPaintings). */
+    public static final Block NOXIS_PAINTING = register(
+            ModBlockItemIds.NOXIS_PAINTING, com.noxisculture.block.custom.NoxisPaintingBlock::new,
+            BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.WOOD)
+                    .strength(0.5F)
+                    .sound(SoundType.WOOD)
+                    .noOcclusion()
+                    .noCollision()
+                    .pushReaction(PushReaction.DESTROY));
+
+    /** Documento de un Noxis (libro, cuaderno u hoja) apoyado; las páginas, en blanco por ahora. */
+    public static final Block NOXIS_DOCUMENT = register(
+            ModBlockItemIds.NOXIS_DOCUMENT, com.noxisculture.block.custom.NoxisDocumentBlock::new,
+            BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_PURPLE)
+                    .strength(0.3F)
+                    .sound(SoundType.WOOL)
+                    .noOcclusion()
+                    .noLootTable()
+                    .pushReaction(PushReaction.DESTROY));
+
     // ---------------- Vida Noxis ----------------
 
     /** Pecera Noxis: donde duermen los Noxis (una por Noxis). */

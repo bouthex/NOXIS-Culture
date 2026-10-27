@@ -1,0 +1,77 @@
+{
+ "parent": "minecraft:block/block",
+ "textures": {
+  "particle": "noxis_culture:block/noxis_document/sheet",
+  "sheet": "noxis_culture:block/noxis_document/sheet"
+ },
+ "elements": [
+  {
+   "from": [
+    3,
+    0,
+    3
+   ],
+   "to": [
+    13,
+    0.5,
+    13
+   ],
+   "faces": {
+    "up": {
+     "texture": "#sheet",
+     "uv": [
+      3,
+      3,
+      13,
+      13
+     ]
+    },
+    "down": {
+     "texture": "#sheet",
+     "uv": [
+      3,
+      3,
+      13,
+      13
+     ]
+    },
+    "north": {
+     "texture": "#sheet",
+     "uv": [
+      3,
+      0,
+      13,
+      1
+     ]
+    },
+    "south": {
+     "texture": "#sheet",
+     "uv": [
+      3,
+      0,
+      13,
+      1
+     ]
+    },
+    "east": {
+     "texture": "#sheet",
+     "uv": [
+      3,
+      0,
+      13,
+      1
+     ]
+    },
+    "west": {
+     "texture": "#sheet",
+     "uv": [
+      3,
+      0,
+      13,
+      1
+     ]
+    }
+   }
+  }
+ ]
+}

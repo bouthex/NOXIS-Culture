@@ -1,0 +1,6 @@
+{
+ "parent": "minecraft:item/generated",
+ "textures": {
+  "layer0": "noxis_culture:block/noxis_painting/art_35"
+ }
+}

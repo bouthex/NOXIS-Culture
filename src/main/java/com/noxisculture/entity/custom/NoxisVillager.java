@@ -81,7 +81,7 @@ import org.jspecify.annotations.Nullable;
  * nos da gratis el menú de comercio vanilla, el guardado de ofertas y la
  * integración con TradeWithPlayerGoal, sin el sistema de profesiones/cerebro.
  */
-public class NoxisVillager extends AbstractVillager implements com.noxisculture.entity.NoxisSpecies, NoxisLightSource, NoxisRestful, NoxisWorker, NoxisFascinatable, NoxisNatureLover, NoxisSocial, NoxisBowlSleeper, com.noxisculture.entity.ai.NoxisBored, com.noxisculture.entity.ai.NoxisFriend, com.noxisculture.entity.ai.NoxisCurious, com.noxisculture.entity.ai.NoxisKeeper, com.noxisculture.entity.ai.NoxisListener, com.noxisculture.entity.ai.NoxisDancer, com.noxisculture.entity.ai.NoxisRoamer, com.noxisculture.entity.ai.NoxisMusical {
+public class NoxisVillager extends AbstractVillager implements com.noxisculture.entity.NoxisSpecies, NoxisLightSource, NoxisRestful, NoxisWorker, NoxisFascinatable, NoxisNatureLover, NoxisSocial, NoxisBowlSleeper, com.noxisculture.entity.ai.NoxisBored, com.noxisculture.entity.ai.NoxisFriend, com.noxisculture.entity.ai.NoxisCurious, com.noxisculture.entity.ai.NoxisKeeper, com.noxisculture.entity.ai.NoxisListener, com.noxisculture.entity.ai.NoxisDancer, com.noxisculture.entity.ai.NoxisRoamer, com.noxisculture.entity.ai.NoxisMusical, com.noxisculture.entity.ai.NoxisAmbient {
     /** Puede reponer en su mesa como mucho cada medio día (~2 veces por día, como vanilla). */
     private static final long RESTOCK_INTERVAL_TICKS = 12_000L;
     /** Espera tras cerrar el menú antes de subir de nivel (vanilla: 40 ticks = 2 s). */
@@ -148,6 +148,9 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
             SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BYTE);
     /** Melodía espontánea: tararea, silba, se mece o escucha (NoxisHumAnimation; no se guarda). */
     private static final EntityDataAccessor<Byte> HUM =
+            SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BYTE);
+    /** Momentos tranquilos de la etapa 2: cielo, compañía, descubrir, preocuparse, pintar (no se guarda). */
+    private static final EntityDataAccessor<Byte> AMBIENT =
             SynchedEntityData.defineId(NoxisVillager.class, EntityDataSerializers.BYTE);
     /** Objetos personales: gesto en curso y lo que se ve en sus manitos al contemplar (no se guardan). */
     private static final EntityDataAccessor<Byte> KEEPSAKE_ANIM =
@@ -342,6 +345,7 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         builder.define(PLAY_ANIM, com.noxisculture.entity.idle.NoxisPlayAnimation.NONE);
         builder.define(PERSONA_GESTURE, com.noxisculture.entity.idle.NoxisPersonaAnimation.NONE);
         builder.define(HUM, com.noxisculture.entity.idle.NoxisHumAnimation.NONE);
+        builder.define(AMBIENT, com.noxisculture.entity.idle.NoxisAmbientAnimation.NONE);
         builder.define(KEEPSAKE_ANIM, com.noxisculture.entity.idle.NoxisKeepsakeAnimation.NONE);
         builder.define(KEEPSAKE_ITEM, ItemStack.EMPTY);
         builder.define(LISTEN_ANIM, com.noxisculture.entity.idle.NoxisListenAnimation.NONE);
@@ -1074,6 +1078,11 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
 
     @Override
     public void setDance(byte state, byte style, int origin, byte beatTicks) {
+        // Se cayó bailando: cuenta como un momento feo (otro puede venir a acompañarlo).
+        if (!this.level().isClientSide() && (state == com.noxisculture.entity.idle.NoxisDanceAnimation.FALL
+                || state == com.noxisculture.entity.idle.NoxisDanceAnimation.PAIR_FALL)) {
+            this.lastDistressTime = this.level().getGameTime();
+        }
         this.entityData.set(DANCE_STYLE, style);
         this.entityData.set(DANCE_ORIGIN, origin);
         this.entityData.set(DANCE_BEAT, beatTicks);
@@ -1269,6 +1278,71 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
     }
 
     /** Gesto de la personalidad (solo visual, cliente). */
+    // ---------------- Momentos tranquilos de la etapa 2 (NoxisAmbient) ----------------
+
+    private final com.noxisculture.entity.idle.NoxisAmbientAnimation ambientAnimation =
+            new com.noxisculture.entity.idle.NoxisAmbientAnimation();
+    private final com.noxisculture.entity.discovery.NoxisDiscoveries discoveries =
+            new com.noxisculture.entity.discovery.NoxisDiscoveries();
+    /** Última vez que lo lastimaron o se cayó bailando (ticks del mundo); -1 = nunca. No se guarda. */
+    private long lastDistressTime = -1L;
+    /** Familia de estilo de pintura: -1 = sin elegir. Se guarda. */
+    private int artStyle = -1;
+    private static final int ART_STYLES = 6;
+
+    public com.noxisculture.entity.idle.NoxisAmbientAnimation getAmbientAnimation() {
+        return this.ambientAnimation;
+    }
+
+    @Override
+    public boolean canDoAmbient() {
+        return this.canHum() && this.getHum() == com.noxisculture.entity.idle.NoxisHumAnimation.NONE
+                && this.getHeldFlower().isEmpty() && !this.isBaby();
+    }
+
+    @Override
+    public byte getAmbientAnim() {
+        return this.entityData.get(AMBIENT);
+    }
+
+    @Override
+    public void setAmbientAnim(byte anim) {
+        this.entityData.set(AMBIENT, anim);
+    }
+
+    @Override
+    public com.noxisculture.entity.discovery.NoxisDiscoveries getDiscoveries() {
+        return this.discoveries;
+    }
+
+    @Override
+    public long getLastDistressTime() {
+        return this.lastDistressTime;
+    }
+
+    @Override
+    public int getArtStyle() {
+        if (this.artStyle < 0) this.artStyle = this.random.nextInt(ART_STYLES);
+        return this.artStyle;
+    }
+
+    /** Servidor, cada tick: malestar real (lo lastimaron) y lo que guarda en su inventario (recuerdos). */
+    private void tickAmbientMemory() {
+        if (this.hurtTime > 0 && this.isAlive()) this.lastDistressTime = this.level().getGameTime();
+        if ((this.tickCount + this.getId()) % 200 == 0) {
+            net.minecraft.world.SimpleContainer inv = this.getInventory();
+            for (int i = 0; i < inv.getContainerSize(); i++) {
+                ItemStack st = inv.getItem(i);
+                if (st.isEmpty()) continue;
+                int id = net.minecraft.core.registries.BuiltInRegistries.ITEM.getId(st.getItem());
+                this.discoveries.mark(com.noxisculture.entity.discovery.NoxisDiscoveries.key(
+                        com.noxisculture.entity.discovery.NoxisDiscoveries.ITEM, id),
+                        (byte) (com.noxisculture.entity.discovery.NoxisDiscoveries.COLLECTED
+                                | com.noxisculture.entity.discovery.NoxisDiscoveries.KNOWN));
+            }
+        }
+    }
+
     public com.noxisculture.entity.idle.NoxisHumAnimation getHumAnimation() {
         return this.humAnimation;
     }
@@ -1622,6 +1696,7 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         this.tickRestGesture();
         this.tickFriendship();
         this.tickScholarBook();
+        this.tickAmbientMemory();
         this.tickResonance();
         this.tickHomeAnchor();
         // Rato sin hacer nada (para aburrirse): quieto, sin camino y tranquilo.
@@ -1715,6 +1790,7 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         this.playAnimation.tick(this.entityData.get(PLAY_ANIM));
         this.personaAnimation.tick(this.entityData.get(PERSONA_GESTURE));
         this.humAnimation.tick(this.entityData.get(HUM));
+        this.ambientAnimation.tick(this.entityData.get(AMBIENT));
         // Silbando: una notita musical que sale de la boquita cada dos pulsos (decorativa: se puede apagar).
         byte humState = this.entityData.get(HUM);
         if (com.noxisculture.entity.idle.NoxisHumAnimation.isWhistle(humState)
@@ -1852,6 +1928,8 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         output.putInt("scholar_trait", this.scholarTrait);
         output.putBoolean("scholar_book", this.scholarBookGiven);
         output.putInt("scholar_roll", SCHOLAR_ROLL_VERSION);
+        output.putIntArray("discoveries", this.discoveries.save());
+        output.putInt("art_style", this.artStyle);
         output.store("gift_memory", net.minecraft.core.registries.BuiltInRegistries.ITEM.byNameCodec().listOf(),
                 new java.util.ArrayList<>(this.giftMemory));
     }
@@ -1893,6 +1971,8 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
             this.scholarTrait = 0;
             this.scholarRerolled = true;
         }
+        input.getIntArray("discoveries").ifPresent(this.discoveries::load);
+        this.artStyle = Mth.clamp(input.getInt("art_style").orElse(-1).intValue(), -1, ART_STYLES - 1);
         this.giftMemory.clear();
         input.read("gift_memory", net.minecraft.core.registries.BuiltInRegistries.ITEM.byNameCodec().listOf())
                 .ifPresent(this.giftMemory::addAll);
