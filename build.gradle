@@ -22,6 +22,16 @@ loom {
 	}
 }
 
+// Mod Menu es OPCIONAL. Para compilar la entrada del menú de configuración se usa una copia mínima de
+// su interfaz pública (src/modmenuStubs), que NO se incluye en el .jar: en el juego se usa la de Mod
+// Menu si está instalado; si no está, esa entrada simplemente nunca se carga.
+sourceSets {
+	modmenuStubs {
+		java.srcDir 'src/modmenuStubs/java'
+		compileClasspath += sourceSets.client.compileClasspath
+	}
+}
+
 dependencies {
 	// To change the versions see the gradle.properties file
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
@@ -29,6 +39,9 @@ dependencies {
 
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+	// Solo para compilar (no se empaqueta): la interfaz de Mod Menu.
+	clientCompileOnly sourceSets.modmenuStubs.output
 }
 
 processResources {

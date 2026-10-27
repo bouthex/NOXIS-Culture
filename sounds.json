@@ -1,0 +1,202 @@
+{
+  "entity.noxis.ambient": {
+    "subtitle": "subtitles.noxis_culture.noxis.ambient",
+    "sounds": [
+      "noxis_culture:noxis/ambient1",
+      "noxis_culture:noxis/ambient2",
+      "noxis_culture:noxis/ambient3"
+    ]
+  },
+  "entity.noxis.happy": {
+    "subtitle": "subtitles.noxis_culture.noxis.happy",
+    "sounds": [
+      "noxis_culture:noxis/happy1",
+      "noxis_culture:noxis/happy2"
+    ]
+  },
+  "entity.noxis.scared": {
+    "subtitle": "subtitles.noxis_culture.noxis.scared",
+    "sounds": [
+      "noxis_culture:noxis/scared1",
+      "noxis_culture:noxis/scared2"
+    ]
+  },
+  "entity.noxis.hurt": {
+    "subtitle": "subtitles.noxis_culture.noxis.hurt",
+    "sounds": [
+      "noxis_culture:noxis/hurt1",
+      "noxis_culture:noxis/hurt2"
+    ]
+  },
+  "entity.noxis.death": {
+    "subtitle": "subtitles.noxis_culture.noxis.death",
+    "sounds": [
+      "noxis_culture:noxis/death"
+    ]
+  },
+  "entity.noxis.yes": {
+    "subtitle": "subtitles.noxis_culture.noxis.yes",
+    "sounds": [
+      "noxis_culture:noxis/yes"
+    ]
+  },
+  "entity.noxis.no": {
+    "subtitle": "subtitles.noxis_culture.noxis.no",
+    "sounds": [
+      "noxis_culture:noxis/no"
+    ]
+  },
+  "entity.noxis.trade": {
+    "subtitle": "subtitles.noxis_culture.noxis.trade",
+    "sounds": [
+      "noxis_culture:noxis/trade"
+    ]
+  },
+  "entity.noxis.yawn": {
+    "subtitle": "subtitles.noxis_culture.noxis.yawn",
+    "sounds": [
+      "noxis_culture:noxis/yawn"
+    ]
+  },
+  "entity.noxis.celebrate": {
+    "subtitle": "subtitles.noxis_culture.noxis.celebrate",
+    "sounds": [
+      "noxis_culture:noxis/celebrate"
+    ]
+  },
+  "entity.noxis.sniff": {
+    "subtitle": "subtitles.noxis_culture.noxis.sniff",
+    "sounds": [
+      {
+        "name": "noxis_culture:noxis/sniff1",
+        "volume": 0.8
+      },
+      {
+        "name": "noxis_culture:noxis/sniff2",
+        "volume": 0.8
+      }
+    ]
+  },
+  "entity.noxis.persona_curious": {
+    "subtitle": "subtitles.noxis_culture.noxis.persona_curious",
+    "sounds": [
+      "noxis_culture:noxis/curious1",
+      "noxis_culture:noxis/curious2"
+    ]
+  },
+  "entity.noxis.persona_mischief": {
+    "subtitle": "subtitles.noxis_culture.noxis.persona_mischief",
+    "sounds": [
+      "noxis_culture:noxis/mischief1",
+      "noxis_culture:noxis/mischief2"
+    ]
+  },
+  "entity.noxis.persona_artist": {
+    "subtitle": "subtitles.noxis_culture.noxis.persona_artist",
+    "sounds": [
+      "noxis_culture:noxis/artist1",
+      "noxis_culture:noxis/artist2"
+    ]
+  },
+  "entity.noxis.persona_affection": {
+    "subtitle": "subtitles.noxis_culture.noxis.persona_affection",
+    "sounds": [
+      "noxis_culture:noxis/affection1",
+      "noxis_culture:noxis/affection2"
+    ]
+  },
+  "entity.noxis.persona_calm": {
+    "subtitle": "subtitles.noxis_culture.noxis.persona_calm",
+    "sounds": [
+      "noxis_culture:noxis/calm1",
+      "noxis_culture:noxis/calm2"
+    ]
+  },
+  "music_disc.golden_siesta": {
+    "sounds": [
+      {
+        "name": "noxis_culture:records/golden_siesta",
+        "stream": true
+      }
+    ]
+  },
+  "music_disc.night_rift": {
+    "sounds": [
+      {
+        "name": "noxis_culture:records/night_rift",
+        "stream": true
+      }
+    ]
+  },
+  "block.noyux.ambient": {
+    "subtitle": "subtitles.noxis_culture.noyux.ambient",
+    "sounds": [
+      "noxis_culture:noyux/noyux_ambient1",
+      "noxis_culture:noyux/noyux_ambient2",
+      "noxis_culture:noyux/noyux_ambient3"
+    ]
+  },
+  "block.noyux.flow": {
+    "subtitle": "subtitles.noxis_culture.noyux.flow",
+    "sounds": [
+      "noxis_culture:noyux/noyux_flow1",
+      "noxis_culture:noyux/noyux_flow2"
+    ]
+  },
+  "block.noyux_fire.crackle": {
+    "subtitle": "subtitles.noxis_culture.noyux_fire.crackle",
+    "sounds": [
+      "noxis_culture:noyux/noyux_crackle1",
+      "noxis_culture:noyux/noyux_crackle2",
+      "noxis_culture:noyux/noyux_crackle3"
+    ]
+  },
+  "block.noyux_fire.ignite": {
+    "subtitle": "subtitles.noxis_culture.noyux_fire.ignite",
+    "sounds": [
+      "noxis_culture:noyux/noyux_ignite"
+    ]
+  },
+  "block.noyux_fire.extinguish": {
+    "subtitle": "subtitles.noxis_culture.noyux_fire.extinguish",
+    "sounds": [
+      "noxis_culture:noyux/noyux_fizz"
+    ]
+  },
+  "entity.noxis.melody_1": {
+    "subtitle": "subtitles.noxis_culture.noxis.hum",
+    "sounds": [
+      "noxis_culture:noxis/melody1"
+    ]
+  },
+  "entity.noxis.melody_2": {
+    "subtitle": "subtitles.noxis_culture.noxis.hum",
+    "sounds": [
+      "noxis_culture:noxis/melody2"
+    ]
+  },
+  "entity.noxis.melody_3": {
+    "subtitle": "subtitles.noxis_culture.noxis.hum",
+    "sounds": [
+      "noxis_culture:noxis/melody3"
+    ]
+  },
+  "entity.noxis.melody_4": {
+    "subtitle": "subtitles.noxis_culture.noxis.whistle",
+    "sounds": [
+      "noxis_culture:noxis/melody4"
+    ]
+  },
+  "entity.noxis.melody_5": {
+    "subtitle": "subtitles.noxis_culture.noxis.whistle",
+    "sounds": [
+      "noxis_culture:noxis/melody5"
+    ]
+  },
+  "entity.noxis.melody_6": {
+    "subtitle": "subtitles.noxis_culture.noxis.whistle",
+    "sounds": [
+      "noxis_culture:noxis/melody6"
+    ]
+  }
+}

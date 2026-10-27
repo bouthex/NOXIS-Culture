@@ -1,5 +1,6 @@
 package com.noxisculture.entity.ai;
 
+import com.noxisculture.config.NoxisConfig;
 import com.noxisculture.entity.idle.NoxisPlayAnimation;
 import com.noxisculture.entity.personality.NoxisPersonality;
 import com.noxisculture.tag.ModTags;
@@ -35,7 +36,13 @@ import org.jspecify.annotations.Nullable;
  *   <li><b>Artista:</b> lo contempla de más lejos y por más tiempo.</li>
  *   <li><b>Tranquilo:</b> casi no se mueve: lo mira desde donde está (o se acerca muy poco).</li>
  * </ul>
- * <p>Si el animal se le acerca demasiado, da un pasito atrás (tímido) y sigue mirando.</p>
+ * <p>Si el animal se le acerca demasiado, da un pasito atrás (tímido) y sigue mirando. Los cariñosos y
+ * los tranquilos, si el animal está quieto, a veces se sientan a mirarlo (la misma postura sentada de
+ * siempre) y se levantan si el animal se va.</p>
+ *
+ * <p>No sale de su zona: el lugar para mirar siempre queda dentro del radio de paseo de su pecera
+ * ({@link NoxisWanderGoal#ROAM_RADIUS}), y si el animal se aleja de la zona lo deja de seguir.
+ * La opción "Observar animales" del menú cambia la frecuencia (0 = nunca).</p>
  *
  * <p>Varios Noxis: como mucho dos miran al mismo animal; el segundo se ubica en otro ángulo, sin
  * amontonarse. Como mucho tres observadores en la zona.</p>
@@ -70,7 +77,7 @@ public class NoxisAnimalWatchGoal<T extends PathfinderMob & NoxisCurious> extend
     /** Quién mira a cada animal (servidor; claves débiles: si el animal desaparece, se borra solo). */
     private static final Map<Entity, List<PathfinderMob>> WATCHERS = new WeakHashMap<>();
 
-    private enum Phase { APPROACH, WATCH, FOLLOW, STEP_BACK, CROUCH, PLAYFUL }
+    private enum Phase { APPROACH, WATCH, FOLLOW, STEP_BACK, CROUCH, PLAYFUL, SIT }
 
     private final T mob;
     private int nextCheckTick;
@@ -86,6 +93,8 @@ public class NoxisAnimalWatchGoal<T extends PathfinderMob & NoxisCurious> extend
     private boolean followUsed;
     private boolean mischiefUsed;
     private long nextStepBackTime;
+    private boolean sitTried;
+    private int stillTicks;
     private boolean done;
 
     public NoxisAnimalWatchGoal(T mob) {
@@ -166,7 +175,9 @@ public class NoxisAnimalWatchGoal<T extends PathfinderMob & NoxisCurious> extend
         RandomSource random = this.mob.getRandom();
         this.nextCheckTick = this.mob.tickCount + 60 + random.nextInt(60);       // se fija cada 3-6 s
         long now = this.mob.level().getGameTime();
-        if (this.nextAllowedTime < 0L) this.nextAllowedTime = now + 1200 + random.nextInt(3600);   // el primero: 1 a 4 min
+        int freq = NoxisConfig.get().animalWatching;
+        if (!NoxisConfig.enabled(freq)) return false;
+        if (this.nextAllowedTime < 0L) this.nextAllowedTime = now + NoxisConfig.scaleCooldown(1200 + random.nextInt(3600), freq);   // el primero: 1 a 4 min
         if (now < this.nextAllowedTime || !this.mob.canFollowCuriously()) return false;
         if (this.mob.getPlayAnim() != NoxisPlayAnimation.NONE || !this.mob.onGround() || this.mob.isInWater()) return false;
         if (random.nextFloat() >= wish(this.mob.getPersonality())) return false;
@@ -206,15 +217,27 @@ public class NoxisAnimalWatchGoal<T extends PathfinderMob & NoxisCurious> extend
             double ang = base + (i == 0 ? 0.0D : (random.nextDouble() - 0.5D) * Math.toRadians(70.0D));
             Vec3 p = new Vec3(a.x + Math.cos(ang) * this.distance, a.y, a.z + Math.sin(ang) * this.distance);
             if (NoxisSpacing.room(near, p, 2.0D) < 1.3D) continue;              // sin amontonarse
+            if (!this.insideHome(p)) continue;                                   // sin salir de su zona
             if (this.mob.getNavigation().createPath(p.x, p.y, p.z, 0) == null) continue;
             return p;
         }
         return null;
     }
 
+    /** ¿Ese punto queda dentro de la zona de paseo de su pecera? (sin pecera: no hay límite). */
+    private boolean insideHome(Vec3 p) {
+        if (!(this.mob instanceof NoxisRoamer roamer)) return true;
+        net.minecraft.core.BlockPos home = roamer.getHomeAnchor();
+        if (home == null) return true;
+        double dx = p.x - (home.getX() + 0.5D), dz = p.z - (home.getZ() + 0.5D);
+        return dx * dx + dz * dz <= NoxisWanderGoal.ROAM_RADIUS * NoxisWanderGoal.ROAM_RADIUS;
+    }
+
     @Override
     public void start() {
         RandomSource random = this.mob.getRandom();
+        this.sitTried = false;
+        this.stillTicks = 0;
         LivingEntity a = this.animal;
         if (a != null) WATCHERS.computeIfAbsent(a, k -> new ArrayList<>()).add(this.mob);
         this.done = false;
@@ -235,6 +258,7 @@ public class NoxisAnimalWatchGoal<T extends PathfinderMob & NoxisCurious> extend
             case CROUCH -> NoxisPlayAnimation.CROUCH;
             case PLAYFUL -> NoxisPlayAnimation.PLAYFUL;
             case WATCH, STEP_BACK -> NoxisPlayAnimation.WATCH;
+            case SIT -> NoxisPlayAnimation.SIT_WATCH;
         });
         if (next == Phase.WATCH) this.maybeVoice(4);
         if (next == Phase.PLAYFUL) this.maybeVoice(2);
@@ -255,6 +279,7 @@ public class NoxisAnimalWatchGoal<T extends PathfinderMob & NoxisCurious> extend
         LivingEntity a = this.animal;
         if (this.done || a == null || !isWatchable(a) || a.level() != this.mob.level()) return false;
         if (this.mob.hurtTime > 0 || !this.mob.canFollowCuriously()) return false;
+        if (this.phase == Phase.FOLLOW && !this.insideHome(this.mob.position())) return false;   // no se va de su zona
         return this.mob.distanceToSqr(a) < LOSE_DISTANCE * LOSE_DISTANCE;
     }
 
@@ -276,6 +301,9 @@ public class NoxisAnimalWatchGoal<T extends PathfinderMob & NoxisCurious> extend
         this.mob.getLookControl().setLookAt(a, 20.0F, 20.0F);
         double d = Math.sqrt(NoxisSpacing.horizontal2(this.mob.position(), a.position()));
         long now = this.mob.level().getGameTime();
+        // ¿El animal está quieto? (para sentarse a mirarlo)
+        if (a.getDeltaMovement().horizontalDistanceSqr() < 1.0E-3D) this.stillTicks++;
+        else this.stillTicks = 0;
         // Tímido: si el animal se le viene encima, un pasito atrás (en cualquier fase menos el manotazo).
         if (d < TOO_CLOSE && this.phase != Phase.STEP_BACK && this.phase != Phase.PLAYFUL && now >= this.nextStepBackTime) {
             this.nextStepBackTime = now + 60;
@@ -312,6 +340,16 @@ public class NoxisAnimalWatchGoal<T extends PathfinderMob & NoxisCurious> extend
                     this.enter(Phase.CROUCH);
                     return;
                 }
+                // Cariñosos y tranquilos: si el animal está quieto, a veces se sientan a mirarlo (una vez).
+                NoxisPersonality p = this.mob.getPersonality();
+                if (!this.sitTried && this.ticks > 40 && this.stillTicks > 40 && this.mob.onGround()
+                        && (p == NoxisPersonality.AFFECTIONATE || p == NoxisPersonality.CALM)) {
+                    this.sitTried = true;
+                    if (this.mob.getRandom().nextFloat() < 0.5F) {
+                        this.enter(Phase.SIT);
+                        return;
+                    }
+                }
                 // Se alejó: a veces lo sigue un ratito (una sola vez); si no, se queda mirando hasta perderlo.
                 if (d > this.distance + 2.5D && !this.followUsed) {
                     this.followUsed = true;
@@ -340,6 +378,14 @@ public class NoxisAnimalWatchGoal<T extends PathfinderMob & NoxisCurious> extend
                 this.mob.getNavigation().stop();
                 if (this.ticks >= CROUCH_TICKS) this.enter(Phase.PLAYFUL);
             }
+            case SIT -> {
+                this.mob.getNavigation().stop();
+                // Sentado hasta que termina el rato de mirar, o hasta que el animal se va.
+                if (this.total >= this.watchLength || d > this.distance + 2.0D) {
+                    this.enter(Phase.WATCH);
+                    this.total = Math.max(this.total, this.watchLength - 30);   // se levanta y mira un momento más
+                }
+            }
             case PLAYFUL -> {
                 this.mob.getNavigation().stop();
                 if (this.ticks >= NoxisPlayAnimation.PLAYFUL_LENGTH) this.enter(Phase.WATCH);
@@ -364,7 +410,8 @@ public class NoxisAnimalWatchGoal<T extends PathfinderMob & NoxisCurious> extend
         this.animal = null;
         this.spot = null;
         RandomSource random = this.mob.getRandom();
-        this.nextAllowedTime = this.mob.level().getGameTime() + COOLDOWN + random.nextInt(COOLDOWN_RANDOM);
+        this.nextAllowedTime = this.mob.level().getGameTime()
+                + NoxisConfig.scaleCooldown(COOLDOWN + random.nextInt(COOLDOWN_RANDOM), NoxisConfig.get().animalWatching);
         this.nextCheckTick = this.mob.tickCount + 100 + random.nextInt(100);
     }
 }

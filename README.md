@@ -108,7 +108,8 @@
       When the rain comes, they have a plan.<br><br>
       They settle in before they sleep and stretch when they wake.
       They keep small treasures, put things back where they belong, and leave gifts for the ones they care about.
-      Now and then they stop to watch an animal, quietly, from a respectful distance.<br><br>
+      Now and then they stop to watch an animal, quietly, from a respectful distance.
+      Some hum or whistle a little tune of their own, and a friend may sway along.<br><br>
       <i>Some things only happen when you are not looking. Others, only when you are.</i>
     </td>
   </tr>
@@ -139,6 +140,8 @@
 5. Start the game with the **Fabric** profile.
 
 To meet your first Noxis, open the **Noxis Culture** creative tab and use the **Noxis Villager Spawn Egg**.
+
+Optional: with [Mod Menu](https://modrinth.com/mod/modmenu) installed, the mod has its own settings screen (behaviors, decorative particles and ambient sounds). Without it, everything works the same; the settings live in `config/noxis_culture.json`.
 
 <details>
 <summary><b>Building from source</b></summary>

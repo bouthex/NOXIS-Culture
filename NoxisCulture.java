@@ -24,6 +24,7 @@ public final class NoxisCulture implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        com.noxisculture.config.NoxisConfig.load();
         // El orden importa: los bloques registran sus BlockItems antes que el resto de ítems.
         ModSounds.initialize();
         com.noxisculture.particle.ModParticles.initialize();
@@ -35,6 +36,9 @@ public final class NoxisCulture implements ModInitializer {
         ModCreativeTabs.initialize();
         com.noxisculture.item.NoxisHatInteractions.register();
         ModWorldgen.initialize();
+        // Quemadura residual del Noyux (solo recorre a las criaturas que se quemaron).
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_LEVEL_TICK.register(
+                com.noxisculture.block.custom.NoyuxBurn::tick);
         LOGGER.info("Noxis Culture: los Noxis llegaron al mundo.");
     }
 

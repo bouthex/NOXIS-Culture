@@ -33,6 +33,15 @@ public final class ModSounds {
     public static final SoundEvent NOXIS_PERSONA_AFFECTION = register("entity.noxis.persona_affection");
     public static final SoundEvent NOXIS_PERSONA_CALM = register("entity.noxis.persona_calm");
 
+    /**
+     * Melodías espontáneas (originales del mod): 1 a 3 tarareos, 4 a 6 silbidos. Todas a 100 BPM
+     * (un pulso cada 12 ticks), para que quien baile al lado vaya al compás.
+     */
+    public static final SoundEvent[] NOXIS_MELODIES = {
+            register("entity.noxis.melody_1"), register("entity.noxis.melody_2"), register("entity.noxis.melody_3"),
+            register("entity.noxis.melody_4"), register("entity.noxis.melody_5"), register("entity.noxis.melody_6")
+    };
+
     /** Disco de cristal amarillo: «Siesta dorada». */
     public static final SoundEvent MUSIC_DISC_GOLDEN_SIESTA = register("music_disc.golden_siesta");
     /** Disco de cristal violeta agrietado: «Grieta nocturna». */
