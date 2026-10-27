@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.noxisculture.mixin.client",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "GameRendererMixin",
+    "FogRendererNoyuxMixin",
+    "ScreenEffectRendererNoyuxMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
