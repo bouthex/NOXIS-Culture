@@ -1,12 +1,36 @@
 {
-  "variants": {
-    "": [
-      {
-        "model": "noxis_culture:block/noxus_block"
-      },
-      {
-        "model": "noxis_culture:block/noxus_block_2"
-      }
-    ]
-  }
+ "variants": {
+  "": [
+   {
+    "model": "noxis_culture:block/noxus_block"
+   },
+   {
+    "model": "noxis_culture:block/noxus_block",
+    "y": 90
+   },
+   {
+    "model": "noxis_culture:block/noxus_block",
+    "y": 180
+   },
+   {
+    "model": "noxis_culture:block/noxus_block",
+    "y": 270
+   },
+   {
+    "model": "noxis_culture:block/noxus_block_2"
+   },
+   {
+    "model": "noxis_culture:block/noxus_block_2",
+    "y": 90
+   },
+   {
+    "model": "noxis_culture:block/noxus_block_2",
+    "y": 180
+   },
+   {
+    "model": "noxis_culture:block/noxus_block_2",
+    "y": 270
+   }
+  ]
+ }
 }

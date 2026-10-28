@@ -8,27 +8,27 @@
     "threshold": 0.0,
     "model": {
      "type": "minecraft:model",
-     "model": "noxis_culture:block/noxis_book"
+     "model": "noxis_culture:block/noxis_document/book"
     }
    },
    {
     "threshold": 1.0,
     "model": {
      "type": "minecraft:model",
-     "model": "noxis_culture:block/noxis_notebook"
+     "model": "noxis_culture:block/noxis_document/notebook"
     }
    },
    {
     "threshold": 2.0,
     "model": {
      "type": "minecraft:model",
-     "model": "noxis_culture:block/noxis_sheet"
+     "model": "noxis_culture:block/noxis_document/sheets_1"
     }
    }
   ],
   "fallback": {
    "type": "minecraft:model",
-   "model": "noxis_culture:block/noxis_book"
+   "model": "noxis_culture:block/noxis_document/book"
   }
  }
 }

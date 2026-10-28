@@ -1,1593 +1,798 @@
 {
  "variants": {
-  "art=0,facing=north,standing=false": {
+  "art=0,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_00"
   },
-  "art=0,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_00"
-  },
-  "art=0,facing=east,standing=false": {
+  "art=0,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_00",
    "y": 90
   },
-  "art=0,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_00",
-   "y": 90
-  },
-  "art=0,facing=south,standing=false": {
+  "art=0,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_00",
    "y": 180
   },
-  "art=0,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_00",
-   "y": 180
-  },
-  "art=0,facing=west,standing=false": {
+  "art=0,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_00",
    "y": 270
   },
-  "art=0,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_00",
-   "y": 270
-  },
-  "art=1,facing=north,standing=false": {
+  "art=1,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_01"
   },
-  "art=1,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_01"
-  },
-  "art=1,facing=east,standing=false": {
+  "art=1,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_01",
    "y": 90
   },
-  "art=1,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_01",
-   "y": 90
-  },
-  "art=1,facing=south,standing=false": {
+  "art=1,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_01",
    "y": 180
   },
-  "art=1,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_01",
-   "y": 180
-  },
-  "art=1,facing=west,standing=false": {
+  "art=1,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_01",
    "y": 270
   },
-  "art=1,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_01",
-   "y": 270
-  },
-  "art=2,facing=north,standing=false": {
+  "art=2,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_02"
   },
-  "art=2,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_02"
-  },
-  "art=2,facing=east,standing=false": {
+  "art=2,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_02",
    "y": 90
   },
-  "art=2,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_02",
-   "y": 90
-  },
-  "art=2,facing=south,standing=false": {
+  "art=2,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_02",
    "y": 180
   },
-  "art=2,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_02",
-   "y": 180
-  },
-  "art=2,facing=west,standing=false": {
+  "art=2,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_02",
    "y": 270
   },
-  "art=2,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_02",
-   "y": 270
-  },
-  "art=3,facing=north,standing=false": {
+  "art=3,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_03"
   },
-  "art=3,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_03"
-  },
-  "art=3,facing=east,standing=false": {
+  "art=3,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_03",
    "y": 90
   },
-  "art=3,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_03",
-   "y": 90
-  },
-  "art=3,facing=south,standing=false": {
+  "art=3,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_03",
    "y": 180
   },
-  "art=3,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_03",
-   "y": 180
-  },
-  "art=3,facing=west,standing=false": {
+  "art=3,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_03",
    "y": 270
   },
-  "art=3,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_03",
-   "y": 270
-  },
-  "art=4,facing=north,standing=false": {
+  "art=4,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_04"
   },
-  "art=4,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_04"
-  },
-  "art=4,facing=east,standing=false": {
+  "art=4,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_04",
    "y": 90
   },
-  "art=4,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_04",
-   "y": 90
-  },
-  "art=4,facing=south,standing=false": {
+  "art=4,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_04",
    "y": 180
   },
-  "art=4,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_04",
-   "y": 180
-  },
-  "art=4,facing=west,standing=false": {
+  "art=4,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_04",
    "y": 270
   },
-  "art=4,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_04",
-   "y": 270
-  },
-  "art=5,facing=north,standing=false": {
+  "art=5,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_05"
   },
-  "art=5,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_05"
-  },
-  "art=5,facing=east,standing=false": {
+  "art=5,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_05",
    "y": 90
   },
-  "art=5,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_05",
-   "y": 90
-  },
-  "art=5,facing=south,standing=false": {
+  "art=5,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_05",
    "y": 180
   },
-  "art=5,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_05",
-   "y": 180
-  },
-  "art=5,facing=west,standing=false": {
+  "art=5,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_05",
    "y": 270
   },
-  "art=5,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_05",
-   "y": 270
-  },
-  "art=6,facing=north,standing=false": {
+  "art=6,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_06"
   },
-  "art=6,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_06"
-  },
-  "art=6,facing=east,standing=false": {
+  "art=6,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_06",
    "y": 90
   },
-  "art=6,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_06",
-   "y": 90
-  },
-  "art=6,facing=south,standing=false": {
+  "art=6,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_06",
    "y": 180
   },
-  "art=6,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_06",
-   "y": 180
-  },
-  "art=6,facing=west,standing=false": {
+  "art=6,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_06",
    "y": 270
   },
-  "art=6,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_06",
-   "y": 270
-  },
-  "art=7,facing=north,standing=false": {
+  "art=7,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_07"
   },
-  "art=7,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_07"
-  },
-  "art=7,facing=east,standing=false": {
+  "art=7,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_07",
    "y": 90
   },
-  "art=7,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_07",
-   "y": 90
-  },
-  "art=7,facing=south,standing=false": {
+  "art=7,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_07",
    "y": 180
   },
-  "art=7,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_07",
-   "y": 180
-  },
-  "art=7,facing=west,standing=false": {
+  "art=7,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_07",
    "y": 270
   },
-  "art=7,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_07",
-   "y": 270
-  },
-  "art=8,facing=north,standing=false": {
+  "art=8,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_08"
   },
-  "art=8,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_08"
-  },
-  "art=8,facing=east,standing=false": {
+  "art=8,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_08",
    "y": 90
   },
-  "art=8,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_08",
-   "y": 90
-  },
-  "art=8,facing=south,standing=false": {
+  "art=8,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_08",
    "y": 180
   },
-  "art=8,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_08",
-   "y": 180
-  },
-  "art=8,facing=west,standing=false": {
+  "art=8,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_08",
    "y": 270
   },
-  "art=8,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_08",
-   "y": 270
-  },
-  "art=9,facing=north,standing=false": {
+  "art=9,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_09"
   },
-  "art=9,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_09"
-  },
-  "art=9,facing=east,standing=false": {
+  "art=9,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_09",
    "y": 90
   },
-  "art=9,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_09",
-   "y": 90
-  },
-  "art=9,facing=south,standing=false": {
+  "art=9,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_09",
    "y": 180
   },
-  "art=9,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_09",
-   "y": 180
-  },
-  "art=9,facing=west,standing=false": {
+  "art=9,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_09",
    "y": 270
   },
-  "art=9,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_09",
-   "y": 270
-  },
-  "art=10,facing=north,standing=false": {
+  "art=10,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_10"
   },
-  "art=10,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_10"
-  },
-  "art=10,facing=east,standing=false": {
+  "art=10,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_10",
    "y": 90
   },
-  "art=10,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_10",
-   "y": 90
-  },
-  "art=10,facing=south,standing=false": {
+  "art=10,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_10",
    "y": 180
   },
-  "art=10,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_10",
-   "y": 180
-  },
-  "art=10,facing=west,standing=false": {
+  "art=10,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_10",
    "y": 270
   },
-  "art=10,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_10",
-   "y": 270
-  },
-  "art=11,facing=north,standing=false": {
+  "art=11,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_11"
   },
-  "art=11,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_11"
-  },
-  "art=11,facing=east,standing=false": {
+  "art=11,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_11",
    "y": 90
   },
-  "art=11,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_11",
-   "y": 90
-  },
-  "art=11,facing=south,standing=false": {
+  "art=11,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_11",
    "y": 180
   },
-  "art=11,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_11",
-   "y": 180
-  },
-  "art=11,facing=west,standing=false": {
+  "art=11,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_11",
    "y": 270
   },
-  "art=11,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_11",
-   "y": 270
-  },
-  "art=12,facing=north,standing=false": {
+  "art=12,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_12"
   },
-  "art=12,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_12"
-  },
-  "art=12,facing=east,standing=false": {
+  "art=12,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_12",
    "y": 90
   },
-  "art=12,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_12",
-   "y": 90
-  },
-  "art=12,facing=south,standing=false": {
+  "art=12,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_12",
    "y": 180
   },
-  "art=12,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_12",
-   "y": 180
-  },
-  "art=12,facing=west,standing=false": {
+  "art=12,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_12",
    "y": 270
   },
-  "art=12,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_12",
-   "y": 270
-  },
-  "art=13,facing=north,standing=false": {
+  "art=13,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_13"
   },
-  "art=13,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_13"
-  },
-  "art=13,facing=east,standing=false": {
+  "art=13,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_13",
    "y": 90
   },
-  "art=13,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_13",
-   "y": 90
-  },
-  "art=13,facing=south,standing=false": {
+  "art=13,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_13",
    "y": 180
   },
-  "art=13,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_13",
-   "y": 180
-  },
-  "art=13,facing=west,standing=false": {
+  "art=13,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_13",
    "y": 270
   },
-  "art=13,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_13",
-   "y": 270
-  },
-  "art=14,facing=north,standing=false": {
+  "art=14,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_14"
   },
-  "art=14,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_14"
-  },
-  "art=14,facing=east,standing=false": {
+  "art=14,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_14",
    "y": 90
   },
-  "art=14,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_14",
-   "y": 90
-  },
-  "art=14,facing=south,standing=false": {
+  "art=14,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_14",
    "y": 180
   },
-  "art=14,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_14",
-   "y": 180
-  },
-  "art=14,facing=west,standing=false": {
+  "art=14,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_14",
    "y": 270
   },
-  "art=14,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_14",
-   "y": 270
-  },
-  "art=15,facing=north,standing=false": {
+  "art=15,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_15"
   },
-  "art=15,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_15"
-  },
-  "art=15,facing=east,standing=false": {
+  "art=15,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_15",
    "y": 90
   },
-  "art=15,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_15",
-   "y": 90
-  },
-  "art=15,facing=south,standing=false": {
+  "art=15,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_15",
    "y": 180
   },
-  "art=15,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_15",
-   "y": 180
-  },
-  "art=15,facing=west,standing=false": {
+  "art=15,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_15",
    "y": 270
   },
-  "art=15,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_15",
-   "y": 270
-  },
-  "art=16,facing=north,standing=false": {
+  "art=16,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_16"
   },
-  "art=16,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_16"
-  },
-  "art=16,facing=east,standing=false": {
+  "art=16,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_16",
    "y": 90
   },
-  "art=16,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_16",
-   "y": 90
-  },
-  "art=16,facing=south,standing=false": {
+  "art=16,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_16",
    "y": 180
   },
-  "art=16,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_16",
-   "y": 180
-  },
-  "art=16,facing=west,standing=false": {
+  "art=16,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_16",
    "y": 270
   },
-  "art=16,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_16",
-   "y": 270
-  },
-  "art=17,facing=north,standing=false": {
+  "art=17,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_17"
   },
-  "art=17,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_17"
-  },
-  "art=17,facing=east,standing=false": {
+  "art=17,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_17",
    "y": 90
   },
-  "art=17,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_17",
-   "y": 90
-  },
-  "art=17,facing=south,standing=false": {
+  "art=17,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_17",
    "y": 180
   },
-  "art=17,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_17",
-   "y": 180
-  },
-  "art=17,facing=west,standing=false": {
+  "art=17,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_17",
    "y": 270
   },
-  "art=17,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_17",
-   "y": 270
-  },
-  "art=18,facing=north,standing=false": {
+  "art=18,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_18"
   },
-  "art=18,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_18"
-  },
-  "art=18,facing=east,standing=false": {
+  "art=18,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_18",
    "y": 90
   },
-  "art=18,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_18",
-   "y": 90
-  },
-  "art=18,facing=south,standing=false": {
+  "art=18,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_18",
    "y": 180
   },
-  "art=18,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_18",
-   "y": 180
-  },
-  "art=18,facing=west,standing=false": {
+  "art=18,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_18",
    "y": 270
   },
-  "art=18,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_18",
-   "y": 270
-  },
-  "art=19,facing=north,standing=false": {
+  "art=19,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_19"
   },
-  "art=19,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_19"
-  },
-  "art=19,facing=east,standing=false": {
+  "art=19,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_19",
    "y": 90
   },
-  "art=19,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_19",
-   "y": 90
-  },
-  "art=19,facing=south,standing=false": {
+  "art=19,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_19",
    "y": 180
   },
-  "art=19,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_19",
-   "y": 180
-  },
-  "art=19,facing=west,standing=false": {
+  "art=19,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_19",
    "y": 270
   },
-  "art=19,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_19",
-   "y": 270
-  },
-  "art=20,facing=north,standing=false": {
+  "art=20,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_20"
   },
-  "art=20,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_20"
-  },
-  "art=20,facing=east,standing=false": {
+  "art=20,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_20",
    "y": 90
   },
-  "art=20,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_20",
-   "y": 90
-  },
-  "art=20,facing=south,standing=false": {
+  "art=20,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_20",
    "y": 180
   },
-  "art=20,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_20",
-   "y": 180
-  },
-  "art=20,facing=west,standing=false": {
+  "art=20,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_20",
    "y": 270
   },
-  "art=20,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_20",
-   "y": 270
-  },
-  "art=21,facing=north,standing=false": {
+  "art=21,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_21"
   },
-  "art=21,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_21"
-  },
-  "art=21,facing=east,standing=false": {
+  "art=21,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_21",
    "y": 90
   },
-  "art=21,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_21",
-   "y": 90
-  },
-  "art=21,facing=south,standing=false": {
+  "art=21,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_21",
    "y": 180
   },
-  "art=21,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_21",
-   "y": 180
-  },
-  "art=21,facing=west,standing=false": {
+  "art=21,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_21",
    "y": 270
   },
-  "art=21,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_21",
-   "y": 270
-  },
-  "art=22,facing=north,standing=false": {
+  "art=22,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_22"
   },
-  "art=22,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_22"
-  },
-  "art=22,facing=east,standing=false": {
+  "art=22,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_22",
    "y": 90
   },
-  "art=22,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_22",
-   "y": 90
-  },
-  "art=22,facing=south,standing=false": {
+  "art=22,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_22",
    "y": 180
   },
-  "art=22,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_22",
-   "y": 180
-  },
-  "art=22,facing=west,standing=false": {
+  "art=22,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_22",
    "y": 270
   },
-  "art=22,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_22",
-   "y": 270
-  },
-  "art=23,facing=north,standing=false": {
+  "art=23,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_23"
   },
-  "art=23,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_23"
-  },
-  "art=23,facing=east,standing=false": {
+  "art=23,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_23",
    "y": 90
   },
-  "art=23,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_23",
-   "y": 90
-  },
-  "art=23,facing=south,standing=false": {
+  "art=23,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_23",
    "y": 180
   },
-  "art=23,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_23",
-   "y": 180
-  },
-  "art=23,facing=west,standing=false": {
+  "art=23,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_23",
    "y": 270
   },
-  "art=23,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_23",
-   "y": 270
-  },
-  "art=24,facing=north,standing=false": {
+  "art=24,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_24"
   },
-  "art=24,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_24"
-  },
-  "art=24,facing=east,standing=false": {
+  "art=24,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_24",
    "y": 90
   },
-  "art=24,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_24",
-   "y": 90
-  },
-  "art=24,facing=south,standing=false": {
+  "art=24,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_24",
    "y": 180
   },
-  "art=24,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_24",
-   "y": 180
-  },
-  "art=24,facing=west,standing=false": {
+  "art=24,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_24",
    "y": 270
   },
-  "art=24,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_24",
-   "y": 270
-  },
-  "art=25,facing=north,standing=false": {
+  "art=25,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_25"
   },
-  "art=25,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_25"
-  },
-  "art=25,facing=east,standing=false": {
+  "art=25,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_25",
    "y": 90
   },
-  "art=25,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_25",
-   "y": 90
-  },
-  "art=25,facing=south,standing=false": {
+  "art=25,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_25",
    "y": 180
   },
-  "art=25,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_25",
-   "y": 180
-  },
-  "art=25,facing=west,standing=false": {
+  "art=25,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_25",
    "y": 270
   },
-  "art=25,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_25",
-   "y": 270
-  },
-  "art=26,facing=north,standing=false": {
+  "art=26,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_26"
   },
-  "art=26,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_26"
-  },
-  "art=26,facing=east,standing=false": {
+  "art=26,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_26",
    "y": 90
   },
-  "art=26,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_26",
-   "y": 90
-  },
-  "art=26,facing=south,standing=false": {
+  "art=26,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_26",
    "y": 180
   },
-  "art=26,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_26",
-   "y": 180
-  },
-  "art=26,facing=west,standing=false": {
+  "art=26,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_26",
    "y": 270
   },
-  "art=26,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_26",
-   "y": 270
-  },
-  "art=27,facing=north,standing=false": {
+  "art=27,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_27"
   },
-  "art=27,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_27"
-  },
-  "art=27,facing=east,standing=false": {
+  "art=27,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_27",
    "y": 90
   },
-  "art=27,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_27",
-   "y": 90
-  },
-  "art=27,facing=south,standing=false": {
+  "art=27,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_27",
    "y": 180
   },
-  "art=27,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_27",
-   "y": 180
-  },
-  "art=27,facing=west,standing=false": {
+  "art=27,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_27",
    "y": 270
   },
-  "art=27,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_27",
-   "y": 270
-  },
-  "art=28,facing=north,standing=false": {
+  "art=28,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_28"
   },
-  "art=28,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_28"
-  },
-  "art=28,facing=east,standing=false": {
+  "art=28,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_28",
    "y": 90
   },
-  "art=28,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_28",
-   "y": 90
-  },
-  "art=28,facing=south,standing=false": {
+  "art=28,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_28",
    "y": 180
   },
-  "art=28,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_28",
-   "y": 180
-  },
-  "art=28,facing=west,standing=false": {
+  "art=28,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_28",
    "y": 270
   },
-  "art=28,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_28",
-   "y": 270
-  },
-  "art=29,facing=north,standing=false": {
+  "art=29,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_29"
   },
-  "art=29,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_29"
-  },
-  "art=29,facing=east,standing=false": {
+  "art=29,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_29",
    "y": 90
   },
-  "art=29,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_29",
-   "y": 90
-  },
-  "art=29,facing=south,standing=false": {
+  "art=29,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_29",
    "y": 180
   },
-  "art=29,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_29",
-   "y": 180
-  },
-  "art=29,facing=west,standing=false": {
+  "art=29,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_29",
    "y": 270
   },
-  "art=29,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_29",
-   "y": 270
-  },
-  "art=30,facing=north,standing=false": {
+  "art=30,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_30"
   },
-  "art=30,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_30"
-  },
-  "art=30,facing=east,standing=false": {
+  "art=30,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_30",
    "y": 90
   },
-  "art=30,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_30",
-   "y": 90
-  },
-  "art=30,facing=south,standing=false": {
+  "art=30,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_30",
    "y": 180
   },
-  "art=30,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_30",
-   "y": 180
-  },
-  "art=30,facing=west,standing=false": {
+  "art=30,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_30",
    "y": 270
   },
-  "art=30,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_30",
-   "y": 270
-  },
-  "art=31,facing=north,standing=false": {
+  "art=31,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_31"
   },
-  "art=31,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_31"
-  },
-  "art=31,facing=east,standing=false": {
+  "art=31,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_31",
    "y": 90
   },
-  "art=31,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_31",
-   "y": 90
-  },
-  "art=31,facing=south,standing=false": {
+  "art=31,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_31",
    "y": 180
   },
-  "art=31,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_31",
-   "y": 180
-  },
-  "art=31,facing=west,standing=false": {
+  "art=31,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_31",
    "y": 270
   },
-  "art=31,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_31",
-   "y": 270
-  },
-  "art=32,facing=north,standing=false": {
+  "art=32,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_32"
   },
-  "art=32,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_32"
-  },
-  "art=32,facing=east,standing=false": {
+  "art=32,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_32",
    "y": 90
   },
-  "art=32,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_32",
-   "y": 90
-  },
-  "art=32,facing=south,standing=false": {
+  "art=32,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_32",
    "y": 180
   },
-  "art=32,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_32",
-   "y": 180
-  },
-  "art=32,facing=west,standing=false": {
+  "art=32,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_32",
    "y": 270
   },
-  "art=32,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_32",
-   "y": 270
-  },
-  "art=33,facing=north,standing=false": {
+  "art=33,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_33"
   },
-  "art=33,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_33"
-  },
-  "art=33,facing=east,standing=false": {
+  "art=33,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_33",
    "y": 90
   },
-  "art=33,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_33",
-   "y": 90
-  },
-  "art=33,facing=south,standing=false": {
+  "art=33,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_33",
    "y": 180
   },
-  "art=33,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_33",
-   "y": 180
-  },
-  "art=33,facing=west,standing=false": {
+  "art=33,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_33",
    "y": 270
   },
-  "art=33,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_33",
-   "y": 270
-  },
-  "art=34,facing=north,standing=false": {
+  "art=34,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_34"
   },
-  "art=34,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_34"
-  },
-  "art=34,facing=east,standing=false": {
+  "art=34,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_34",
    "y": 90
   },
-  "art=34,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_34",
-   "y": 90
-  },
-  "art=34,facing=south,standing=false": {
+  "art=34,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_34",
    "y": 180
   },
-  "art=34,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_34",
-   "y": 180
-  },
-  "art=34,facing=west,standing=false": {
+  "art=34,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_34",
    "y": 270
   },
-  "art=34,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_34",
-   "y": 270
-  },
-  "art=35,facing=north,standing=false": {
+  "art=35,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_35"
   },
-  "art=35,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_35"
-  },
-  "art=35,facing=east,standing=false": {
+  "art=35,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_35",
    "y": 90
   },
-  "art=35,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_35",
-   "y": 90
-  },
-  "art=35,facing=south,standing=false": {
+  "art=35,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_35",
    "y": 180
   },
-  "art=35,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_35",
-   "y": 180
-  },
-  "art=35,facing=west,standing=false": {
+  "art=35,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_35",
    "y": 270
   },
-  "art=35,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_35",
-   "y": 270
-  },
-  "art=36,facing=north,standing=false": {
+  "art=36,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_36"
   },
-  "art=36,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_36"
-  },
-  "art=36,facing=east,standing=false": {
+  "art=36,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_36",
    "y": 90
   },
-  "art=36,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_36",
-   "y": 90
-  },
-  "art=36,facing=south,standing=false": {
+  "art=36,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_36",
    "y": 180
   },
-  "art=36,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_36",
-   "y": 180
-  },
-  "art=36,facing=west,standing=false": {
+  "art=36,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_36",
    "y": 270
   },
-  "art=36,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_36",
-   "y": 270
-  },
-  "art=37,facing=north,standing=false": {
+  "art=37,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_37"
   },
-  "art=37,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_37"
-  },
-  "art=37,facing=east,standing=false": {
+  "art=37,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_37",
    "y": 90
   },
-  "art=37,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_37",
-   "y": 90
-  },
-  "art=37,facing=south,standing=false": {
+  "art=37,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_37",
    "y": 180
   },
-  "art=37,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_37",
-   "y": 180
-  },
-  "art=37,facing=west,standing=false": {
+  "art=37,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_37",
    "y": 270
   },
-  "art=37,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_37",
-   "y": 270
-  },
-  "art=38,facing=north,standing=false": {
+  "art=38,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_38"
   },
-  "art=38,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_38"
-  },
-  "art=38,facing=east,standing=false": {
+  "art=38,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_38",
    "y": 90
   },
-  "art=38,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_38",
-   "y": 90
-  },
-  "art=38,facing=south,standing=false": {
+  "art=38,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_38",
    "y": 180
   },
-  "art=38,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_38",
-   "y": 180
-  },
-  "art=38,facing=west,standing=false": {
+  "art=38,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_38",
    "y": 270
   },
-  "art=38,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_38",
-   "y": 270
-  },
-  "art=39,facing=north,standing=false": {
+  "art=39,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_39"
   },
-  "art=39,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_39"
-  },
-  "art=39,facing=east,standing=false": {
+  "art=39,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_39",
    "y": 90
   },
-  "art=39,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_39",
-   "y": 90
-  },
-  "art=39,facing=south,standing=false": {
+  "art=39,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_39",
    "y": 180
   },
-  "art=39,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_39",
-   "y": 180
-  },
-  "art=39,facing=west,standing=false": {
+  "art=39,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_39",
    "y": 270
   },
-  "art=39,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_39",
-   "y": 270
-  },
-  "art=40,facing=north,standing=false": {
+  "art=40,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_40"
   },
-  "art=40,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_40"
-  },
-  "art=40,facing=east,standing=false": {
+  "art=40,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_40",
    "y": 90
   },
-  "art=40,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_40",
-   "y": 90
-  },
-  "art=40,facing=south,standing=false": {
+  "art=40,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_40",
    "y": 180
   },
-  "art=40,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_40",
-   "y": 180
-  },
-  "art=40,facing=west,standing=false": {
+  "art=40,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_40",
    "y": 270
   },
-  "art=40,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_40",
-   "y": 270
-  },
-  "art=41,facing=north,standing=false": {
+  "art=41,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_41"
   },
-  "art=41,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_41"
-  },
-  "art=41,facing=east,standing=false": {
+  "art=41,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_41",
    "y": 90
   },
-  "art=41,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_41",
-   "y": 90
-  },
-  "art=41,facing=south,standing=false": {
+  "art=41,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_41",
    "y": 180
   },
-  "art=41,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_41",
-   "y": 180
-  },
-  "art=41,facing=west,standing=false": {
+  "art=41,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_41",
    "y": 270
   },
-  "art=41,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_41",
-   "y": 270
-  },
-  "art=42,facing=north,standing=false": {
+  "art=42,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_42"
   },
-  "art=42,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_42"
-  },
-  "art=42,facing=east,standing=false": {
+  "art=42,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_42",
    "y": 90
   },
-  "art=42,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_42",
-   "y": 90
-  },
-  "art=42,facing=south,standing=false": {
+  "art=42,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_42",
    "y": 180
   },
-  "art=42,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_42",
-   "y": 180
-  },
-  "art=42,facing=west,standing=false": {
+  "art=42,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_42",
    "y": 270
   },
-  "art=42,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_42",
-   "y": 270
-  },
-  "art=43,facing=north,standing=false": {
+  "art=43,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_43"
   },
-  "art=43,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_43"
-  },
-  "art=43,facing=east,standing=false": {
+  "art=43,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_43",
    "y": 90
   },
-  "art=43,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_43",
-   "y": 90
-  },
-  "art=43,facing=south,standing=false": {
+  "art=43,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_43",
    "y": 180
   },
-  "art=43,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_43",
-   "y": 180
-  },
-  "art=43,facing=west,standing=false": {
+  "art=43,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_43",
    "y": 270
   },
-  "art=43,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_43",
-   "y": 270
-  },
-  "art=44,facing=north,standing=false": {
+  "art=44,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_44"
   },
-  "art=44,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_44"
-  },
-  "art=44,facing=east,standing=false": {
+  "art=44,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_44",
    "y": 90
   },
-  "art=44,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_44",
-   "y": 90
-  },
-  "art=44,facing=south,standing=false": {
+  "art=44,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_44",
    "y": 180
   },
-  "art=44,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_44",
-   "y": 180
-  },
-  "art=44,facing=west,standing=false": {
+  "art=44,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_44",
    "y": 270
   },
-  "art=44,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_44",
-   "y": 270
-  },
-  "art=45,facing=north,standing=false": {
+  "art=45,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_45"
   },
-  "art=45,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_45"
-  },
-  "art=45,facing=east,standing=false": {
+  "art=45,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_45",
    "y": 90
   },
-  "art=45,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_45",
-   "y": 90
-  },
-  "art=45,facing=south,standing=false": {
+  "art=45,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_45",
    "y": 180
   },
-  "art=45,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_45",
-   "y": 180
-  },
-  "art=45,facing=west,standing=false": {
+  "art=45,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_45",
    "y": 270
   },
-  "art=45,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_45",
-   "y": 270
-  },
-  "art=46,facing=north,standing=false": {
+  "art=46,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_46"
   },
-  "art=46,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_46"
-  },
-  "art=46,facing=east,standing=false": {
+  "art=46,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_46",
    "y": 90
   },
-  "art=46,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_46",
-   "y": 90
-  },
-  "art=46,facing=south,standing=false": {
+  "art=46,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_46",
    "y": 180
   },
-  "art=46,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_46",
-   "y": 180
-  },
-  "art=46,facing=west,standing=false": {
+  "art=46,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_46",
    "y": 270
   },
-  "art=46,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_46",
-   "y": 270
-  },
-  "art=47,facing=north,standing=false": {
+  "art=47,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_47"
   },
-  "art=47,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_47"
-  },
-  "art=47,facing=east,standing=false": {
+  "art=47,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_47",
    "y": 90
   },
-  "art=47,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_47",
-   "y": 90
-  },
-  "art=47,facing=south,standing=false": {
+  "art=47,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_47",
    "y": 180
   },
-  "art=47,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_47",
-   "y": 180
-  },
-  "art=47,facing=west,standing=false": {
+  "art=47,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_47",
    "y": 270
   },
-  "art=47,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_47",
-   "y": 270
-  },
-  "art=48,facing=north,standing=false": {
+  "art=48,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_48"
   },
-  "art=48,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_48"
-  },
-  "art=48,facing=east,standing=false": {
+  "art=48,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_48",
    "y": 90
   },
-  "art=48,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_48",
-   "y": 90
-  },
-  "art=48,facing=south,standing=false": {
+  "art=48,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_48",
    "y": 180
   },
-  "art=48,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_48",
-   "y": 180
-  },
-  "art=48,facing=west,standing=false": {
+  "art=48,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_48",
    "y": 270
   },
-  "art=48,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_48",
-   "y": 270
-  },
-  "art=49,facing=north,standing=false": {
+  "art=49,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_49"
   },
-  "art=49,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_49"
-  },
-  "art=49,facing=east,standing=false": {
+  "art=49,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_49",
    "y": 90
   },
-  "art=49,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_49",
-   "y": 90
-  },
-  "art=49,facing=south,standing=false": {
+  "art=49,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_49",
    "y": 180
   },
-  "art=49,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_49",
-   "y": 180
-  },
-  "art=49,facing=west,standing=false": {
+  "art=49,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_49",
    "y": 270
   },
-  "art=49,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_49",
-   "y": 270
-  },
-  "art=50,facing=north,standing=false": {
+  "art=50,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_50"
   },
-  "art=50,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_50"
-  },
-  "art=50,facing=east,standing=false": {
+  "art=50,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_50",
    "y": 90
   },
-  "art=50,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_50",
-   "y": 90
-  },
-  "art=50,facing=south,standing=false": {
+  "art=50,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_50",
    "y": 180
   },
-  "art=50,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_50",
-   "y": 180
-  },
-  "art=50,facing=west,standing=false": {
+  "art=50,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_50",
    "y": 270
   },
-  "art=50,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_50",
-   "y": 270
-  },
-  "art=51,facing=north,standing=false": {
+  "art=51,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_51"
   },
-  "art=51,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_51"
-  },
-  "art=51,facing=east,standing=false": {
+  "art=51,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_51",
    "y": 90
   },
-  "art=51,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_51",
-   "y": 90
-  },
-  "art=51,facing=south,standing=false": {
+  "art=51,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_51",
    "y": 180
   },
-  "art=51,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_51",
-   "y": 180
-  },
-  "art=51,facing=west,standing=false": {
+  "art=51,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_51",
    "y": 270
   },
-  "art=51,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_51",
-   "y": 270
-  },
-  "art=52,facing=north,standing=false": {
+  "art=52,facing=north": {
    "model": "noxis_culture:block/noxis_painting/wall_52"
   },
-  "art=52,facing=north,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_52"
-  },
-  "art=52,facing=east,standing=false": {
+  "art=52,facing=east": {
    "model": "noxis_culture:block/noxis_painting/wall_52",
    "y": 90
   },
-  "art=52,facing=east,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_52",
-   "y": 90
-  },
-  "art=52,facing=south,standing=false": {
+  "art=52,facing=south": {
    "model": "noxis_culture:block/noxis_painting/wall_52",
    "y": 180
   },
-  "art=52,facing=south,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_52",
-   "y": 180
-  },
-  "art=52,facing=west,standing=false": {
+  "art=52,facing=west": {
    "model": "noxis_culture:block/noxis_painting/wall_52",
-   "y": 270
-  },
-  "art=52,facing=west,standing=true": {
-   "model": "noxis_culture:block/noxis_painting/standing_52",
    "y": 270
   }
  }
