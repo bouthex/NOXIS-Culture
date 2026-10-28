@@ -40,10 +40,9 @@ public final class ModCreativeTabs {
                 output.accept(ModBlocks.NOXUS_BLOCK.asItem());
                 output.accept(ModBlocks.NIRIS.asItem());
                 output.accept(ModBlocks.IGNYX.asItem());
-                // Obras de los Noxis artistas (toda la colección) y documentos (páginas en blanco)
-                for (int art = 0; art < com.noxisculture.art.NoxisPaintings.COUNT; art++) {
-                    output.accept(com.noxisculture.art.NoxisPaintings.stack(art, "", -1L));
-                }
+                // Pintura (sin descubrir: la obra se revela al colgarla), atril y documentos (páginas en blanco)
+                output.accept(com.noxisculture.art.NoxisPaintings.blank());
+                output.accept(ModBlocks.NOXIS_EASEL.asItem());
                 for (int kind = 0; kind < com.noxisculture.document.NoxisDocuments.KINDS; kind++) {
                     output.accept(com.noxisculture.document.NoxisDocuments.create(kind, "", -1L));
                 }

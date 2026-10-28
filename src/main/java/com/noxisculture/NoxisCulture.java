@@ -28,6 +28,7 @@ public final class NoxisCulture implements ModInitializer {
         // El orden importa: los bloques registran sus BlockItems antes que el resto de ítems.
         ModSounds.initialize();
         com.noxisculture.particle.ModParticles.initialize();
+        com.noxisculture.item.ModDataComponents.initialize();
         ModFluids.initialize();
         ModBlocks.initialize();
         ModItems.initialize();
@@ -37,6 +38,7 @@ public final class NoxisCulture implements ModInitializer {
         ModCreativeTabs.initialize();
         com.noxisculture.item.NoxisHatInteractions.register();
         ModWorldgen.initialize();
+        com.noxisculture.command.NoxisCommands.register();
         // Quemadura residual del Noyux (solo recorre a las criaturas que se quemaron).
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_LEVEL_TICK.register(
                 com.noxisculture.block.custom.NoyuxBurn::tick);

@@ -25,12 +25,25 @@ public final class ModPoi {
     public static final ResourceKey<PoiType> DOCUMENT_KEY = ResourceKey.create(Registries.POINT_OF_INTEREST_TYPE, NoxisCulture.id("noxis_document"));
 
     public static final PoiType PAINTING = PoiHelper.register(NoxisCulture.id("noxis_painting"), 0, 1, ModBlocks.NOXIS_PAINTING);
+    public static final ResourceKey<PoiType> EASEL_KEY = ResourceKey.create(Registries.POINT_OF_INTEREST_TYPE, NoxisCulture.id("noxis_easel"));
+    public static final PoiType EASEL = PoiHelper.register(NoxisCulture.id("noxis_easel"), 0, 1, ModBlocks.NOXIS_EASEL);
     public static final PoiType DOCUMENT = PoiHelper.register(NoxisCulture.id("noxis_document"), 0, 1, ModBlocks.NOXIS_DOCUMENT);
 
     /** Pinturas colocadas a menos de {@code radius} bloques. */
     public static Stream<BlockPos> paintingsNear(ServerLevel level, BlockPos center, int radius) {
         return level.getPoiManager().getInRange(h -> h.is(PAINTING_KEY), center, radius, PoiManager.Occupancy.ANY)
                 .map(PoiRecord::getPos);
+    }
+
+    /** Atriles (con o sin obra) a menos de {@code radius} bloques. */
+    public static Stream<BlockPos> easelsNear(ServerLevel level, BlockPos center, int radius) {
+        return level.getPoiManager().getInRange(h -> h.is(EASEL_KEY), center, radius, PoiManager.Occupancy.ANY)
+                .map(PoiRecord::getPos);
+    }
+
+    /** Obras a la vista (pinturas colgadas y atriles) a menos de {@code radius} bloques. */
+    public static Stream<BlockPos> artworksNear(ServerLevel level, BlockPos center, int radius) {
+        return Stream.concat(paintingsNear(level, center, radius), easelsNear(level, center, radius));
     }
 
     /** Documentos colocados a menos de {@code radius} bloques. */
