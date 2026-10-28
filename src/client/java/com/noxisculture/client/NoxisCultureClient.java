@@ -31,6 +31,7 @@ public final class NoxisCultureClient implements ClientModInitializer {
         EntityRenderers.register(ModEntityTypes.NOXIS_VILLAGER, NoxisVillagerRenderer::new);
         // Configuración accesible sin Mod Menu: botón en Opciones y comando /noxisculture config.
         com.noxisculture.client.config.NoxisConfigAccess.register();
+        com.noxisculture.document.NoxisDocuments.READER = com.noxisculture.client.document.NoxisDocumentScreen::open;
 
         // Sombrero de Noxis puesto en la cabeza (jugadores, soportes de armadura...).
         ModelLayerRegistry.registerModelLayer(NoxisHatArmorRenderer.LAYER, NoxisHatArmorRenderer::createLayer);

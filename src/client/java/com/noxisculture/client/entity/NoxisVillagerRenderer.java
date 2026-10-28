@@ -137,7 +137,7 @@ public class NoxisVillagerRenderer extends MobRenderer<NoxisVillager, NoxisVilla
         state.ambientPartnerRight = amb.isPartnerRight();
         state.ambientPhase = (entity.getId() % 7) * 0.9F;
         state.ambientSit = ambBusy ? amb.getSit(partialTick) : 0.0F;
-        state.easelScale = amb.getEaselScale(partialTick);
+        state.easelScale = 0.0F;   // el atril ahora es un bloque real del mundo (NoxisEaselBlock): ya no se dibuja en el Noxis
         state.canvasStage = amb.getCanvasStage();
         state.brushShown = amb.toolsInHand();
         state.paletteShown = state.brushShown;

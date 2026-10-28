@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "noxis_culture_gametest",
+  "version": "1.0.0",
+  "name": "Noxis Culture — pruebas de cliente",
+  "environment": "client",
+  "entrypoints": {
+    "fabric-client-gametest": ["com.noxisculture.gametest.NoxisClientGameTest"]
+  },
+  "depends": { "noxis_culture": "*" }
+}
