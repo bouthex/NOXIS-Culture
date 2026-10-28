@@ -23,6 +23,10 @@ public final class ModBlockEntities {
     public static final BlockEntityType<NoxisDocumentBlockEntity> NOXIS_DOCUMENT =
             register("noxis_document", NoxisDocumentBlockEntity::new, ModBlocks.NOXIS_DOCUMENT);
 
+    /** Atril: quién pinta la obra, cuánto avanzó y cuándo pintó por última vez. */
+    public static final BlockEntityType<NoxisEaselBlockEntity> NOXIS_EASEL =
+            register("noxis_easel", NoxisEaselBlockEntity::new, ModBlocks.NOXIS_EASEL);
+
     private static <T extends BlockEntity> BlockEntityType<T> register(
             String name, FabricBlockEntityTypeBuilder.Factory<? extends T> factory, Block... blocks) {
         return Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, NoxisCulture.id(name),

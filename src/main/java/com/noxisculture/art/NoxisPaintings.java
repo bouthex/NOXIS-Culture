@@ -1,23 +1,28 @@
 package com.noxisculture.art;
 
 import com.noxisculture.block.ModBlocks;
+import com.noxisculture.item.ModDataComponents;
+import com.noxisculture.world.ModPoi;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 import java.util.List;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.component.CustomModelData;
 
 /**
  * La colección de pinturas de los Noxis artistas.
  *
- * <p>Cada obra es un diseño original del mod (pixel art de 16x16 con su marco, en
+ * <p>Cada obra es un diseño original del mod (pixel art de 14x14 dentro de su marco, en
  * {@code textures/block/noxis_painting/art_NN.png}). La identidad de una obra es su número: viaja en
- * el objeto ({@code custom_model_data}, que además elige el dibujo del ícono) y en el bloque colgado o
- * apoyado (propiedad {@code art}). Así nunca cambia al guardarla, llevarla, colgarla o recargar el
- * mundo, y no se guarda ninguna imagen repetida.</p>
+ * el objeto (componente {@code noxis_culture:painting_art}) y en el bloque colgado o en el atril
+ * (propiedad {@code art}). En la mano y en el inventario todas las pinturas se ven iguales (ícono
+ * genérico): la obra se ve al colocarla.</p>
+ * <p>Pinturas sin descubrir: sin obra todavía; se apilan normalmente y la obra se sortea al colocarlas
+ * por primera vez ({@link #discover}). Las pinturas que termina un Noxis nacen con su obra. Una obra
+ * asignada no se vuelve a sortear nunca.</p>
  *
  * <p>Las obras se agrupan en {@link #FAMILIES} familias de estilo (solo para organizar: cada artista
  * tiene una familia preferida y un repertorio reconocible):</p>
@@ -61,28 +66,68 @@ public final class NoxisPaintings {
         return options[random.nextInt(n)];
     }
 
-    /** Una pintura terminada como objeto (con su número y quién la pintó, para recordarlo). */
-    public static ItemStack stack(int art, String painterId, long day) {
-        ItemStack stack = new ItemStack(ModBlocks.NOXIS_PAINTING.asItem());
+    /** Una pintura sin descubrir (todavía sin obra): se apila con las demás sin descubrir. */
+    public static ItemStack blank() {
+        return new ItemStack(ModBlocks.NOXIS_PAINTING.asItem());
+    }
+
+    /** Una pintura con su obra ya asignada (la termina un Noxis, se retira de una pared o de un atril). */
+    public static ItemStack stack(int art) {
+        ItemStack stack = blank();
         setArt(stack, art);
-        CompoundTag tag = new CompoundTag();
-        tag.putInt("art", art);
-        if (!painterId.isEmpty()) tag.putString("painter", painterId);
-        if (day >= 0L) tag.putLong("day", day);
-        stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
         return stack;
     }
 
+    /** Asigna la obra. Solo se usa con pinturas que todavía no tienen una: nunca se vuelve a sortear. */
     public static void setArt(ItemStack stack, int art) {
-        stack.set(DataComponents.CUSTOM_MODEL_DATA,
-                new CustomModelData(List.of((float) Mth.clamp(art, 0, COUNT - 1)), List.of(), List.of(), List.of()));
+        stack.set(ModDataComponents.PAINTING_ART, Mth.clamp(art, 0, COUNT - 1));
     }
 
-    /** El número de la obra de ese objeto (0 si no tiene: por ejemplo, una sacada del creativo antigua). */
+    /** ¿Ya tiene obra? (también reconoce las pinturas de la versión anterior, que la guardaban en custom_model_data). */
+    public static boolean hasArt(ItemStack stack) {
+        return stack.has(ModDataComponents.PAINTING_ART) || legacyArt(stack) >= 0;
+    }
+
+    /** El número de la obra, o -1 si la pintura todavía no fue descubierta. */
     public static int artOf(ItemStack stack) {
+        Integer art = stack.get(ModDataComponents.PAINTING_ART);
+        if (art != null) return Mth.clamp(art, 0, COUNT - 1);
+        return legacyArt(stack);
+    }
+
+    private static int legacyArt(ItemStack stack) {
         CustomModelData data = stack.get(DataComponents.CUSTOM_MODEL_DATA);
         if (data != null && !data.floats().isEmpty()) return Mth.clamp(Math.round(data.floats().get(0)), 0, COUNT - 1);
-        return 0;
+        return -1;
+    }
+
+    /**
+     * Pasa una pintura de la versión anterior al formato actual (misma obra), para que se apile con las
+     * demás de su obra. No cambia nada si ya está en el formato actual o no tiene obra.
+     */
+    public static void migrateLegacy(ItemStack stack) {
+        if (stack.has(ModDataComponents.PAINTING_ART)) return;
+        int art = legacyArt(stack);
+        if (art < 0) return;
+        stack.remove(DataComponents.CUSTOM_MODEL_DATA);
+        stack.remove(DataComponents.CUSTOM_DATA);
+        setArt(stack, art);
+    }
+
+    /**
+     * Sortea la obra de una pintura sin descubrir que se coloca por primera vez: cualquiera de la
+     * colección, evitando (si se puede) las que ya cuelgan cerca, para que descubrir sea más lindo.
+     */
+    public static int discover(ServerLevel level, BlockPos pos, RandomSource random) {
+        java.util.Set<Integer> near = new java.util.HashSet<>();
+        ModPoi.artworksNear(level, pos, 16).forEach(p -> {
+            int a = com.noxisculture.block.custom.NoxisPaintingBlock.artAt(level.getBlockState(p));
+            if (a >= 0) near.add(a);
+        });
+        int[] options = new int[COUNT];
+        int n = 0;
+        for (int i = 0; i < COUNT; i++) if (!near.contains(i)) options[n++] = i;
+        return n == 0 ? random.nextInt(COUNT) : options[random.nextInt(n)];
     }
 
     public static boolean isPainting(ItemStack stack) {

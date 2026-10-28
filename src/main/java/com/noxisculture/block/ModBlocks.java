@@ -112,7 +112,7 @@ public final class ModBlocks {
     // ---------------- Obras y documentos de los Noxis ----------------
 
     /** Pintura de un Noxis artista: colgada en la pared o apoyada en un caballetito (ver NoxisPaintings). */
-    public static final Block NOXIS_PAINTING = register(
+    public static final Block NOXIS_PAINTING = registerWithItem(
             ModBlockItemIds.NOXIS_PAINTING, com.noxisculture.block.custom.NoxisPaintingBlock::new,
             BlockBehaviour.Properties.of()
                     .mapColor(MapColor.WOOD)
@@ -120,10 +120,21 @@ public final class ModBlocks {
                     .sound(SoundType.WOOD)
                     .noOcclusion()
                     .noCollision()
+                    .pushReaction(PushReaction.DESTROY),
+            (block, props) -> new com.noxisculture.item.custom.NoxisPaintingItem(block, props.stacksTo(16)));
+
+    /** Atril de pintura: para exhibir una obra o para que un Noxis artista la pinte. */
+    public static final Block NOXIS_EASEL = register(
+            ModBlockItemIds.NOXIS_EASEL, com.noxisculture.block.custom.NoxisEaselBlock::new,
+            BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.WOOD)
+                    .strength(1.0F)
+                    .sound(SoundType.WOOD)
+                    .noOcclusion()
+                    .ignitedByLava()
                     .pushReaction(PushReaction.DESTROY));
 
-    /** Documento de un Noxis (libro, cuaderno u hoja) apoyado; las páginas, en blanco por ahora. */
-    public static final Block NOXIS_DOCUMENT = register(
+    public static final Block NOXIS_DOCUMENT = registerWithItem(
             ModBlockItemIds.NOXIS_DOCUMENT, com.noxisculture.block.custom.NoxisDocumentBlock::new,
             BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_PURPLE)
@@ -131,7 +142,8 @@ public final class ModBlocks {
                     .sound(SoundType.WOOL)
                     .noOcclusion()
                     .noLootTable()
-                    .pushReaction(PushReaction.DESTROY));
+                    .pushReaction(PushReaction.DESTROY),
+            (block, props) -> new com.noxisculture.item.custom.NoxisDocumentItem(block, props.stacksTo(16)));
 
     // ---------------- Vida Noxis ----------------
 
@@ -223,6 +235,14 @@ public final class ModBlocks {
      * el sombrero de copa del Noxis (no con el casco de oro): por eso el "equipable" no lleva
      * modelo de armadura vanilla. Se tiñe (ver NoxisHatItem / NoxisHatColors).
      */
+    private static Block registerWithItem(BlockItemId id, Function<BlockBehaviour.Properties, Block> factory,
+                                          BlockBehaviour.Properties properties,
+                                          java.util.function.BiFunction<Block, Item.Properties, Item> itemFactory) {
+        Block block = register(id.block(), factory, properties);
+        Item item = itemFactory.apply(block, new Item.Properties().useBlockDescriptionPrefix().setId(id.item()));
+        Registry.register(BuiltInRegistries.ITEM, id.item(), item);
+        return block;
+    }
     private static Block registerHat(BlockItemId id, Function<BlockBehaviour.Properties, Block> factory,
                                      BlockBehaviour.Properties properties) {
         Block block = register(id.block(), factory, properties);

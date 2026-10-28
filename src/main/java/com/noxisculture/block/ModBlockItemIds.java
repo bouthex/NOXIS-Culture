@@ -26,6 +26,7 @@ public final class ModBlockItemIds {
 
     // Obras y documentos de los Noxis
     public static final BlockItemId NOXIS_PAINTING = create("noxis_painting");
+    public static final BlockItemId NOXIS_EASEL = create("noxis_easel");
     public static final BlockItemId NOXIS_DOCUMENT = create("noxis_document");   // nombre pendiente de aprobación
 
     // Vida Noxis

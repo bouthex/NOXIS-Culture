@@ -71,6 +71,22 @@ public final class NoxisDocuments {
         return BOOK;
     }
 
+    /** La abre el cliente (pantalla de lectura); en el servidor no hace nada. Lo conecta NoxisCultureClient. */
+    public static java.util.function.Consumer<ItemStack> READER = stack -> {};
+
+    /** Abre la pantalla de lectura de ese documento (solo tiene efecto en el cliente). */
+    public static void openReader(ItemStack stack) {
+        READER.accept(stack);
+    }
+
+    /** Cuántas páginas tiene (todavía en blanco: el idioma llega en otra etapa). Un libro muestra 2, un cuaderno 2, una hoja 1. */
+    public static int pageCount(ItemStack stack) {
+        CustomData data = stack.get(DataComponents.CUSTOM_DATA);
+        int stored = data == null ? 0 : data.copyTag().getListOrEmpty("pages").size();
+        int base = kindOf(stack) == SHEET ? 1 : 2;
+        return Math.max(base, stored);
+    }
+
     public static boolean isDocument(ItemStack stack) {
         return stack.is(ModBlocks.NOXIS_DOCUMENT.asItem());
     }
