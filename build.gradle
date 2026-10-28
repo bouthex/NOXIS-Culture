@@ -22,6 +22,18 @@ loom {
 	}
 }
 
+// Pruebas reales del cliente (Fabric client gametest): source set "gametest", NO entra en el .jar del mod.
+// Ejecutar con: ./gradlew runClientGameTest   (abre el juego, crea un mundo de prueba, saca capturas y se cierra)
+fabricApi {
+	configureTests {
+		createSourceSet = true
+		modId = 'noxis_culture_gametest'
+		enableGameTests = false
+		enableClientGameTests = true
+		eula = true
+	}
+}
+
 dependencies {
 	// To change the versions see the gradle.properties file
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
