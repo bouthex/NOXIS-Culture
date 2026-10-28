@@ -33,4 +33,9 @@ public interface NoxisAmbient extends NoxisCurious, NoxisKeeper, NoxisFriend, No
 
     /** Familia de estilo de un artista (0..5); se elige una vez y se guarda. */
     int getArtStyle();
+
+    /** El atril con la obra que dejó a medio pintar (para volver a continuarla); null = ninguno. Se guarda. */
+    net.minecraft.core.@org.jspecify.annotations.Nullable BlockPos getWorkEasel();
+
+    void setWorkEasel(net.minecraft.core.@org.jspecify.annotations.Nullable BlockPos pos);
 }

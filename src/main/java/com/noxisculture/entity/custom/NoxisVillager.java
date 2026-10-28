@@ -965,6 +965,11 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         return this.personality;
     }
 
+    /** Cambia la personalidad (solo comandos de prueba: /noxis). Se guarda con el Noxis. */
+    public void setPersonality(com.noxisculture.entity.personality.NoxisPersonality personality) {
+        this.personality = personality;
+    }
+
     @Override
     public boolean canDoPersonaGesture() {
         return this.isFreeForPlay() && this.getPlayAnim() == com.noxisculture.entity.idle.NoxisPlayAnimation.NONE
@@ -1290,6 +1295,18 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
     private long lastDistressTime = -1L;
     /** Familia de estilo de pintura: -1 = sin elegir. Se guarda. */
     private int artStyle = -1;
+    /** Atril con la obra que dejó a medio pintar (para volver a continuarla). */
+    private net.minecraft.core.@Nullable BlockPos workEasel;
+
+    @Override
+    public net.minecraft.core.@Nullable BlockPos getWorkEasel() {
+        return this.workEasel;
+    }
+
+    @Override
+    public void setWorkEasel(net.minecraft.core.@Nullable BlockPos pos) {
+        this.workEasel = pos;
+    }
     private static final int ART_STYLES = 6;
 
     public com.noxisculture.entity.idle.NoxisAmbientAnimation getAmbientAnimation() {
@@ -1950,6 +1967,7 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         output.putInt("scholar_roll", SCHOLAR_ROLL_VERSION);
         output.putIntArray("discoveries", this.discoveries.save());
         output.putInt("art_style", this.artStyle);
+        if (this.workEasel != null) output.putLong("work_easel", this.workEasel.asLong());
         output.store("gift_memory", net.minecraft.core.registries.BuiltInRegistries.ITEM.byNameCodec().listOf(),
                 new java.util.ArrayList<>(this.giftMemory));
     }
@@ -1993,6 +2011,7 @@ public class NoxisVillager extends AbstractVillager implements com.noxisculture.
         }
         input.getIntArray("discoveries").ifPresent(this.discoveries::load);
         this.artStyle = Mth.clamp(input.getInt("art_style").orElse(-1).intValue(), -1, ART_STYLES - 1);
+        this.workEasel = input.getLong("work_easel").map(net.minecraft.core.BlockPos::of).orElse(null);
         this.giftMemory.clear();
         input.read("gift_memory", net.minecraft.core.registries.BuiltInRegistries.ITEM.byNameCodec().listOf())
                 .ifPresent(this.giftMemory::addAll);

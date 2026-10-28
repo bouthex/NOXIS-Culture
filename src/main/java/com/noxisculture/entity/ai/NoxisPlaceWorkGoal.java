@@ -29,8 +29,8 @@ import org.jspecify.annotations.Nullable;
  * documento escrito) busca, de a ratos, un lugar apropiado dentro de su zona y la deja:
  *
  * <ul>
- *   <li><b>Pinturas</b>: colgadas en una pared, a la altura de los ojos, o, si no hay paredes cerca (un
- *   campo abierto), apoyadas en un caballetito en el piso, mirando hacia un lugar abierto.</li>
+ *   <li><b>Pinturas</b>: colgadas en una pared, a la altura de los ojos, o, si no hay paredes cerca,
+ *   exhibidas en un atril vacío cercano. Si no hay lugar, la guarda y prueba otro día.</li>
  *   <li><b>Documentos</b>: apoyados encima de un mueble de la etiqueta
  *   {@code noxis_culture:document_surfaces} (mesas de trabajo, barriles, cofres, atriles...).</li>
  * </ul>
@@ -79,15 +79,15 @@ public class NoxisPlaceWorkGoal<T extends PathfinderMob & NoxisAmbient> extends 
         if (this.slot < 0) return false;
         BlockPos here = this.mob.blockPosition();
         if (this.painting) {
-            if (ModPoi.paintingsNear(level, here, AREA).count() >= MAX_PAINTINGS) return false;
-            return this.findWall(level) || this.findFloor(level);
+            if (ModPoi.artworksNear(level, here, AREA).count() >= MAX_PAINTINGS) return false;
+            return this.findWall(level) || this.findEasel(level);
         }
         if (ModPoi.documentsNear(level, here, AREA).count() >= MAX_DOCUMENTS) return false;
         return this.findSurface(level);
     }
 
     private boolean freeOfPaintings(ServerLevel level, BlockPos p) {
-        return ModPoi.paintingsNear(level, p, 4).findAny().isEmpty();
+        return ModPoi.artworksNear(level, p, 4).findAny().isEmpty();
     }
 
     /** Pared: parado en S, la obra queda en S+1 (a la altura de los ojos) colgada de la pared de al lado. */
@@ -98,7 +98,7 @@ public class NoxisPlaceWorkGoal<T extends PathfinderMob & NoxisAmbient> extends 
             if (!NoxisAmbientUtil.standable(level, s) || !NoxisAmbientUtil.insideHome(this.mob, Vec3.atBottomCenterOf(s))) continue;
             BlockPos p = s.above();
             for (Direction d : Direction.Plane.HORIZONTAL) {
-                BlockState state = ((NoxisPaintingBlock) ModBlocks.NOXIS_PAINTING).placed(0, d.getOpposite(), false);
+                BlockState state = ((NoxisPaintingBlock) ModBlocks.NOXIS_PAINTING).placed(0, d.getOpposite());
                 if (!state.canSurvive(level, p) || !this.freeOfPaintings(level, p)) continue;
                 if (this.mob.getNavigation().createPath(s, 0) == null) continue;
                 this.standAt = s;
@@ -111,19 +111,18 @@ public class NoxisPlaceWorkGoal<T extends PathfinderMob & NoxisAmbient> extends 
         return false;
     }
 
-    /** Piso: un caballetito en un lugar libre, mirando hacia donde hay espacio. */
-    private boolean findFloor(ServerLevel level) {
-        RandomSource random = this.mob.getRandom();
-        for (int i = 0; i < 10; i++) {
-            BlockPos p = this.mob.blockPosition().offset(random.nextInt(SEARCH * 2 + 1) - SEARCH, random.nextInt(3) - 1, random.nextInt(SEARCH * 2 + 1) - SEARCH);
-            if (!NoxisAmbientUtil.standable(level, p) || !NoxisAmbientUtil.insideHome(this.mob, Vec3.atBottomCenterOf(p))) continue;
-            if (!this.freeOfPaintings(level, p)) continue;
-            Direction d = Direction.Plane.HORIZONTAL.getRandomDirection(random);
-            BlockPos s = p.relative(d);
-            if (!NoxisAmbientUtil.standable(level, s) || this.mob.getNavigation().createPath(s, 0) == null) continue;
+    /** Un atril vacío cercano (de un jugador o de otro Noxis): la deja exhibida ahí. */
+    private boolean findEasel(ServerLevel level) {
+        for (BlockPos e : ModPoi.easelsNear(level, this.mob.blockPosition(), SEARCH).toList()) {
+            BlockState st = level.getBlockState(e);
+            if (!st.is(ModBlocks.NOXIS_EASEL) || st.getValue(com.noxisculture.block.custom.NoxisEaselBlock.CANVAS) != 0) continue;
+            Direction facing = st.getValue(com.noxisculture.block.custom.NoxisEaselBlock.FACING);
+            BlockPos s = e.relative(facing);
+            if (!NoxisAmbientUtil.standable(level, s) || !NoxisAmbientUtil.insideHome(this.mob, Vec3.atBottomCenterOf(s))) continue;
+            if (this.mob.getNavigation().createPath(s, 0) == null) continue;
             this.standAt = s;
-            this.placeAt = p;
-            this.facing = d;                // mira hacia donde se para el Noxis (lado abierto)
+            this.placeAt = e;
+            this.facing = facing;
             this.standing = true;
             return true;
         }
@@ -202,13 +201,26 @@ public class NoxisPlaceWorkGoal<T extends PathfinderMob & NoxisAmbient> extends 
         SimpleContainer inv = this.mob.getPrivateInventory();
         if (p == null || this.slot < 0 || this.slot >= inv.getContainerSize()) return;
         ItemStack st = inv.getItem(this.slot);
-        if (!level.getBlockState(p).canBeReplaced()) return;
         if (this.painting && NoxisPaintings.isPainting(st)) {
-            BlockState state = ((NoxisPaintingBlock) ModBlocks.NOXIS_PAINTING).placed(NoxisPaintings.artOf(st), this.facing, this.standing);
-            if (!state.canSurvive(level, p)) return;
-            level.setBlock(p, state, Block.UPDATE_ALL);
+            NoxisPaintings.migrateLegacy(st);
+            int art = NoxisPaintings.hasArt(st) ? NoxisPaintings.artOf(st)
+                    : NoxisPaintings.discover((ServerLevel) level, p, this.mob.getRandom());
+            if (this.standing) {
+                // En el atril vacío (si sigue vacío).
+                BlockState easel = level.getBlockState(p);
+                if (!easel.is(ModBlocks.NOXIS_EASEL) || easel.getValue(com.noxisculture.block.custom.NoxisEaselBlock.CANVAS) != 0) return;
+                level.setBlock(p, easel.setValue(com.noxisculture.block.custom.NoxisEaselBlock.CANVAS, com.noxisculture.block.custom.NoxisEaselBlock.CANVAS_DONE)
+                        .setValue(com.noxisculture.block.custom.NoxisEaselBlock.ART, art), Block.UPDATE_ALL);
+            } else {
+                if (!level.getBlockState(p).canBeReplaced()) return;
+                BlockState state = ((NoxisPaintingBlock) ModBlocks.NOXIS_PAINTING).placed(art, this.facing);
+                if (!state.canSurvive(level, p)) return;
+                level.setBlock(p, state, Block.UPDATE_ALL);
+            }
             inv.removeItem(this.slot, 1);
             level.playSound(null, p, SoundEvents.PAINTING_PLACE, SoundSource.NEUTRAL, 0.7F, 1.0F);
+        } else if (!level.getBlockState(p).canBeReplaced()) {
+            return;
         } else if (!this.painting && NoxisDocuments.isDocument(st)) {
             ItemStack one = st.copyWithCount(1);
             if (NoxisDocumentBlock.place(level, p, one, this.facing)) {

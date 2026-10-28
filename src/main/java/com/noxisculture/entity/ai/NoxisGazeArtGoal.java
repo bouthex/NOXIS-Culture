@@ -70,23 +70,24 @@ public class NoxisGazeArtGoal<T extends PathfinderMob & NoxisAmbient> extends Go
         long now = this.mob.level().getGameTime();
         if (this.nextAllowedTime < 0L) this.nextAllowedTime = now + 1200 + random.nextInt(2400);
         if (now < this.nextAllowedTime || !(this.mob.level() instanceof ServerLevel level) || !this.mob.canDoAmbient() || !this.mob.onGround()) return false;
-        List<BlockPos> found = ModPoi.paintingsNear(level, this.mob.blockPosition(), RADIUS).toList();
+        List<BlockPos> found = ModPoi.artworksNear(level, this.mob.blockPosition(), RADIUS).toList();
         if (found.isEmpty()) return false;
         BlockPos pick = found.get(random.nextInt(found.size()));
         BlockState state = level.getBlockState(pick);
-        if (!state.is(ModBlocks.NOXIS_PAINTING)) return false;
+        int art = NoxisPaintingBlock.artAt(state);
+        if (art < 0) return false;                      // un atril vacío o con una obra a medio pintar
         // ¿Ya la está mirando otro?
         if (!level.getEntitiesOfClass(PathfinderMob.class, new net.minecraft.world.phys.AABB(pick).inflate(2.5D),
                 e -> e != this.mob && e instanceof NoxisAmbient a
                         && com.noxisculture.entity.idle.NoxisAmbientAnimation.stateOf(a.getAmbientAnim()) == NoxisAmbientAnimation.GAZE_ART).isEmpty()) return false;
-        int art = state.getValue(NoxisPaintingBlock.ART);
         int k = NoxisDiscoveries.key(NoxisDiscoveries.ITEM, 0x0800000 + art);
         boolean isNew = !this.mob.getDiscoveries().has(k, NoxisDiscoveries.KNOWN);
         if (random.nextFloat() >= wish(this.mob.getPersonality(), isNew)) return false;
         // Delante de la obra, a un par de bloques.
-        Direction facing = state.getValue(NoxisPaintingBlock.FACING);
+        Direction facing = state.getValue(net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING);
+        boolean easel = state.is(ModBlocks.NOXIS_EASEL);
         BlockPos front = pick.relative(facing, 2);
-        if (state.getValue(NoxisPaintingBlock.STANDING) || !com.noxisculture.entity.ai.NoxisAmbientUtil.standable(level, front)) front = front.below();
+        if (!easel && !com.noxisculture.entity.ai.NoxisAmbientUtil.standable(level, front)) front = front.below();
         if (!NoxisAmbientUtil.standable(level, front)) front = pick.relative(facing);
         if (!NoxisAmbientUtil.standable(level, front) || this.mob.getNavigation().createPath(front, 0) == null) return false;
         this.painting = pick;
@@ -106,7 +107,7 @@ public class NoxisGazeArtGoal<T extends PathfinderMob & NoxisAmbient> extends Go
     @Override
     public boolean canContinueToUse() {
         BlockPos p = this.painting;
-        if (p == null || !this.mob.level().getBlockState(p).is(ModBlocks.NOXIS_PAINTING)) return false;   // la sacaron
+        if (p == null || NoxisPaintingBlock.artAt(this.mob.level().getBlockState(p)) < 0) return false;   // la sacaron
         if (!this.mob.canDoAmbient() || this.mob.hurtTime > 0) return false;
         return this.watching ? this.ticks < this.length : this.ticks < 200;
     }
