@@ -1,0 +1,41 @@
+{
+ "ambientocclusion": false,
+ "textures": {
+  "particle": "noxis_culture:block/noxis_easel/canvas_linen",
+  "over": "noxis_culture:block/noxis_easel/canvas_unfinished"
+ },
+ "elements": [
+  {
+   "from": [
+    2.5,
+    3.5,
+    6.45
+   ],
+   "to": [
+    13.5,
+    14.5,
+    6.45
+   ],
+   "faces": {
+    "north": {
+     "texture": "#over",
+     "uv": [
+      1,
+      1,
+      15,
+      15
+     ]
+    }
+   },
+   "rotation": {
+    "angle": -12.0,
+    "axis": "x",
+    "origin": [
+     8,
+     0,
+     8
+    ]
+   }
+  }
+ ]
+}

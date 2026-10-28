@@ -1,0 +1,7 @@
+{
+ "parent": "noxis_culture:block/noxis_easel/canvas_art",
+ "textures": {
+  "particle": "noxis_culture:block/noxis_painting/art_45",
+  "front": "noxis_culture:block/noxis_painting/art_45"
+ }
+}

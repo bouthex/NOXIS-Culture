@@ -1,0 +1,89 @@
+{
+ "ambientocclusion": false,
+ "textures": {
+  "particle": "noxis_culture:block/noxis_easel/canvas_linen",
+  "front": "noxis_culture:block/noxis_easel/canvas_linen",
+  "back": "noxis_culture:block/noxis_easel/canvas_back",
+  "linen": "noxis_culture:block/noxis_easel/canvas_linen"
+ },
+ "elements": [
+  {
+   "from": [
+    2.5,
+    3.5,
+    6.5
+   ],
+   "to": [
+    13.5,
+    14.5,
+    7.5
+   ],
+   "faces": {
+    "north": {
+     "texture": "#front",
+     "uv": [
+      0,
+      0,
+      11,
+      11
+     ]
+    },
+    "south": {
+     "texture": "#back",
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ]
+    },
+    "up": {
+     "texture": "#linen",
+     "uv": [
+      0,
+      0,
+      11,
+      1
+     ]
+    },
+    "down": {
+     "texture": "#linen",
+     "uv": [
+      0,
+      0,
+      11,
+      1
+     ]
+    },
+    "east": {
+     "texture": "#linen",
+     "uv": [
+      0,
+      0,
+      1,
+      11
+     ]
+    },
+    "west": {
+     "texture": "#linen",
+     "uv": [
+      0,
+      0,
+      1,
+      11
+     ]
+    }
+   },
+   "rotation": {
+    "angle": -12.0,
+    "axis": "x",
+    "origin": [
+     8,
+     0,
+     8
+    ]
+   },
+   "name": "lienzo"
+  }
+ ]
+}
