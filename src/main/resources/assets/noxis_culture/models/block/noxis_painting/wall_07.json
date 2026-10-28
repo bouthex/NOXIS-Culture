@@ -1,16 +1,42 @@
 {
  "parent": "minecraft:block/block",
+ "ambientocclusion": true,
  "textures": {
   "particle": "noxis_culture:block/noxis_painting/art_07",
   "art": "noxis_culture:block/noxis_painting/art_07",
-  "frame": "noxis_culture:block/noxis_painting/frame"
+  "wood": "noxis_culture:block/noxis_painting/frame_wood",
+  "gilt": "noxis_culture:block/noxis_painting/frame_gilt"
  },
  "elements": [
   {
    "from": [
-    0,
-    0,
+    1,
+    1,
     15
+   ],
+   "to": [
+    15,
+    15,
+    16
+   ],
+   "faces": {
+    "north": {
+     "texture": "#art",
+     "uv": [
+      1,
+      1,
+      15,
+      15
+     ]
+    }
+   },
+   "name": "lienzo"
+  },
+  {
+   "from": [
+    0,
+    15,
+    13.5
    ],
    "to": [
     16,
@@ -19,61 +45,232 @@
    ],
    "faces": {
     "north": {
-     "texture": "#art",
+     "texture": "#wood",
      "uv": [
       0,
       0,
       16,
-      16
+      1
      ]
     },
-    "south": {
-     "texture": "#frame",
+    "up": {
+     "texture": "#wood",
      "uv": [
       0,
       0,
       16,
-      16
-     ],
-     "cullface": "south"
+      2.5
+     ]
     },
-    "east": {
-     "texture": "#frame",
+    "down": {
+     "texture": "#gilt",
      "uv": [
       0,
       0,
-      1,
+      16,
+      2.5
+     ]
+    },
+    "east": {
+     "texture": "#wood",
+     "uv": [
+      0,
+      0,
+      2.5,
       16
      ]
     },
     "west": {
-     "texture": "#frame",
+     "texture": "#wood",
      "uv": [
       0,
       0,
-      1,
+      2.5,
+      16
+     ]
+    }
+   },
+   "name": "marco"
+  },
+  {
+   "from": [
+    0,
+    0,
+    13.5
+   ],
+   "to": [
+    16,
+    1,
+    16
+   ],
+   "faces": {
+    "north": {
+     "texture": "#wood",
+     "uv": [
+      0,
+      15,
+      16,
       16
      ]
     },
     "up": {
-     "texture": "#frame",
+     "texture": "#gilt",
      "uv": [
       0,
       0,
       16,
-      1
+      2.5
      ]
     },
     "down": {
-     "texture": "#frame",
+     "texture": "#wood",
      "uv": [
       0,
       0,
       16,
-      1
+      2.5
+     ]
+    },
+    "east": {
+     "texture": "#wood",
+     "uv": [
+      0,
+      0,
+      2.5,
+      16
+     ]
+    },
+    "west": {
+     "texture": "#wood",
+     "uv": [
+      0,
+      0,
+      2.5,
+      16
      ]
     }
-   }
+   },
+   "name": "marco"
+  },
+  {
+   "from": [
+    0,
+    1,
+    13.5
+   ],
+   "to": [
+    1,
+    15,
+    16
+   ],
+   "faces": {
+    "north": {
+     "texture": "#wood",
+     "uv": [
+      0,
+      1,
+      1,
+      15
+     ]
+    },
+    "up": {
+     "texture": "#wood",
+     "uv": [
+      0,
+      0,
+      16,
+      2.5
+     ]
+    },
+    "down": {
+     "texture": "#wood",
+     "uv": [
+      0,
+      0,
+      16,
+      2.5
+     ]
+    },
+    "east": {
+     "texture": "#gilt",
+     "uv": [
+      0,
+      0,
+      2.5,
+      14
+     ]
+    },
+    "west": {
+     "texture": "#wood",
+     "uv": [
+      0,
+      0,
+      2.5,
+      16
+     ]
+    }
+   },
+   "name": "marco"
+  },
+  {
+   "from": [
+    15,
+    1,
+    13.5
+   ],
+   "to": [
+    16,
+    15,
+    16
+   ],
+   "faces": {
+    "north": {
+     "texture": "#wood",
+     "uv": [
+      15,
+      1,
+      16,
+      15
+     ]
+    },
+    "up": {
+     "texture": "#wood",
+     "uv": [
+      0,
+      0,
+      16,
+      2.5
+     ]
+    },
+    "down": {
+     "texture": "#wood",
+     "uv": [
+      0,
+      0,
+      16,
+      2.5
+     ]
+    },
+    "east": {
+     "texture": "#wood",
+     "uv": [
+      0,
+      0,
+      2.5,
+      16
+     ]
+    },
+    "west": {
+     "texture": "#gilt",
+     "uv": [
+      0,
+      0,
+      2.5,
+      14
+     ]
+    }
+   },
+   "name": "marco"
   }
  ]
 }
